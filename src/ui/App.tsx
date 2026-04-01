@@ -34,12 +34,11 @@ export function App({ watchMode = false }: AppProps) {
   }, [watchMode]);
 
   useInput((input, key) => {
-    if (input === "q") {
-      exit();
-      return;
-    }
-
     if (view === "list") {
+      if (key.escape) {
+        exit();
+        return;
+      }
       if (key.upArrow) {
         setSelectedIndex((i) => Math.max(0, i - 1));
       } else if (key.downArrow) {
@@ -48,7 +47,7 @@ export function App({ watchMode = false }: AppProps) {
         setView("detail");
       }
     } else if (view === "detail") {
-      if (key.escape || input === "b") {
+      if (key.escape) {
         setView("list");
       }
     }
@@ -94,11 +93,11 @@ export function App({ watchMode = false }: AppProps) {
       <Box marginTop={1} borderStyle="single" borderColor="gray" paddingX={1}>
         {view === "list" ? (
           <Text color="gray">
-            ↑↓ navigate • Enter select • q quit
+            ↑↓ navigate • Enter select • Ctrl+C quit
           </Text>
         ) : (
           <Text color="gray">
-            b back • q quit
+            Esc back • Ctrl+C quit
           </Text>
         )}
       </Box>
