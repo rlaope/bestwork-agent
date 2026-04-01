@@ -4,6 +4,7 @@ import { homedir } from "node:os";
 import { ensureDataDir } from "../../data/store.js";
 
 const HOOK_COMMAND = `NYSM_HOOK_EVENT=__EVENT__ bash "$(npm root -g)/nysm/hooks/nysm-hook.sh"`;
+const GATEWAY_COMMAND = `bash "$(npm root -g)/nysm/hooks/nysm-gateway.sh"`;
 
 export async function installCommand() {
   await ensureDataDir();
@@ -68,14 +69,40 @@ export async function installCommand() {
     });
   }
 
+  // Add UserPromptSubmit gateway hook
+  if (!hooks.UserPromptSubmit) hooks.UserPromptSubmit = [];
+  const promptHooks = hooks.UserPromptSubmit as Array<Record<string, unknown>>;
+  const hasGateway = promptHooks.some(
+    (h) =>
+      Array.isArray(h.hooks) &&
+      h.hooks.some(
+        (hh: Record<string, unknown>) =>
+          typeof hh.command === "string" && hh.command.includes("nysm-gateway")
+      )
+  );
+
+  if (!hasGateway) {
+    promptHooks.push({
+      hooks: [
+        {
+          type: "command",
+          command: GATEWAY_COMMAND,
+          timeout: 10,
+        },
+      ],
+    });
+  }
+
   settings.hooks = hooks;
 
   await writeFile(settingsPath, JSON.stringify(settings, null, 2) + "\n");
 
   console.log("\n  nysm hooks installed successfully!\n");
   console.log("  Hooks added to ~/.claude/settings.json:");
-  console.log("  • PostToolUse — captures tool results");
-  console.log("  • PreToolUse  — captures tool inputs");
-  console.log("\n  Data will be stored in ~/.nysm/data/");
+  console.log("  • PostToolUse       — captures tool results");
+  console.log("  • PreToolUse        — captures tool inputs");
+  console.log("  • UserPromptSubmit  — gateway (natural language → nysm commands)");
+  console.log("\n  Try in Claude Code: '루프 감지해줘', '히트맵 보여줘', '세션 요약'");
+  console.log("  Data stored in ~/.nysm/data/");
   console.log("  Restart Claude Code to activate.\n");
 }

@@ -4,7 +4,7 @@
   "description": "now you see me — Claude Code Agent Observability & Session Analytics TUI",
   "type": "module",
   "bin": {
-    "nysm": "./dist/cli/index.js"
+    "nysm": "./dist/index.js"
   },
   "scripts": {
     "build": "tsup",
