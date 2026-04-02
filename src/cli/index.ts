@@ -15,6 +15,7 @@ import { exportCommand } from "./commands/observe/export.js";
 import { notifyConfigCommand, notifySendCommand } from "./commands/notify/notify-config.js";
 import { watchCommand } from "./commands/harness/watch.js";
 import { agentsCommand } from "./commands/harness/agents.js";
+import { setupCommand } from "./commands/harness/setup.js";
 
 const program = new Command();
 
@@ -69,6 +70,11 @@ program
   .command("install")
   .description("Install Claude Code hooks for advanced tracking")
   .action(installCommand);
+
+program
+  .command("setup")
+  .description("Interactive setup wizard")
+  .action(setupCommand);
 
 program
   .command("outcome <id>")
