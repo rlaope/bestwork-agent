@@ -1265,16 +1265,16 @@ RULES:
 - Be concise. Execute, don't explain.
 
 MEETING LOG \u2014 CRITICAL for trio/team/squad execution:
-When executing trio, team, or squad, you MUST record each agent's decision to ~/.bestwork/state/meeting.jsonl.
+When executing trio, team, or squad, you MUST record each agent's decision to .bestwork/state/meeting.jsonl.
 
 Before starting, write the header:
-\`mkdir -p ~/.bestwork/state && echo '{"type":"header","teamName":"<TEAM>","mode":"<MODE>","task":"<TASK>","classification":"<TYPE>","developerCount":<N>,"routingReason":"<WHY>"}' > ~/.bestwork/state/meeting.jsonl\`
+\`mkdir -p ~/.bestwork/state && echo '{"type":"header","teamName":"<TEAM>","mode":"<MODE>","task":"<TASK>","classification":"<TYPE>","developerCount":<N>,"routingReason":"<WHY>"}' > .bestwork/state/meeting.jsonl\`
 
 After EACH agent completes, append an entry:
-\`echo '{"type":"entry","timestamp":"<ISO>","agentId":"<ID>","title":"<TITLE>","role":"<ROLE>","phase":"<PHASE>","decision":"<APPROVE|REQUEST_CHANGES|IMPLEMENT>","summary":"<1-2 sentence summary>","filesChanged":["<files>"],"codeSnippet":"<key code line>","iteration":<N>}' >> ~/.bestwork/state/meeting.jsonl\`
+\`echo '{"type":"entry","timestamp":"<ISO>","agentId":"<ID>","title":"<TITLE>","role":"<ROLE>","phase":"<PHASE>","decision":"<APPROVE|REQUEST_CHANGES|IMPLEMENT>","summary":"<1-2 sentence summary>","filesChanged":["<files>"],"codeSnippet":"<key code line>","iteration":<N>}' >> .bestwork/state/meeting.jsonl\`
 
 After all agents finish, write the footer:
-\`echo '{"type":"footer","verdict":"<APPROVED|REJECTED>","totalIterations":<N>}' >> ~/.bestwork/state/meeting.jsonl\`
+\`echo '{"type":"footer","verdict":"<APPROVED|REJECTED>","totalIterations":<N>}' >> .bestwork/state/meeting.jsonl\`
 
 This file is read by the Stop hook to send rich Discord/Slack notifications with each agent's decision, code snippets, and meeting summary. If you skip this, the notification will be missing agent details.`
   },

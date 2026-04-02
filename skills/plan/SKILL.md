@@ -185,10 +185,10 @@ Wait for user input. Accept:
 Before execution, ALWAYS save the plan to disk:
 
 ```bash
-mkdir -p ~/.bestwork/plans
+mkdir -p .bestwork/plans
 ```
 
-Write the plan as JSON to `~/.bestwork/plans/<timestamp>-<slug>.json`:
+Write the plan as JSON to `.bestwork/plans/<timestamp>-<slug>.json`:
 ```json
 {
   "created": "<ISO timestamp>",
@@ -200,7 +200,7 @@ Write the plan as JSON to `~/.bestwork/plans/<timestamp>-<slug>.json`:
 }
 ```
 
-Also write a human-readable summary to `~/.bestwork/plans/<timestamp>-<slug>.md`.
+Also write a human-readable summary to `.bestwork/plans/<timestamp>-<slug>.md`.
 
 This enables:
 - `./plan --last` — re-load and resume the most recent plan
@@ -208,7 +208,7 @@ This enables:
 - Plans can be picked up in a new session if the current one dies
 
 When the user says `./plan --last`:
-1. Read the latest `.json` file from `~/.bestwork/plans/`
+1. Read the latest `.json` file from `.bestwork/plans/`
 2. Print the plan summary
 3. Ask: "resume this plan? (y/n)"
 4. If yes, jump to Phase 4 execution
@@ -227,7 +227,7 @@ Then execute based on the confirmed mode:
 
 - **PAIR**: Execute sequentially — first specialist handles their domain files, second specialist handles theirs. Cross-review at the end.
 
-- **TRIO**: Execute as `./trio` — spawn Tech agent (implement), PM agent (verify), Critic agent (review). Feedback loop up to 3 rounds. Record to meeting log at `~/.bestwork/state/meeting.jsonl`.
+- **TRIO**: Execute as `./trio` — spawn Tech agent (implement), PM agent (verify), Critic agent (review). Feedback loop up to 3 rounds. Record to meeting log at `.bestwork/state/meeting.jsonl`.
 
 - **SQUAD**: Spawn all agents in parallel using `run_in_background`. Each agent works on their assigned files. Disagreements resolved by majority vote. Record to meeting log.
 
@@ -235,11 +235,11 @@ Then execute based on the confirmed mode:
 
 For trio/squad/hierarchy, write the meeting log:
 ```bash
-mkdir -p ~/.bestwork/state && echo '{"type":"header","teamName":"plan","mode":"<MODE>","task":"<TASK>","classification":"PLAN","developerCount":<N>,"routingReason":"plan skill recommendation"}' > ~/.bestwork/state/meeting.jsonl
+mkdir -p ~/.bestwork/state && echo '{"type":"header","teamName":"plan","mode":"<MODE>","task":"<TASK>","classification":"PLAN","developerCount":<N>,"routingReason":"plan skill recommendation"}' > .bestwork/state/meeting.jsonl
 ```
 
 After execution completes, update the saved plan's status to "complete" and print:
 ```
 [BW] plan complete. mode={MODE}, agents={N}, files={N}.
-     saved: ~/.bestwork/plans/<filename>.md
+     saved: .bestwork/plans/<filename>.md
 ```
