@@ -26,7 +26,43 @@ export async function loadConfig(): Promise<BestworkConfig> {
 
 export async function saveConfig(config: BestworkConfig): Promise<void> {
   await mkdir(CONFIG_DIR, { recursive: true });
-  await writeFile(CONFIG_FILE, JSON.stringify(config, null, 2) + "\n");
+  await writeFile(CONFIG_FILE, JSON.stringify(config, null, 2) + "\n", { mode: 0o600 });
+}
+
+const ALLOWED_WEBHOOK_HOSTS: Record<string, RegExp> = {
+  discord: /^(discord\.com|discordapp\.com)$/,
+  slack: /^hooks\.slack\.com$/,
+  telegram: /^api\.telegram\.org$/,
+};
+
+const BLOCKED_IP_PATTERNS = [
+  /^localhost$/i,
+  /^127\./,
+  /^169\.254\./,
+  /^10\./,
+  /^192\.168\./,
+];
+
+export function validateWebhookUrl(url: string, service: string): void {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new Error(`Invalid URL for ${service}: ${url}`);
+  }
+  if (parsed.protocol !== "https:") {
+    throw new Error(`${service} webhook URL must use HTTPS`);
+  }
+  const host = parsed.hostname;
+  for (const pattern of BLOCKED_IP_PATTERNS) {
+    if (pattern.test(host)) {
+      throw new Error(`${service} webhook URL host is blocked: ${host}`);
+    }
+  }
+  const allowed = ALLOWED_WEBHOOK_HOSTS[service];
+  if (allowed && !allowed.test(host)) {
+    throw new Error(`${service} webhook URL host is not allowed: ${host}`);
+  }
 }
 
 export async function sendNotification(
@@ -75,6 +111,7 @@ async function sendDiscord(
   title: string,
   body: string
 ): Promise<void> {
+  validateWebhookUrl(webhookUrl, "discord");
   await fetch(webhookUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -97,6 +134,7 @@ async function sendSlack(
   title: string,
   body: string
 ): Promise<void> {
+  validateWebhookUrl(webhookUrl, "slack");
   await fetch(webhookUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -127,6 +165,7 @@ async function sendTelegram(
   title: string,
   body: string
 ): Promise<void> {
+  validateWebhookUrl(`https://api.telegram.org/bot${botToken}/sendMessage`, "telegram");
   const text = `🔍 *bestwork-agent — ${title}*\n\n${body}`;
   await fetch(
     `https://api.telegram.org/bot${botToken}/sendMessage`,

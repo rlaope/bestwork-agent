@@ -9,7 +9,7 @@ mkdir -p "$BESTWORK_DIR"
 INPUT=$(cat)
 
 # Extract fields
-SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // "unknown"')
+SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // "unknown"' | tr -cd 'a-zA-Z0-9_-')
 TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // "unknown"')
 TIMESTAMP=$(date +%s%3N)
 

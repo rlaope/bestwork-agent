@@ -93,28 +93,32 @@ fi
 # Loop detection
 if echo "$LOWER" | grep -qE '(loop|루프).*(detect|감지|check|찾)'; then
   RESULT=$(bestwork loops 2>&1)
-  echo "{\"hookSpecificOutput\":{\"hookEventName\":\"UserPromptSubmit\",\"additionalContext\":\"[bestwork loop detection]\\n${RESULT}\"}}"
+  jq -n --arg result "[bestwork loop detection]\n$RESULT" \
+    '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":$result}}'
   exit 0
 fi
 
 # Heatmap
 if echo "$LOWER" | grep -qE '(heatmap|히트맵|activity|활동).*(show|보여|view)'; then
   RESULT=$(bestwork heatmap 2>&1)
-  echo "{\"hookSpecificOutput\":{\"hookEventName\":\"UserPromptSubmit\",\"additionalContext\":\"[bestwork heatmap]\\n${RESULT}\"}}"
+  jq -n --arg result "[bestwork heatmap]\n$RESULT" \
+    '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":$result}}'
   exit 0
 fi
 
 # Summary
 if echo "$LOWER" | grep -qE '(session|세션).*(summary|요약|stats|통계)'; then
   RESULT=$(bestwork summary 2>&1)
-  echo "{\"hookSpecificOutput\":{\"hookEventName\":\"UserPromptSubmit\",\"additionalContext\":\"[bestwork summary]\\n${RESULT}\"}}"
+  jq -n --arg result "[bestwork summary]\n$RESULT" \
+    '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":$result}}'
   exit 0
 fi
 
 # Weekly
 if echo "$LOWER" | grep -qE '(weekly|주간).*(summary|report|요약|리포트)'; then
   RESULT=$(bestwork summary -w 2>&1)
-  echo "{\"hookSpecificOutput\":{\"hookEventName\":\"UserPromptSubmit\",\"additionalContext\":\"[bestwork weekly]\\n${RESULT}\"}}"
+  jq -n --arg result "[bestwork weekly]\n$RESULT" \
+    '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":$result}}'
   exit 0
 fi
 

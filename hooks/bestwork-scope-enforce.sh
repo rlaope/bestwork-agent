@@ -20,9 +20,12 @@ FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // ""')
 
 [ -z "$FILE_PATH" ] && echo '{}' && exit 0
 
-# Check if file is within scope
-if echo "$FILE_PATH" | grep -q "$SCOPE"; then
+# Check if file is within scope using realpath prefix match
+RESOLVED_FILE=$(realpath "$FILE_PATH" 2>/dev/null || echo "$FILE_PATH")
+RESOLVED_SCOPE=$(realpath "$SCOPE" 2>/dev/null || echo "$SCOPE")
+if [[ "$RESOLVED_FILE" == "$RESOLVED_SCOPE"* ]]; then
   echo '{}'
 else
-  echo "{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"additionalContext\":\"[bestwork scope] BLOCKED: ${FILE_PATH} is outside scope '${SCOPE}'. Use ./unlock to remove restriction.\"}}"
+  jq -n --arg file "$FILE_PATH" --arg scope "$SCOPE" \
+    '{"hookSpecificOutput":{"hookEventName":"PreToolUse","additionalContext":("[bestwork scope] BLOCKED: " + $file + " is outside scope " + $scope + ". Use ./unlock to remove restriction.")}}'
 fi

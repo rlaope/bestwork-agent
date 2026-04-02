@@ -99,4 +99,5 @@ else
   RESULT="[bestwork review] Platform review for ${OS} ${ARCH}, Node ${NODE_VER}:\\n${WARNINGS}\\nFix these mismatches before proceeding."
 fi
 
-echo "{\"hookSpecificOutput\":{\"hookEventName\":\"UserPromptSubmit\",\"additionalContext\":\"${RESULT}\"}}"
+jq -n --arg result "$RESULT" \
+  '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":$result}}'

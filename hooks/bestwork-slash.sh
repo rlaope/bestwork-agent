@@ -11,6 +11,7 @@ if echo "$PROMPT" | grep -qE '^\./discord'; then
   if [ -n "$URL" ]; then
     mkdir -p "$HOME/.bestwork"
     jq -n --arg url "$URL" '{"notify":{"discord":{"webhookUrl":$url}}}' > "$HOME/.bestwork/config.json"
+    chmod 600 "$HOME/.bestwork/config.json"
     # Test notification
     curl -s -X POST "$URL" \
       -H "Content-Type: application/json" \
@@ -28,6 +29,7 @@ if echo "$PROMPT" | grep -qE '^\./slack'; then
   if [ -n "$URL" ]; then
     mkdir -p "$HOME/.bestwork"
     jq -n --arg url "$URL" '{"notify":{"slack":{"webhookUrl":$url}}}' > "$HOME/.bestwork/config.json"
+    chmod 600 "$HOME/.bestwork/config.json"
     curl -s -X POST "$URL" \
       -H "Content-Type: application/json" \
       -d '{"blocks":[{"type":"header","text":{"type":"plain_text","text":"🔍 bestwork connected"}},{"type":"section","text":{"type":"mrkdwn","text":"Slack notifications enabled. You will receive alerts after each prompt."}}]}' > /dev/null 2>&1

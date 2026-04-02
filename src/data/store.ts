@@ -15,7 +15,9 @@ export function getDataDir(): string {
 }
 
 function eventFile(sessionId: string): string {
-  return join(DATA_DIR, `${sessionId}.jsonl`);
+  const safeId = sessionId.replace(/[^a-zA-Z0-9_-]/g, "");
+  if (!safeId) return join(DATA_DIR, "unknown.jsonl");
+  return join(DATA_DIR, `${safeId}.jsonl`);
 }
 
 export async function ensureDataDir(): Promise<void> {
