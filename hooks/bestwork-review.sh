@@ -44,12 +44,12 @@ DIFF=$(git diff HEAD 2>/dev/null)
 }
 
 # Only look at added lines
-ADDED=$(echo "$DIFF" | grep -E '^\+[^+]' | grep -v '^\+\+\+')
+ADDED=$(echo "$DIFF" | grep '^+' | grep -v '^+++')
 
 WARNINGS=""
 
 # === 1. FAKE IMPORTS — check if imported modules actually exist ===
-IMPORTS=$(echo "$ADDED" | grep -oE "from ['\"]([^'\"]+)['\"]" | sed "s/from ['\"]//;s/['\"]$//" | sort -u)
+IMPORTS=$(echo "$ADDED" | grep -oE 'from ["'"'"'][^"'"'"']+["'"'"']' | sed "s/from [\"']//;s/[\"']$//" | sort -u)
 for imp in $IMPORTS; do
   # Skip relative imports and node: protocol
   echo "$imp" | grep -qE '^(\.|node:)' && continue
@@ -63,7 +63,7 @@ for imp in $IMPORTS; do
 done
 
 # === 2. NONEXISTENT FILE REFS — relative imports pointing to missing files ===
-REL_IMPORTS=$(echo "$ADDED" | grep -oE "from ['\"]\.\.?/[^'\"]+['\"]" | sed "s/from ['\"]//;s/['\"]$//" | head -10)
+REL_IMPORTS=$(echo "$ADDED" | grep -oE 'from ["'"'"']\.\./[^"'"'"']+["'"'"']' | sed "s/from [\"']//;s/[\"']$//" | head -10)
 for rel in $REL_IMPORTS; do
   # Strip .js/.ts extension for resolution
   BASE=$(echo "$rel" | sed 's/\.[jt]sx\?$//')

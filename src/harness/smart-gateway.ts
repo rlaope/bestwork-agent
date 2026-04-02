@@ -30,11 +30,15 @@ const SLASH_PREFIXES = [
 ];
 
 // Skill keyword map — natural language to skill name
-const SKILL_ROUTES: Array<{ patterns: RegExp[]; skill: string; reason: string }> = [
+// hook: shell script name to execute directly (output becomes additionalContext)
+// no hook: use Skill tool invocation via additionalContext message
+const SKILL_ROUTES: Array<{ patterns: RegExp[]; skill: string; reason: string; hook?: string; env?: string }> = [
   {
     patterns: [/리뷰|review|검증|verify|할루시네이션|hallucination|검사|scan|コードレビュー|レビュー/i],
     skill: "review",
     reason: "code review and hallucination scan",
+    hook: "bestwork-review.sh",
+    env: "BESTWORK_REVIEW_TRIGGER=1",
   },
   {
     patterns: [/에이전트.*목록|에이전트.*리스트|agent.*list|agents|프로필|エージェント一覧|エージェント/i],
@@ -145,6 +149,23 @@ async function main() {
   const lower = prompt.toLowerCase();
   for (const route of SKILL_ROUTES) {
     if (route.patterns.some((p) => p.test(lower))) {
+      // If skill has a shell hook, execute it directly (same as ./command)
+      if (route.hook && PLUGIN_ROOT) {
+        try {
+          const hookInput = JSON.stringify({ prompt, session_id: input.session_id ?? "" });
+          const envPrefix = route.env ? `${route.env} ` : "";
+          const result = execSync(
+            `echo '${hookInput.replace(/'/g, "'\\''")}' | ${envPrefix}bash "${PLUGIN_ROOT}/hooks/${route.hook}"`,
+            { encoding: "utf-8", timeout: 10000 }
+          ).trim();
+          if (result && result !== "{}") {
+            log(`[BW gateway → ${route.skill}] ${route.reason}`);
+            process.stdout.write(result + "\n");
+            return;
+          }
+        } catch {}
+      }
+      // Fallback: tell Claude to invoke the skill
       output(`[BW gateway] matched skill: bestwork-agent:${route.skill} — ${route.reason}. Use the Skill tool to invoke bestwork-agent:${route.skill} now.`);
       return;
     }
