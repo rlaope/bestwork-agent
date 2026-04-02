@@ -53,8 +53,8 @@ async function readStdin() {
 
 // === OAuth token management (OMC pattern) ===
 const OAUTH_CLIENT_ID = process.env.CLAUDE_CODE_OAUTH_CLIENT_ID || "9d1c250a-e61b-44d9-88ed-5944d1962f5e";
-const CACHE_TTL_MS = 300000; // 5min normal cache
-const MAX_STALE_MS = 900000; // 15min stale data OK
+const CACHE_TTL_MS = 600000; // 10min normal cache
+const MAX_STALE_MS = 1800000; // 30min stale data OK
 const API_TIMEOUT = 5000;
 
 function getCredentials() {
@@ -365,7 +365,7 @@ async function main() {
   const messengers = [];
   if (cfg.notify?.discord?.webhookUrl) messengers.push("discord");
   if (cfg.notify?.slack?.webhookUrl) messengers.push("slack");
-  if (messengers.length > 0) out += ` ${D}(${messengers.join(", ")})${R}`;
+  if (messengers.length > 0) out += ` ${D}msg:${messengers.join(",")}${R}`;
 
   process.stdout.write(out + "\n");
 }

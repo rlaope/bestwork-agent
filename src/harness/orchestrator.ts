@@ -293,14 +293,14 @@ function splitTasks(task: string): string[] {
     return task.split("|").map((t) => t.trim()).filter(Boolean);
   }
 
-  // Split by "and then" / Korean conjunctions
-  const conjunctionPattern = /\band then\b|그리고|하고\s|하고$|다음에|그다음/i;
+  // Split by "and then" / Korean conjunctions / Japanese て form
+  const conjunctionPattern = /\band then\b|그리고\s|(?<=[가-힣])고\s|하고$|다음에\s|그다음\s|して|してから/i;
   if (conjunctionPattern.test(task)) {
     return task.split(conjunctionPattern).map((t) => t.trim()).filter(Boolean);
   }
 
   // Split by numbered list: "1. ... 2. ... 3. ..."
-  const numberedMatch = task.match(/\d+\.\s+[^\d]+/g);
+  const numberedMatch = task.match(/\d+\.\s+.+?(?=\s+\d+\.|$)/g);
   if (numberedMatch && numberedMatch.length > 1) {
     return numberedMatch.map((t) => t.replace(/^\d+\.\s+/, "").trim()).filter(Boolean);
   }
@@ -376,12 +376,12 @@ export function classifyIntent(task: string): IntentClassification {
 
   // Infer complexity from domain count + keywords
   const complexitySignals = [
-    /refactor/i,
-    /redesign/i,
-    /migrate/i,
-    /architect/i,
-    /implement.*system/i,
-    /build.*platform/i,
+    /refactor|리팩토링|リファクタ/i,
+    /redesign|재설계|再設計/i,
+    /migrate|마이그레이션|マイグレーション/i,
+    /architect|아키텍처|アーキテクチャ/i,
+    /implement.*system|시스템.*구현/i,
+    /build.*platform|플랫폼.*구축/i,
   ];
   const isComplex = complexitySignals.some((p) => p.test(task)) || allDomains.length >= 3;
 

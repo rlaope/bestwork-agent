@@ -25,12 +25,12 @@ const SLASH_PREFIXES = [
 // Skill keyword map — natural language to skill name
 const SKILL_ROUTES: Array<{ patterns: RegExp[]; skill: string; reason: string }> = [
   {
-    patterns: [/리뷰|review|검증|verify|할루시네이션|hallucination|검사|scan/i],
+    patterns: [/리뷰|review|검증|verify|할루시네이션|hallucination|검사|scan|コードレビュー|レビュー/i],
     skill: "review",
     reason: "code review and hallucination scan",
   },
   {
-    patterns: [/에이전트.*목록|에이전트.*리스트|agent.*list|agents|프로필/i],
+    patterns: [/에이전트.*목록|에이전트.*리스트|agent.*list|agents|프로필|エージェント一覧|エージェント/i],
     skill: "agents",
     reason: "agent catalog lookup",
   },
@@ -65,7 +65,7 @@ const SKILL_ROUTES: Array<{ patterns: RegExp[]; skill: string; reason: string }>
     reason: "hook installation",
   },
   {
-    patterns: [/health|건강|상태.*체크|상태.*확인/i],
+    patterns: [/health|건강|상태.*체크|상태.*확인|ヘルスチェック/i],
     skill: "health",
     reason: "session health check",
   },
