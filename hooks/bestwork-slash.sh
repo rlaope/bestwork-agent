@@ -5,35 +5,50 @@
 INPUT=$(cat)
 PROMPT=$(echo "$INPUT" | jq -r '.prompt // .display // ""' 2>/dev/null)
 
-# ./discord <webhook_url>
+# ./discord <webhook_url> [--lang <code>]
 if echo "$PROMPT" | grep -qE '^\./discord'; then
-  URL=$(echo "$PROMPT" | sed 's|^\./discord\s*||' | tr -d ' ')
+  ARGS=$(echo "$PROMPT" | sed 's|^\./discord\s*||')
+  URL=$(echo "$ARGS" | grep -oE 'https://[^ ]+')
+  LANG=$(echo "$ARGS" | grep -oE '\-\-lang\s+[a-z]+' | awk '{print $2}')
+  [ -z "$LANG" ] && LANG="en"
+
   if [ -n "$URL" ]; then
     mkdir -p "$HOME/.bestwork"
-    jq -n --arg url "$URL" '{"notify":{"discord":{"webhookUrl":$url}}}' > "$HOME/.bestwork/config.json"
+    # Merge with existing config or create new
+    EXISTING=$(cat "$HOME/.bestwork/config.json" 2>/dev/null || echo '{}')
+    echo "$EXISTING" | jq --arg url "$URL" --arg lang "$LANG" \
+      '.notify.discord = {"webhookUrl":$url} | .language = $lang' > "$HOME/.bestwork/config.json"
     chmod 600 "$HOME/.bestwork/config.json"
     # Test notification
     curl -s -X POST "$URL" \
       -H "Content-Type: application/json" \
-      -d '{"embeds":[{"title":"🔍 bestwork connected","description":"Discord notifications enabled. You will receive alerts after each prompt.","color":55467}]}' > /dev/null 2>&1
-    echo "{\"hookSpecificOutput\":{\"hookEventName\":\"UserPromptSubmit\",\"additionalContext\":\"[bestwork] Discord webhook configured and tested. Notifications will be sent after each prompt completion.\"}}"
+      -d "{\"embeds\":[{\"title\":\"bestwork connected\",\"description\":\"Discord notifications enabled (lang: ${LANG}).\",\"color\":55467}]}" > /dev/null 2>&1
+    jq -n --arg lang "$LANG" \
+      '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":("[bestwork] Discord configured (lang: " + $lang + "). Notifications active.")}}'
   else
-    echo "{\"hookSpecificOutput\":{\"hookEventName\":\"UserPromptSubmit\",\"additionalContext\":\"[bestwork] Usage: ./discord <webhook_url>\"}}"
+    jq -n '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":"[bestwork] Usage: ./discord <webhook_url> [--lang ko|en|ja]"}}'
   fi
   exit 0
 fi
 
-# ./slack <webhook_url>
+# ./slack <webhook_url> [--lang <code>]
 if echo "$PROMPT" | grep -qE '^\./slack'; then
-  URL=$(echo "$PROMPT" | sed 's|^\./slack\s*||' | tr -d ' ')
+  ARGS=$(echo "$PROMPT" | sed 's|^\./slack\s*||')
+  URL=$(echo "$ARGS" | grep -oE 'https://[^ ]+')
+  LANG=$(echo "$ARGS" | grep -oE '\-\-lang\s+[a-z]+' | awk '{print $2}')
+  [ -z "$LANG" ] && LANG="en"
+
   if [ -n "$URL" ]; then
     mkdir -p "$HOME/.bestwork"
-    jq -n --arg url "$URL" '{"notify":{"slack":{"webhookUrl":$url}}}' > "$HOME/.bestwork/config.json"
+    EXISTING=$(cat "$HOME/.bestwork/config.json" 2>/dev/null || echo '{}')
+    echo "$EXISTING" | jq --arg url "$URL" --arg lang "$LANG" \
+      '.notify.slack = {"webhookUrl":$url} | .language = $lang' > "$HOME/.bestwork/config.json"
     chmod 600 "$HOME/.bestwork/config.json"
     curl -s -X POST "$URL" \
       -H "Content-Type: application/json" \
-      -d '{"blocks":[{"type":"header","text":{"type":"plain_text","text":"🔍 bestwork connected"}},{"type":"section","text":{"type":"mrkdwn","text":"Slack notifications enabled. You will receive alerts after each prompt."}}]}' > /dev/null 2>&1
-    echo "{\"hookSpecificOutput\":{\"hookEventName\":\"UserPromptSubmit\",\"additionalContext\":\"[bestwork] Slack webhook configured and tested. Notifications will be sent after each prompt completion.\"}}"
+      -d "{\"blocks\":[{\"type\":\"header\",\"text\":{\"type\":\"plain_text\",\"text\":\"bestwork connected\"}},{\"type\":\"section\",\"text\":{\"type\":\"mrkdwn\",\"text\":\"Slack notifications enabled (lang: ${LANG}).\"}}]}" > /dev/null 2>&1
+    jq -n --arg lang "$LANG" \
+      '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":("[bestwork] Slack configured (lang: " + $lang + "). Notifications active.")}}'
   else
     echo "{\"hookSpecificOutput\":{\"hookEventName\":\"UserPromptSubmit\",\"additionalContext\":\"[bestwork] Usage: ./slack <webhook_url>\"}}"
   fi

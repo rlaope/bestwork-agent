@@ -16,6 +16,7 @@ export interface MeetingEntry {
   decision: Decision;
   summary: string;
   details?: string;
+  codeSnippet?: string;
   filesChanged?: string[];
   iteration: number;
 }
@@ -28,6 +29,9 @@ export interface MeetingLog {
   entries: MeetingEntry[];
   finalVerdict: "APPROVED" | "REJECTED" | "IN_PROGRESS";
   totalIterations: number;
+  routingReason: string;
+  classification: string;
+  developerCount: number;
 }
 
 // ============================================================
@@ -78,6 +82,9 @@ export function renderMeetingHeader(log: MeetingLog): string {
   lines.push(`${COLORS.bold}│${COLORS.reset}  ${COLORS.cyan}${COLORS.bold}bestwork meeting${COLORS.reset} — ${modeTag}                            ${COLORS.bold}│${COLORS.reset}`);
   lines.push(`${COLORS.bold}│${COLORS.reset}  Team: ${log.teamName.padEnd(48)}${COLORS.bold}│${COLORS.reset}`);
   lines.push(`${COLORS.bold}│${COLORS.reset}  Task: ${log.task.slice(0, 48).padEnd(48)}${COLORS.bold}│${COLORS.reset}`);
+  lines.push(`${COLORS.bold}│${COLORS.reset}  Type: ${log.classification.padEnd(48)}${COLORS.bold}│${COLORS.reset}`);
+  lines.push(`${COLORS.bold}│${COLORS.reset}  Devs: ${String(log.developerCount).padEnd(48)}${COLORS.bold}│${COLORS.reset}`);
+  lines.push(`${COLORS.bold}│${COLORS.reset}  Why:  ${log.routingReason.slice(0, 48).padEnd(48)}${COLORS.bold}│${COLORS.reset}`);
   lines.push(`${COLORS.bold}└─────────────────────────────────────────────────────────┘${COLORS.reset}`);
   lines.push("");
 
@@ -106,6 +113,15 @@ export function renderMeetingEntry(entry: MeetingEntry, showDetails: boolean = t
     for (const line of detailLines) {
       lines.push(`       ${COLORS.gray}│ ${line}${COLORS.reset}`);
     }
+  }
+
+  // Code snippet
+  if (entry.codeSnippet) {
+    lines.push(`       ${COLORS.dim}┌── code ──${COLORS.reset}`);
+    for (const line of entry.codeSnippet.split("\n").slice(0, 6)) {
+      lines.push(`       ${COLORS.dim}│ ${line}${COLORS.reset}`);
+    }
+    lines.push(`       ${COLORS.dim}└──────────${COLORS.reset}`);
   }
 
   // Files changed
@@ -169,7 +185,17 @@ export function formatMeetingForDiscord(log: MeetingLog): object {
   const duration = Math.round((Date.now() - log.startedAt.getTime()) / 1000);
 
   const agentSummaries = log.entries
-    .map((e) => `**${e.title}** → ${e.decision}\n${e.summary}`)
+    .map((e) => {
+      let text = `**${e.title}** → ${e.decision}\n${e.summary}`;
+      if (e.codeSnippet) {
+        const snippet = e.codeSnippet.split("\n").slice(0, 4).join("\n");
+        text += `\n\`\`\`\n${snippet}\n\`\`\``;
+      }
+      if (e.filesChanged && e.filesChanged.length > 0) {
+        text += `\n📁 ${e.filesChanged.slice(0, 3).join(", ")}`;
+      }
+      return text;
+    })
     .join("\n\n");
 
   const color = log.finalVerdict === "APPROVED" ? 0x00d4aa : log.finalVerdict === "REJECTED" ? 0xff4444 : 0xffaa00;
@@ -178,7 +204,7 @@ export function formatMeetingForDiscord(log: MeetingLog): object {
     embeds: [
       {
         title: `${log.mode === "hierarchy" ? "⬆" : "◆"} ${log.teamName} — ${log.finalVerdict}`,
-        description: `**Task:** ${log.task}\n**Duration:** ${duration}s · **Iterations:** ${log.totalIterations}\n**Decisions:** ${approveCount} approve · ${rejectCount} changes\n\n${agentSummaries}`,
+        description: `**Task:** ${log.task}\n**Type:** ${log.classification} · **Devs:** ${log.developerCount}\n**Why this team:** ${log.routingReason}\n**Duration:** ${duration}s · **Iterations:** ${log.totalIterations}\n**Decisions:** ${approveCount} approve · ${rejectCount} changes\n\n${agentSummaries}`,
         color,
         footer: { text: "bestwork-agent" },
         timestamp: new Date().toISOString(),
@@ -193,7 +219,13 @@ export function formatMeetingForSlack(log: MeetingLog): object {
   const duration = Math.round((Date.now() - log.startedAt.getTime()) / 1000);
 
   const agentSummaries = log.entries
-    .map((e) => `*${e.title}* → ${e.decision}\n${e.summary}`)
+    .map((e) => {
+      let text = `*${e.title}* → ${e.decision}\n${e.summary}`;
+      if (e.codeSnippet) {
+        text += `\n\`\`\`${e.codeSnippet.split("\n").slice(0, 4).join("\n")}\`\`\``;
+      }
+      return text;
+    })
     .join("\n\n");
 
   return {
@@ -206,7 +238,7 @@ export function formatMeetingForSlack(log: MeetingLog): object {
         type: "section",
         text: {
           type: "mrkdwn",
-          text: `*Task:* ${log.task}\n*Duration:* ${duration}s · *Iterations:* ${log.totalIterations}\n*Decisions:* ${approveCount} approve · ${rejectCount} changes\n\n${agentSummaries}`,
+          text: `*Task:* ${log.task}\n*Type:* ${log.classification} · *Devs:* ${log.developerCount}\n*Why:* ${log.routingReason}\n*Duration:* ${duration}s · *Iterations:* ${log.totalIterations}\n*Decisions:* ${approveCount} approve · ${rejectCount} changes\n\n${agentSummaries}`,
         },
       },
       {
