@@ -136,17 +136,72 @@ export function buildExecutionPlan(
 // Auto-allocate: pick team based on developer count
 // ============================================================
 
+export type ExecutionMode = "passthrough" | "solo" | "pair" | "trio" | "squad" | "hierarchy";
+
 export interface Allocation {
-  structure: "squad" | "hierarchy";
+  mode: ExecutionMode;
   developerCount: number;
   assignedAgents: string[];
   reasoning: string;
+}
+
+// Patterns that should never trigger agent allocation
+const PASSTHROUGH_PATTERNS = [
+  /^(git |commit|push|pull|merge|rebase|checkout|branch|stash|tag|log|diff|status)/i,
+  /^(ls|cd|pwd|cat|head|tail|mv|cp|rm |mkdir|touch|chmod|find|grep|sed|awk)/i,
+  /^(npm |yarn |pnpm |bun |npx |node |deno |cargo |pip |go |make)/i,
+  /^(exit|quit|bye|thanks|thank|ok|yes|no|y|n)$/i,
+  /^\/\w/,  // slash commands
+  /^\.\//,  // dot commands
+];
+
+// Patterns that indicate lightweight work (solo agent)
+const SOLO_PATTERNS = [
+  /fix (a |the |this )?(typo|bug|error|issue|warning)/i,
+  /rename|delete|remove|add (a |the )?comment/i,
+  /update (the |a )?(version|readme|docs|changelog)/i,
+  /format|lint|prettier|eslint/i,
+];
+
+export function classifyWeight(task: string): ExecutionMode {
+  // Passthrough: no agents needed
+  for (const pattern of PASSTHROUGH_PATTERNS) {
+    if (pattern.test(task.trim())) return "passthrough";
+  }
+
+  // Solo: single lightweight task
+  for (const pattern of SOLO_PATTERNS) {
+    if (pattern.test(task)) return "solo";
+  }
+
+  // Default: let autoAllocate decide based on signals
+  return "pair"; // placeholder, overridden by autoAllocate
 }
 
 export function autoAllocate(
   task: string,
   signals: { fileCount?: number; domains?: string[]; complexity?: "low" | "medium" | "high" }
 ): Allocation {
+  // Check passthrough first
+  const weight = classifyWeight(task);
+  if (weight === "passthrough") {
+    return {
+      mode: "passthrough",
+      developerCount: 0,
+      assignedAgents: [],
+      reasoning: "Lightweight operation — direct execution, no agents needed",
+    };
+  }
+
+  if (weight === "solo") {
+    return {
+      mode: "solo",
+      developerCount: 1,
+      assignedAgents: ["sr-fullstack"],
+      reasoning: "Simple task — single developer, no review overhead",
+    };
+  }
+
   const { fileCount = 1, domains = ["backend"], complexity = "medium" } = signals;
 
   let devCount = 1;
@@ -172,7 +227,7 @@ export function autoAllocate(
     fullstack: "sr-fullstack",
     infra: "sr-infra",
     security: "sr-security",
-    ai: "sr-backend", // AI work usually needs backend
+    ai: "sr-backend",
     data: "sr-backend",
     mobile: "sr-frontend",
   };
@@ -181,20 +236,24 @@ export function autoAllocate(
     agents.push(domainToAgent[domain] ?? "sr-fullstack");
   }
 
-  // Fill remaining slots
   while (agents.length < devCount) {
     if (!agents.includes("sr-fullstack")) agents.push("sr-fullstack");
     else if (!agents.includes("qa-lead")) agents.push("qa-lead");
     else agents.push("jr-engineer");
   }
 
-  const structure = devCount >= 3 && complexity === "high" ? "hierarchy" : "squad";
+  let mode: ExecutionMode;
+  if (devCount === 1) mode = "solo";
+  else if (devCount === 2) mode = "pair";
+  else if (devCount === 3) mode = "trio";
+  else if (complexity === "high") mode = "hierarchy";
+  else mode = "squad";
 
   return {
-    structure,
+    mode,
     developerCount: devCount,
     assignedAgents: agents,
-    reasoning: `${fileCount} files, ${domains.length} domains (${domains.join(", ")}), ${complexity} complexity → ${devCount} devs in ${structure} mode`,
+    reasoning: `${fileCount} files, ${domains.length} domains (${domains.join(", ")}), ${complexity} complexity → ${devCount} devs in ${mode} mode`,
   };
 }
 

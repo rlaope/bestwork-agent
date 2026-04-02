@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildExecutionPlan, autoAllocate, formatPlan } from "../orchestrator.js";
+import { buildExecutionPlan, autoAllocate, formatPlan, classifyWeight } from "../orchestrator.js";
 
 describe("buildExecutionPlan", () => {
   it("builds hierarchy plan for Full Team", () => {
@@ -60,16 +60,60 @@ describe("buildExecutionPlan", () => {
   });
 });
 
+describe("classifyWeight", () => {
+  it("passthrough for git commands", () => {
+    expect(classifyWeight("git commit -m 'fix'")).toBe("passthrough");
+    expect(classifyWeight("git push")).toBe("passthrough");
+    expect(classifyWeight("git status")).toBe("passthrough");
+  });
+
+  it("passthrough for shell commands", () => {
+    expect(classifyWeight("npm install")).toBe("passthrough");
+    expect(classifyWeight("ls -la")).toBe("passthrough");
+    expect(classifyWeight("node server.js")).toBe("passthrough");
+  });
+
+  it("passthrough for simple answers", () => {
+    expect(classifyWeight("yes")).toBe("passthrough");
+    expect(classifyWeight("ok")).toBe("passthrough");
+    expect(classifyWeight("thanks")).toBe("passthrough");
+  });
+
+  it("passthrough for slash/dot commands", () => {
+    expect(classifyWeight("/help")).toBe("passthrough");
+    expect(classifyWeight("./review")).toBe("passthrough");
+  });
+
+  it("solo for simple fixes", () => {
+    expect(classifyWeight("fix the typo in header")).toBe("solo");
+    expect(classifyWeight("rename the variable")).toBe("solo");
+    expect(classifyWeight("update the version")).toBe("solo");
+    expect(classifyWeight("format the code")).toBe("solo");
+  });
+
+  it("pair for regular tasks", () => {
+    expect(classifyWeight("add user authentication with OAuth2")).toBe("pair");
+    expect(classifyWeight("build a dashboard component")).toBe("pair");
+  });
+});
+
 describe("autoAllocate", () => {
-  it("allocates 1 dev for simple task", () => {
-    const result = autoAllocate("fix typo", { fileCount: 1, domains: ["backend"], complexity: "low" });
+  it("passthrough for git commands", () => {
+    const result = autoAllocate("git push", {});
+    expect(result.mode).toBe("passthrough");
+    expect(result.developerCount).toBe(0);
+  });
+
+  it("solo for simple fix", () => {
+    const result = autoAllocate("fix typo in header", {});
+    expect(result.mode).toBe("solo");
     expect(result.developerCount).toBe(1);
-    expect(result.structure).toBe("squad");
   });
 
   it("allocates 2 devs for fullstack task", () => {
     const result = autoAllocate("add login page", { fileCount: 4, domains: ["backend", "frontend"], complexity: "medium" });
     expect(result.developerCount).toBe(2);
+    expect(result.mode).toBe("pair");
   });
 
   it("allocates 3+ devs for complex multi-domain", () => {
@@ -80,7 +124,7 @@ describe("autoAllocate", () => {
   it("allocates 4 devs for enterprise scale", () => {
     const result = autoAllocate("redesign system", { fileCount: 15, domains: ["backend", "frontend", "infra", "security"], complexity: "high" });
     expect(result.developerCount).toBe(4);
-    expect(result.structure).toBe("hierarchy");
+    expect(result.mode).toBe("hierarchy");
   });
 
   it("caps at 4 devs", () => {
