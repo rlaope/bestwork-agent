@@ -14,6 +14,7 @@ const HOOKS_REGISTRY = [
   // UserPromptSubmit hooks
   { event: "UserPromptSubmit", id: "nysm-gateway", command: `bash "${NPM_ROOT}/nysm-gateway.sh"`, timeout: 10 },
   { event: "UserPromptSubmit", id: "nysm-slash", command: `bash "${NPM_ROOT}/nysm-slash.sh"`, timeout: 10 },
+  { event: "UserPromptSubmit", id: "nysm-agents", command: `bash "${NPM_ROOT}/nysm-agents.sh"`, timeout: 15 },
   // Stop hooks
   { event: "Stop", id: "nysm-prompt-done", command: `bash "${NPM_ROOT}/nysm-prompt-done.sh"`, timeout: 15 },
 ];
@@ -69,13 +70,22 @@ export async function installCommand() {
   console.log("  • UserPromptSubmit — slash commands (./discord, ./slack) + gateway");
   console.log("  • Stop           — prompt completion notifications");
   console.log("");
-  console.log("  Slash commands (type in Claude Code):");
-  console.log("    ./discord <webhook_url>  — enable Discord notifications");
-  console.log("    ./slack <webhook_url>    — enable Slack notifications");
-  console.log("    ./nysm                   — check nysm status");
+  console.log("  Slash commands:");
+  console.log("    ./discord <url>          — Discord notifications");
+  console.log("    ./slack <url>            — Slack notifications");
+  console.log("    ./nysm                   — status check");
+  console.log("    ./help                   — list all commands");
+  console.log("");
+  console.log("  Data-driven agents (nysm-exclusive):");
+  console.log("    ./autopsy [id]           — session post-mortem");
+  console.log("    ./similar [query]        — find similar past sessions");
+  console.log("    ./learn                  — extract prompting rules from history");
+  console.log("    ./predict <task>         — predict task complexity");
+  console.log("    ./guard                  — session health guardrails");
+  console.log("    ./compare <id1> <id2>    — compare sessions");
   console.log("");
   console.log("  Anti-hallucination:");
-  console.log("    Grounding — warns when editing files not yet Read in session");
+  console.log("    Grounding — warns when editing files not yet Read");
   console.log("    Validate  — auto typecheck after code changes");
   console.log("");
   console.log("  Restart Claude Code to activate.\n");
