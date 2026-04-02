@@ -1,122 +1,137 @@
 ---
 name: doctor
-description: Diagnose install/deploy flow integrity — checks hooks, paths, versions, and plugin config for mismatches
+description: Diagnose the current project's deploy config vs actual code — find mismatches between what's configured and what exists
 ---
 
 When this skill is invoked, IMMEDIATELY print:
 
 ```
-[BW] running diagnostics...
+[BW] running project diagnostics...
 ```
 
-Run ALL of the following checks. For each check, print PASS or FAIL with details.
+This skill checks the USER'S CURRENT PROJECT (the working directory), NOT bestwork-agent itself.
+Detect which stack/platform the project uses, then run the relevant checks.
 
-## 1. Version consistency
-
-Check that version is the same across all files:
-```bash
-echo "package.json: $(jq -r '.version' package.json 2>/dev/null)"
-echo "plugin.json: $(jq -r '.version' .claude-plugin/plugin.json 2>/dev/null)"
-echo "marketplace.json: $(jq -r '.plugins[0].version' .claude-plugin/marketplace.json 2>/dev/null)"
-```
-If any differ → FAIL with which files mismatch.
-
-## 2. Hook path resolution
-
-Test that hooks can be found from both install paths:
-```bash
-# npm global path
-NPM_HOOKS="$(npm root -g 2>/dev/null)/bestwork-agent/hooks"
-echo "npm global hooks: $([ -d "$NPM_HOOKS" ] && echo 'FOUND' || echo 'NOT FOUND')"
-
-# plugin cache path
-CACHE_HOOKS="$(ls -d ~/.claude/plugins/cache/bestwork-tools/bestwork-agent/*/hooks 2>/dev/null | sort -V | tail -1)"
-echo "plugin cache hooks: $([ -d "$CACHE_HOOKS" ] && echo "FOUND ($CACHE_HOOKS)" || echo 'NOT FOUND')"
-
-# marketplace path
-MP_HOOKS="$(ls -d ~/.claude/plugins/marketplaces/bestwork-tools/hooks 2>/dev/null)"
-echo "marketplace hooks: $([ -d "$MP_HOOKS" ] && echo 'FOUND' || echo 'NOT FOUND')"
-```
-At least one path must exist → otherwise FAIL.
-
-## 3. Hook registration
-
-Check settings.json for bestwork hooks:
-```bash
-jq '.hooks | to_entries[] | .key as $ev | .value[] | .hooks[]? | select(._bestwork_id != null or (.command // "" | contains("bestwork"))) | "\($ev): \(._bestwork_id // .command[:50])"' ~/.claude/settings.json 2>/dev/null
-```
-Count registered hooks. Expected: 11. If fewer → WARN with missing hooks.
-
-## 4. Plugin manifest
-
-Check `.claude-plugin/plugin.json` has required fields:
-- `name` exists
-- `skills` points to existing directory
-- `hooks` points to existing file (`hooks/hooks.json`)
+## 1. Detect Project Stack
 
 ```bash
-SKILLS_PATH=$(jq -r '.skills // empty' .claude-plugin/plugin.json 2>/dev/null)
-HOOKS_PATH=$(jq -r '.hooks // empty' .claude-plugin/plugin.json 2>/dev/null)
-echo "skills field: $([ -n "$SKILLS_PATH" ] && [ -d "$SKILLS_PATH" ] && echo 'OK' || echo 'MISSING/BROKEN')"
-echo "hooks field: $([ -n "$HOOKS_PATH" ] && [ -f "$HOOKS_PATH" ] && echo 'OK' || echo 'MISSING/BROKEN')"
+ls -a package.json Cargo.toml go.mod pyproject.toml requirements.txt Gemfile pom.xml build.gradle Makefile 2>/dev/null
 ```
 
-## 5. npm publish readiness
+Identify: Node/Deno/Bun, Rust, Go, Python, Ruby, Java, or mixed. Also check for frameworks (Next.js, Nuxt, Django, Rails, etc.) by reading config files.
 
-Check `package.json` has `files` field:
+## 2. Package Dependencies vs Imports
+
+For Node.js projects:
+- Grep all `import ... from '...'` and `require('...')` in source files
+- Compare against `dependencies` and `devDependencies` in `package.json`
+- Report: packages imported but NOT in dependencies (phantom deps)
+- Report: packages in dependencies but NEVER imported (dead deps)
+
+For Python:
+- Compare `import` statements against `requirements.txt` / `pyproject.toml`
+
+For Go:
+- Run `go mod tidy -diff` if available
+
+## 3. Build Config vs Source
+
+Check that build/bundle config references real files:
+- **tsconfig.json**: `include`/`exclude` paths exist? `paths` aliases resolve?
+- **tsup/vite/webpack config**: entry points exist?
+- **Dockerfile**: `COPY` source paths exist? `CMD`/`ENTRYPOINT` binary exists in build output?
+- **docker-compose.yml**: volume mounts, build contexts exist?
+
 ```bash
-jq -r '.files // empty' package.json 2>/dev/null
-```
-If missing → WARN: "npm publish will include all files".
-
-Check required dirs exist:
-```bash
-for dir in dist hooks skills .claude-plugin; do
-  echo "$dir: $([ -d "$dir" ] && echo 'OK' || echo 'MISSING')"
-done
-```
-
-## 6. Dead references
-
-Scan hook scripts for references to files that don't exist:
-```bash
-grep -roh 'bestwork-[a-z-]*\.sh' hooks/*.sh 2>/dev/null | sort -u | while read f; do
-  [ ! -f "hooks/$f" ] && echo "DEAD: $f referenced but not found"
-done
-```
-
-## 7. hooks.json vs install.ts parity
-
-Compare hook IDs registered by both paths:
-- `hooks.json` hooks (for plugin installs)
-- `install.ts` HOOKS_REGISTRY (for npm installs)
-
-List any hooks that exist in one but not the other.
-
-## 8. Build artifacts
-
-Check dist/ is up to date:
-```bash
-SRC_NEWEST=$(find src -name '*.ts' -newer dist/index.js 2>/dev/null | head -5)
-if [ -n "$SRC_NEWEST" ]; then
-  echo "STALE: dist/ is older than these source files:"
-  echo "$SRC_NEWEST"
-else
-  echo "OK: dist/ is up to date"
+# Example for tsconfig
+if [ -f tsconfig.json ]; then
+  jq -r '.compilerOptions.paths // {} | to_entries[] | .value[]' tsconfig.json 2>/dev/null | while read p; do
+    resolved="${p%/*}"
+    [ ! -d "$resolved" ] && [ ! -f "${p%.ts}.ts" ] && echo "DEAD: tsconfig path alias → $p"
+  done
 fi
 ```
 
+## 4. CI/CD Config vs Code
+
+Check that CI/CD pipelines reference real scripts and files:
+- **GitHub Actions** (`.github/workflows/*.yml`): `run:` commands reference existing scripts? Node version matches `engines`?
+- **Vercel/Netlify config** (`vercel.json`, `netlify.toml`): build commands match `package.json` scripts?
+- **Dockerfile**: base image Node version matches `engines`?
+
+```bash
+if ls .github/workflows/*.yml 1>/dev/null 2>&1; then
+  grep -h 'node-version' .github/workflows/*.yml 2>/dev/null | grep -oP '\d+' | sort -u | while read ci_ver; do
+    pkg_ver=$(jq -r '.engines.node // empty' package.json 2>/dev/null | grep -oP '\d+')
+    [ -n "$pkg_ver" ] && [ "$ci_ver" != "$pkg_ver" ] && echo "MISMATCH: CI uses Node $ci_ver, package.json engines says $pkg_ver"
+  done
+fi
+```
+
+## 5. Environment Variables
+
+- Scan source code for `process.env.XXX`, `os.environ`, `env::var` patterns
+- Compare against:
+  - `.env.example` / `.env.sample` (if exists)
+  - CI/CD env declarations in workflow files
+  - Docker env declarations
+- Report: env vars used in code but not documented anywhere
+
+```bash
+grep -roh 'process\.env\.\w\+' src/ 2>/dev/null | sort -u | sed 's/process\.env\.//' | while read var; do
+  found=0
+  grep -q "$var" .env.example 2>/dev/null && found=1
+  grep -q "$var" .env.sample 2>/dev/null && found=1
+  grep -rq "$var" .github/workflows/ 2>/dev/null && found=1
+  [ "$found" -eq 0 ] && echo "UNDOCUMENTED: $var used in code but not in .env.example or CI"
+done
+```
+
+## 6. Deploy Config vs Code Structure
+
+- **Serverless** (`serverless.yml`): handler paths point to real files?
+- **K8s** (`k8s/*.yml`, `helm/`): image names, ports, volume paths valid?
+- **Vercel**: `api/` directory exists if serverless functions configured?
+- **package.json `scripts`**: referenced files exist? (`node scripts/foo.js` — does `scripts/foo.js` exist?)
+
+```bash
+jq -r '.scripts // {} | to_entries[] | .value' package.json 2>/dev/null | grep -oP '(?:node |ts-node |tsx )\K[^ ]+' | while read f; do
+  [ ! -f "$f" ] && echo "DEAD: package.json script references $f but file not found"
+done
+```
+
+## 7. Git Hooks vs Config
+
+- If `.husky/` exists: do hook scripts reference valid commands?
+- If `lint-staged` in package.json: do glob patterns match existing files?
+- If `commitlint`: is config present?
+
+## 8. Platform Mismatches
+
+- Check for OS-specific code on wrong platform:
+  - Linux patterns (`/proc/`, `systemd`, `apt-get`) on macOS
+  - macOS patterns (`launchd`, `NSApplication`) on Linux
+  - Windows patterns (`HKEY_`, `C:\\`) on Unix
+- Check runtime mismatches:
+  - `Deno.*` APIs but no `deno.json`
+  - `Bun.*` APIs but not running Bun
+  - Node APIs in Deno/Bun project
+
 ## Summary
 
-Print a summary table:
+Print results as:
 ```
-[BW] diagnostics complete
-  versions:    {PASS|FAIL}
-  hook paths:  {PASS|FAIL}
-  hooks reg:   {PASS|WARN} ({N}/11)
-  plugin.json: {PASS|FAIL}
-  npm ready:   {PASS|WARN}
-  dead refs:   {PASS|FAIL}
-  hook parity: {PASS|WARN}
-  build:       {PASS|STALE}
+[BW] project diagnostics complete
+
+  dependencies:  {PASS|WARN} ({N} phantom, {N} dead)
+  build config:  {PASS|FAIL} ({details})
+  CI/CD:         {PASS|WARN} ({details})
+  env vars:      {PASS|WARN} ({N} undocumented)
+  deploy config: {PASS|FAIL} ({details})
+  git hooks:     {PASS|WARN}
+  platform:      {PASS|WARN} ({details})
+
+  {total issues found}
 ```
+
+If critical issues found, suggest: `./plan fix deploy issues` to auto-fix.
