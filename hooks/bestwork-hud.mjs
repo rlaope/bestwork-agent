@@ -357,52 +357,51 @@ async function main() {
 
   let out = `${B}${CC}BW${R}${D}#${VERSION}${R}`;
 
-  // 5h usage + reset time
+  // Usage: 5-hour + weekly
   if (!usage || typeof usage !== "object") {
-    out += ` ${D}|${R} ${D}--%${R}${D}(5h)${R} ${D}--%${R}${D}(wk)${R}`;
+    out += ` ${D}|${R} ${D}5h${R} ${D}--%${R} ${D}week${R} ${D}--%${R}`;
   } else {
     const c5 = pctColor(usage.fiveHour);
-    out += ` ${D}|${R} ${c5}${usage.fiveHour}%${R}${D}(5h)${R}`;
+    out += ` ${D}|${R} ${D}5h${R} ${c5}${usage.fiveHour}%${R}`;
     if (usage.fiveHourReset) {
       const ms = new Date(usage.fiveHourReset).getTime() - Date.now();
       if (ms > 0) out += `${D}↻${formatDuration(ms)}${R}`;
     }
-
     const cw = pctColor(usage.weekly);
-    out += ` ${cw}${usage.weekly}%${R}${D}(wk)${R}`;
+    out += ` ${D}week${R} ${cw}${usage.weekly}%${R}`;
   }
 
-  // Context %
+  // Context window usage
   const ctx = getContextPercent(stdinData);
   if (ctx != null) {
     const cc = pctColor(ctx);
-    out += ` ${D}|${R} ${D}ctx${R} ${cc}${ctx}%${R}`;
+    out += ` ${D}|${R} ${D}context${R} ${cc}${ctx}%${R}`;
   }
 
-  // Session
+  // Session uptime + efficiency
   if (session) {
-    out += ` ${D}|${R} ${CW}${session.timeStr}${R}`;
+    out += ` ${D}|${R} ${D}session${R} ${CW}${session.timeStr}${R}`;
 
-    // BW unique: efficiency score (calls per prompt — lower is better)
+    // Efficiency: avg tool calls per prompt (lower = better)
     if (session.prompts > 0) {
       const eff = Math.round(session.calls / session.prompts);
       const ec = eff <= 10 ? CG : eff <= 20 ? CY : CR;
-      out += ` ${ec}⚡${eff}${R}${D}c/p${R}`;
+      out += ` ${D}efficiency${R} ${ec}⚡${eff}${R}`;
     }
   }
 
-  // Gateway mode
+  // Active bestwork mode
   const gwMode = getLastGatewayAction();
   if (gwMode !== "idle") {
     const label = MODE_LABELS[gwMode] || gwMode;
-    out += ` ${CC}${label}${R}`;
+    out += ` ${D}|${R} ${D}mode${R} ${CC}${label}${R}`;
   }
 
-  // Guards
-  if (existsSync(join(bwDir, "scope.lock"))) out += ` 🔒`;
-  if (existsSync(join(bwDir, "strict.lock"))) out += ` 🛡`;
+  // Active guards
+  if (existsSync(join(bwDir, "scope.lock"))) out += ` 🔒${D}scope${R}`;
+  if (existsSync(join(bwDir, "strict.lock"))) out += ` 🛡${D}strict${R}`;
 
-  // Notifications — show which messengers are active
+  // Notification channels
   const cfg = existsSync(join(bwDir, "config.json")) ? JSON.parse(readFileSync(join(bwDir, "config.json"), "utf-8")) : {};
   const messengers = [];
   if (cfg.notify?.discord?.webhookUrl) messengers.push("discord");

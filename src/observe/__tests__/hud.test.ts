@@ -138,8 +138,8 @@ describe("HUD usage display", () => {
 
     const output = runHud();
     const plain = stripAnsi(output);
-    expect(plain).toContain("42%(5h)");
-    expect(plain).toContain("15%(wk)");
+    expect(plain).toContain("42%");
+    expect(plain).toContain("15%");
   });
 
   it("should show dashes when no cache exists and no credentials", () => {
@@ -177,8 +177,8 @@ describe("HUD usage display", () => {
     const output = runHud();
     const plain = stripAnsi(output);
     // Should use the stale data (65%/30%) since it's within backoff window
-    expect(plain).toContain("65%(5h)");
-    expect(plain).toContain("30%(wk)");
+    expect(plain).toContain("65%");
+    expect(plain).toContain("30%");
   });
 
   it("should show reset time when fiveHourReset is in the future", () => {
@@ -195,7 +195,7 @@ describe("HUD usage display", () => {
     const output = runHud();
     const plain = stripAnsi(output);
     // Should contain the reset countdown (↻ followed by duration)
-    expect(plain).toMatch(/80%\(5h\)↻\d+h?\d*m?/);
+    expect(plain).toMatch(/5h 80%↻\d+h?\d*m?/);
   });
 
   it("should color-code usage based on percentage thresholds", () => {
@@ -259,7 +259,7 @@ describe("HUD context percentage", () => {
     });
     const output = runHud(input);
     const plain = stripAnsi(output);
-    expect(plain).toContain("ctx 25%");
+    expect(plain).toContain("context 25%");
   });
 
   it("should show context % with tokenCount/contextWindow fallback fields", () => {
@@ -269,13 +269,13 @@ describe("HUD context percentage", () => {
     });
     const output = runHud(input);
     const plain = stripAnsi(output);
-    expect(plain).toContain("ctx 50%");
+    expect(plain).toContain("context 50%");
   });
 
   it("should not show context when no token data in stdin", () => {
     const output = runHud("{}");
     const plain = stripAnsi(output);
-    expect(plain).not.toContain("ctx");
+    expect(plain).not.toContain("context");
   });
 
   it("should color context green when below 50%", () => {
@@ -316,7 +316,7 @@ describe("HUD context percentage", () => {
     const output = runHud(input);
     const plain = stripAnsi(output);
     // 33333/200000 = 16.6665 → rounds to 17%
-    expect(plain).toContain("ctx 17%");
+    expect(plain).toContain("context 17%");
   });
 });
 
