@@ -252,5 +252,5 @@ export async function run(inputJson?: string): Promise<void> {
   }
 }
 
-// Direct execution
-run().catch(() => {});
+// Exported only — called by bestwork-prompt-done.sh via m.run(data)
+// Do NOT add top-level run() here, it causes duplicate notifications on import
