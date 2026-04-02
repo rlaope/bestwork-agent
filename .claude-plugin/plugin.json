@@ -16,12 +16,5 @@
     "./agents/validation.md",
     "./agents/grounding.md",
     "./agents/platform-review.md"
-  ],
-  "commands": [
-    "./commands/sessions.md",
-    "./commands/agents.md",
-    "./commands/review.md",
-    "./commands/trio.md",
-    "./commands/install.md"
   ]
 }
