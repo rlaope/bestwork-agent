@@ -1,7 +1,7 @@
 {
   "name": "bestwork-agent",
-  "version": "0.1.0",
-  "description": "Harness engineering for Claude Code. 36 specialist agents, smart gateway, anti-hallucination, parallel trio execution.",
+  "version": "0.8.0",
+  "description": "Harness engineering for Claude Code. 38 specialist agents, smart gateway, anti-hallucination, parallel trio execution.",
   "author": {
     "name": "rlaope",
     "url": "https://github.com/rlaope"
@@ -11,7 +11,12 @@
   "license": "MIT",
   "keywords": ["harness", "agents", "orchestration", "observability", "anti-hallucination"],
 
-  "agents": "./agents/",
+  "agents": [
+    "./agents/smart-gateway.md",
+    "./agents/validation.md",
+    "./agents/grounding.md",
+    "./agents/platform-review.md"
+  ],
   "hooks": "./hooks/hooks.json",
   "commands": [
     "./commands/sessions.md",
@@ -19,10 +24,5 @@
     "./commands/review.md",
     "./commands/trio.md",
     "./commands/install.md"
-  ],
-
-  "setup": {
-    "command": "npm install -g bestwork-agent && bestwork install",
-    "message": "Installing bestwork-agent CLI and registering hooks..."
-  }
+  ]
 }
