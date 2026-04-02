@@ -7,6 +7,7 @@ import { TECH_AGENTS } from "./tech/index.js";
 import { PM_AGENTS } from "./pm/index.js";
 import { CRITIC_AGENTS } from "./critic/index.js";
 import type { AgentProfile } from "./types.js";
+import { loadPrompt } from "../prompt-loader.js";
 
 export const ALL_AGENTS: AgentProfile[] = [
   ...TECH_AGENTS,
@@ -22,6 +23,24 @@ export function getAgentsByRole(
   role: "tech" | "pm" | "critic"
 ): AgentProfile[] {
   return ALL_AGENTS.filter((a) => a.role === role);
+}
+
+export async function getAgentWithPrompt(id: string): Promise<AgentProfile | null> {
+  const agent = getAgent(id);
+  if (!agent) return null;
+
+  try {
+    const name = agent.id.replace(`${agent.role}-`, "");
+    const prompt = await loadPrompt(agent.role, name);
+    return { ...agent, systemPrompt: prompt };
+  } catch {
+    return agent; // fallback to hardcoded
+  }
+}
+
+export async function getTeamWithPrompts(ids: string[]): Promise<AgentProfile[]> {
+  const results = await Promise.all(ids.map((id) => getAgentWithPrompt(id)));
+  return results.filter((a): a is AgentProfile => a !== null);
 }
 
 export function formatAgentCatalog(): string {

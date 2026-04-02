@@ -20,6 +20,7 @@ import { orgCommand } from "./commands/harness/org.js";
 import { updateCommand } from "./commands/harness/update.js";
 import { doctorCommand } from "./commands/harness/doctor.js";
 import { welcomeCommand } from "./commands/harness/welcome.js";
+import { recoverSessionCommand } from "./commands/harness/recover-session.js";
 
 const program = new Command();
 
@@ -131,6 +132,11 @@ program
   .command("welcome")
   .description("Show bestwork branded welcome message")
   .action(welcomeCommand);
+
+program
+  .command("recover [id]")
+  .description("Recover a team/trio/squad session (list active or show by ID)")
+  .action(recoverSessionCommand);
 
 const notifyCmd = program
   .command("notify")

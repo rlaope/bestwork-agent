@@ -10,7 +10,7 @@
  */
 
 import { ALL_ORG_ROLES, TEAM_PRESETS, type OrgRole, type TeamConfig } from "./org.js";
-import { ALL_AGENTS, type AgentProfile } from "./agents/index.js";
+import { ALL_AGENTS, getAgentWithPrompt, type AgentProfile } from "./agents/index.js";
 
 // ============================================================
 // Execution Plan — deterministic, serializable, testable
@@ -258,6 +258,158 @@ export function autoAllocate(
 }
 
 // ============================================================
+// Intent Gate — structured classification with reasoning
+// ============================================================
+
+export interface IntentClassification {
+  mode: ExecutionMode;
+  tasks: string[];
+  reasoning: string;
+  confidence: "high" | "medium" | "low";
+  suggestedAgents: string[];
+}
+
+const DOMAIN_KEYWORDS: Record<string, string[]> = {
+  backend:  ["api", "server", "endpoint", "database", "db", "query", "rest", "graphql", "auth", "authentication", "authorization", "middleware", "route", "controller"],
+  frontend: ["ui", "component", "page", "css", "style", "button", "modal", "form", "dark mode", "toggle", "layout", "react", "vue", "angular", "html"],
+  infra:    ["deploy", "docker", "kubernetes", "k8s", "ci", "cd", "pipeline", "terraform", "cloud", "aws", "gcp", "azure", "nginx", "devops"],
+  security: ["auth", "oauth", "jwt", "token", "permission", "role", "acl", "xss", "csrf", "encryption", "hash", "ssl", "tls", "vulnerability"],
+  data:     ["data", "analytics", "etl", "pipeline", "warehouse", "schema", "migration", "seed", "report", "dashboard", "metrics"],
+  ml:       ["ml", "ai", "model", "training", "inference", "embedding", "vector", "llm", "neural", "dataset", "prediction"],
+};
+
+const DOMAIN_TO_AGENT: Record<string, string> = {
+  backend:  "sr-backend",
+  frontend: "sr-frontend",
+  infra:    "sr-infra",
+  security: "sr-security",
+  data:     "sr-backend",
+  ml:       "sr-backend",
+};
+
+function splitTasks(task: string): string[] {
+  // Split by "|"
+  if (task.includes("|")) {
+    return task.split("|").map((t) => t.trim()).filter(Boolean);
+  }
+
+  // Split by "and then"
+  if (/\band then\b/i.test(task)) {
+    return task.split(/\band then\b/i).map((t) => t.trim()).filter(Boolean);
+  }
+
+  // Split by numbered list: "1. ... 2. ... 3. ..."
+  const numberedMatch = task.match(/\d+\.\s+[^\d]+/g);
+  if (numberedMatch && numberedMatch.length > 1) {
+    return numberedMatch.map((t) => t.replace(/^\d+\.\s+/, "").trim()).filter(Boolean);
+  }
+
+  return [task.trim()];
+}
+
+function detectDomains(task: string): string[] {
+  const lower = task.toLowerCase();
+  const found: string[] = [];
+  for (const [domain, keywords] of Object.entries(DOMAIN_KEYWORDS)) {
+    if (keywords.some((kw) => lower.includes(kw))) {
+      found.push(domain);
+    }
+  }
+  return found.length > 0 ? [...new Set(found)] : ["backend"];
+}
+
+export function classifyIntent(task: string): IntentClassification {
+  const tasks = splitTasks(task);
+  const taskCount = tasks.length;
+
+  // Check passthrough first
+  const weight = classifyWeight(task);
+  if (weight === "passthrough") {
+    return {
+      mode: "passthrough",
+      tasks,
+      reasoning: "Task matches passthrough pattern (git/shell/npm command or simple acknowledgement) — no agent allocation needed.",
+      confidence: "high",
+      suggestedAgents: [],
+    };
+  }
+
+  // Detect domains across all sub-tasks
+  const allDomains = [...new Set(tasks.flatMap((t) => detectDomains(t)))];
+  const suggestedAgents = allDomains
+    .map((d) => DOMAIN_TO_AGENT[d] ?? "sr-fullstack")
+    .filter((a, i, arr) => arr.indexOf(a) === i);
+
+  // Multi-task path
+  if (taskCount >= 3) {
+    return {
+      mode: "trio",
+      tasks,
+      reasoning: `Task contains ${taskCount} separable sub-tasks ("${tasks.join(" | ")}") spanning domains: ${allDomains.join(", ")}. Trio mode assigns one agent per sub-task in parallel.`,
+      confidence: "high",
+      suggestedAgents,
+    };
+  }
+
+  if (taskCount === 2) {
+    return {
+      mode: "pair",
+      tasks,
+      reasoning: `Task splits into 2 sub-tasks covering domains: ${allDomains.join(", ")}. Pair mode with one agent per task.`,
+      confidence: "high",
+      suggestedAgents,
+    };
+  }
+
+  // Single task — use autoAllocate signals
+  const soloWeight = classifyWeight(task);
+  if (soloWeight === "solo") {
+    return {
+      mode: "solo",
+      tasks,
+      reasoning: `Single lightweight task matching solo pattern (typo fix, rename, format, or minor update). One senior developer sufficient.`,
+      confidence: "high",
+      suggestedAgents: ["sr-fullstack"],
+    };
+  }
+
+  // Infer complexity from domain count + keywords
+  const complexitySignals = [
+    /refactor/i,
+    /redesign/i,
+    /migrate/i,
+    /architect/i,
+    /implement.*system/i,
+    /build.*platform/i,
+  ];
+  const isComplex = complexitySignals.some((p) => p.test(task)) || allDomains.length >= 3;
+
+  if (isComplex) {
+    return {
+      mode: "hierarchy",
+      tasks,
+      reasoning: `Complex single task touching ${allDomains.length} domain(s) (${allDomains.join(", ")}) with structural complexity signals. Hierarchy mode with senior → lead → CTO chain.`,
+      confidence: allDomains.length >= 2 ? "high" : "medium",
+      suggestedAgents,
+    };
+  }
+
+  // Fallback: use autoAllocate to decide pair vs solo
+  const allocation = autoAllocate(task, { domains: allDomains });
+  const finalMode: ExecutionMode = allocation.mode === "passthrough" || allocation.mode === "solo"
+    ? allocation.mode
+    : allDomains.length >= 2 ? "pair" : "solo";
+
+  return {
+    mode: finalMode,
+    tasks,
+    reasoning: `Single task in domain(s): ${allDomains.join(", ")}. ${allocation.reasoning}`,
+    confidence: "medium",
+    suggestedAgents,
+  };
+}
+
+// ============================================================
 // Format plan for display / gateway consumption
 // ============================================================
 
@@ -295,24 +447,29 @@ function levelOrder(level: string): number {
   }
 }
 
-function findMatchingDomainAgent(role: OrgRole): AgentProfile | null {
-  // Map org roles to domain specialist agents
-  const mapping: Record<string, string> = {
-    "sr-backend": "tech-backend",
-    "sr-frontend": "tech-frontend",
-    "sr-fullstack": "tech-fullstack",
-    "sr-infra": "tech-infra",
-    "sr-security": "tech-security",
-    "jr-engineer": "tech-fullstack",
-    "jr-qa": "tech-testing",
-    "qa-lead": "tech-testing",
-    "tech-lead": "tech-fullstack",
-    "product-lead": "pm-product",
-  };
+const ROLE_TO_AGENT_ID: Record<string, string> = {
+  "sr-backend": "tech-backend",
+  "sr-frontend": "tech-frontend",
+  "sr-fullstack": "tech-fullstack",
+  "sr-infra": "tech-infra",
+  "sr-security": "tech-security",
+  "jr-engineer": "tech-fullstack",
+  "jr-qa": "tech-testing",
+  "qa-lead": "tech-testing",
+  "tech-lead": "tech-fullstack",
+  "product-lead": "pm-product",
+};
 
-  const agentId = mapping[role.id];
+function findMatchingDomainAgent(role: OrgRole): AgentProfile | null {
+  const agentId = ROLE_TO_AGENT_ID[role.id];
   if (!agentId) return null;
   return ALL_AGENTS.find((a) => a.id === agentId) ?? null;
+}
+
+async function findMatchingDomainAgentWithPrompt(role: OrgRole): Promise<AgentProfile | null> {
+  const agentId = ROLE_TO_AGENT_ID[role.id];
+  if (!agentId) return null;
+  return getAgentWithPrompt(agentId);
 }
 
 function combinePrompts(role: OrgRole, domainAgent: AgentProfile | null, task: string): string {
@@ -324,4 +481,91 @@ function combinePrompts(role: OrgRole, domainAgent: AgentProfile | null, task: s
 
   prompt += `\n\nTask: ${task}`;
   return prompt;
+}
+
+export async function buildExecutionPlanWithPrompts(
+  teamName: string,
+  task: string
+): Promise<ExecutionPlan | null> {
+  const preset = TEAM_PRESETS.find(
+    (t) => t.name.toLowerCase() === teamName.toLowerCase()
+  );
+  if (!preset) return null;
+
+  const roles = preset.roles
+    .map((id) => ALL_ORG_ROLES.find((r) => r.id === id))
+    .filter((r): r is OrgRole => r !== undefined);
+
+  if (roles.length === 0) return null;
+
+  const steps: AgentStep[] = [];
+
+  if (preset.mode === "hierarchy") {
+    const ordered = [...roles].sort((a, b) => levelOrder(a.level) - levelOrder(b.level));
+
+    for (let i = 0; i < ordered.length; i++) {
+      const role = ordered[i]!;
+      const domainAgent = await findMatchingDomainAgentWithPrompt(role);
+      const combinedPrompt = combinePrompts(role, domainAgent, task);
+
+      steps.push({
+        agentId: role.id,
+        role: role.title,
+        title: role.title,
+        systemPrompt: combinedPrompt,
+        phase: i === 0 ? "implement" : i < ordered.length - 1 ? "review" : "approve",
+        parallel: false,
+        dependsOn: i > 0 ? [ordered[i - 1]!.id] : [],
+      });
+    }
+  } else if (preset.mode === "squad") {
+    for (const role of roles) {
+      const domainAgent = await findMatchingDomainAgentWithPrompt(role);
+      const combinedPrompt = combinePrompts(role, domainAgent, task);
+
+      steps.push({
+        agentId: role.id,
+        role: role.title,
+        title: role.title,
+        systemPrompt: combinedPrompt,
+        phase: "implement",
+        parallel: true,
+        dependsOn: [],
+      });
+    }
+  } else if (preset.mode === "review") {
+    for (const role of roles) {
+      steps.push({
+        agentId: role.id,
+        role: role.title,
+        title: role.title,
+        systemPrompt: combinePrompts(role, null, task),
+        phase: "review",
+        parallel: true,
+        dependsOn: [],
+      });
+    }
+  } else if (preset.mode === "advisory") {
+    for (let i = 0; i < roles.length; i++) {
+      const role = roles[i]!;
+      steps.push({
+        agentId: role.id,
+        role: role.title,
+        title: role.title,
+        systemPrompt: combinePrompts(role, null, task),
+        phase: "review",
+        parallel: false,
+        dependsOn: i > 0 ? [roles[i - 1]!.id] : [],
+      });
+    }
+  }
+
+  return {
+    mode: preset.mode,
+    teamName: preset.name,
+    task,
+    steps,
+    maxRetries: 3,
+    feedbackLoop: preset.mode === "hierarchy" || preset.mode === "squad",
+  };
 }

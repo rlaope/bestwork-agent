@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildExecutionPlan, autoAllocate, formatPlan, classifyWeight } from "../orchestrator.js";
+import { buildExecutionPlan, autoAllocate, formatPlan, classifyWeight, classifyIntent } from "../orchestrator.js";
 
 describe("buildExecutionPlan", () => {
   it("builds hierarchy plan for Full Team", () => {
@@ -148,5 +148,65 @@ describe("formatPlan", () => {
     const output = formatPlan(plan);
     expect(output).toContain("squad");
     expect(output).toContain("Feature Squad");
+  });
+});
+
+describe("classifyIntent", () => {
+  it("pipe-separated tasks → trio, 3 tasks", () => {
+    const result = classifyIntent("implement auth API | add tests | update docs");
+    expect(result.mode).toBe("trio");
+    expect(result.tasks).toHaveLength(3);
+    expect(result.tasks[0]).toBe("implement auth API");
+    expect(result.tasks[1]).toBe("add tests");
+    expect(result.tasks[2]).toBe("update docs");
+    expect(result.reasoning).toBeTruthy();
+    expect(result.confidence).toBe("high");
+  });
+
+  it("simple typo fix → solo, 1 task", () => {
+    const result = classifyIntent("fix the typo");
+    expect(result.mode).toBe("solo");
+    expect(result.tasks).toHaveLength(1);
+    expect(result.tasks[0]).toBe("fix the typo");
+    expect(result.confidence).toBe("high");
+  });
+
+  it("git push → passthrough", () => {
+    const result = classifyIntent("git push");
+    expect(result.mode).toBe("passthrough");
+    expect(result.suggestedAgents).toHaveLength(0);
+    expect(result.confidence).toBe("high");
+  });
+
+  it("complex refactor → hierarchy", () => {
+    const result = classifyIntent("refactor auth module to support OAuth2");
+    expect(result.mode).toBe("hierarchy");
+    expect(result.tasks).toHaveLength(1);
+    expect(result.reasoning).toMatch(/complex|hierarchy/i);
+  });
+
+  it("add dark mode toggle → pair or solo", () => {
+    const result = classifyIntent("add dark mode toggle");
+    expect(["pair", "solo"]).toContain(result.mode);
+    expect(result.tasks).toHaveLength(1);
+  });
+
+  it("result always has reasoning string", () => {
+    for (const task of ["git pull", "fix the typo", "build new dashboard", "implement auth API | add tests | update docs"]) {
+      const result = classifyIntent(task);
+      expect(typeof result.reasoning).toBe("string");
+      expect(result.reasoning.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("and then separator splits tasks", () => {
+    const result = classifyIntent("add login endpoint and then write unit tests");
+    expect(result.tasks).toHaveLength(2);
+    expect(result.mode).toBe("pair");
+  });
+
+  it("suggestedAgents populated for non-passthrough", () => {
+    const result = classifyIntent("implement auth API | add tests | update docs");
+    expect(result.suggestedAgents.length).toBeGreaterThan(0);
   });
 });
