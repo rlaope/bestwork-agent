@@ -1,4 +1,5 @@
 ---
+name: status
 description: Show current bestwork-agent configuration
 ---
 

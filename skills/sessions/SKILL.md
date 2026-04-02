@@ -1,4 +1,5 @@
 ---
+name: sessions
 description: List Claude Code sessions with stats
 ---
 

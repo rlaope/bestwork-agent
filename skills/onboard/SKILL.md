@@ -1,4 +1,5 @@
 ---
+name: onboard
 description: First-time setup guide and feature walkthrough
 ---
 

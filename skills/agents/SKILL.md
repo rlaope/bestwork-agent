@@ -1,4 +1,5 @@
 ---
+name: agents
 description: List all bestwork specialist agent profiles
 ---
 

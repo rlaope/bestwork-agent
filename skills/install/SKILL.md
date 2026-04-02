@@ -1,4 +1,5 @@
 ---
+name: install
 description: Install bestwork hooks into Claude Code
 ---
 

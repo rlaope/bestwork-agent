@@ -1,4 +1,5 @@
 ---
+name: health
 description: Quick session health check
 ---
 

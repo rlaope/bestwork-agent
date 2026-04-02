@@ -1,4 +1,5 @@
 ---
+name: changelog
 description: Auto-generate changelog from git history
 ---
 

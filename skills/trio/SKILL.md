@@ -1,4 +1,5 @@
 ---
+name: trio
 description: Execute tasks in parallel with Tech + PM + Critic quality gates
 ---
 

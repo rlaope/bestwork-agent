@@ -1,4 +1,5 @@
 ---
+name: review
 description: Check code for hallucinations and platform mismatches
 ---
 

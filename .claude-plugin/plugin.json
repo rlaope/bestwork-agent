@@ -1,6 +1,6 @@
 {
   "name": "bestwork-agent",
-  "version": "0.8.0",
+  "version": "0.10.0",
   "description": "Harness engineering for Claude Code. 38 specialist agents, smart gateway, anti-hallucination, parallel trio execution.",
   "author": {
     "name": "rlaope",
@@ -9,5 +9,6 @@
   "homepage": "https://github.com/rlaope/bestwork-agent",
   "repository": "https://github.com/rlaope/bestwork-agent",
   "license": "MIT",
-  "keywords": ["harness", "agents", "orchestration", "observability", "anti-hallucination"]
+  "keywords": ["harness", "agents", "orchestration", "observability", "anti-hallucination"],
+  "skills": "./skills/"
 }

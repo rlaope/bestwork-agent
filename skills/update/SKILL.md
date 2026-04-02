@@ -1,4 +1,5 @@
 ---
+name: update
 description: Check for updates and upgrade bestwork-agent to the latest version
 ---
 
