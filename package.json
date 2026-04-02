@@ -1,7 +1,7 @@
 {
   "name": "nysm",
   "version": "0.1.0",
-  "description": "now you see me — Claude Code Agent Observability & Session Analytics TUI",
+  "description": "now you see me — best harness engineering for Claude Code. work like a corporation team, not just a club.",
   "type": "module",
   "bin": {
     "nysm": "./dist/index.js"

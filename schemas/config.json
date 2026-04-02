@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "nysm config",
+  "description": "Configuration for nysm — ~/.nysm/config.json",
+  "type": "object",
+  "properties": {
+    "notify": {
+      "type": "object",
+      "properties": {
+        "discord": {
+          "type": "object",
+          "properties": {
+            "webhookUrl": { "type": "string", "format": "uri" }
+          },
+          "required": ["webhookUrl"]
+        },
+        "slack": {
+          "type": "object",
+          "properties": {
+            "webhookUrl": { "type": "string", "format": "uri" }
+          },
+          "required": ["webhookUrl"]
+        },
+        "telegram": {
+          "type": "object",
+          "properties": {
+            "botToken": { "type": "string" },
+            "chatId": { "type": "string" }
+          },
+          "required": ["botToken", "chatId"]
+        }
+      }
+    }
+  }
+}

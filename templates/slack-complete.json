@@ -1,0 +1,19 @@
+{
+  "blocks": [
+    {
+      "type": "header",
+      "text": { "type": "plain_text", "text": "{{icon}} {{project}} — {{status}}" }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*Prompt:* {{prompt}}\n*Stats:* {{calls}} calls | {{prompts}} prompts\n*Time:* {{timestamp}}\n\n{{git_summary}}\n\n*Platform Review:* {{review_result}}\n*Session Health:* {{health_note}}"
+      }
+    },
+    {
+      "type": "context",
+      "elements": [{ "type": "mrkdwn", "text": "nysm — now you see me" }]
+    }
+  ]
+}

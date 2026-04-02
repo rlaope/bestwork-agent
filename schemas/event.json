@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "nysm tool event",
+  "description": "A single tool call event captured by nysm hooks",
+  "type": "object",
+  "required": ["timestamp", "sessionId", "toolName", "event"],
+  "properties": {
+    "timestamp": { "type": "number", "description": "Unix timestamp in milliseconds" },
+    "sessionId": { "type": "string" },
+    "toolName": { "type": "string" },
+    "event": { "type": "string", "enum": ["pre", "post", "fail"] },
+    "input": {
+      "type": "object",
+      "properties": {
+        "file_path": { "type": "string" },
+        "command": { "type": "string" },
+        "pattern": { "type": "string" }
+      }
+    },
+    "output": {
+      "type": "object",
+      "properties": {
+        "success": { "type": "boolean" },
+        "filePath": { "type": "string" }
+      }
+    },
+    "durationMs": { "type": "number" }
+  }
+}

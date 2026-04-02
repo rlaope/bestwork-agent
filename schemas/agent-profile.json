@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "nysm agent profile",
+  "description": "Schema for agent prompt markdown files in prompts/",
+  "type": "object",
+  "required": ["id", "role", "name", "specialty"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^(tech|pm|critic)-[a-z-]+$" },
+    "role": { "type": "string", "enum": ["tech", "pm", "critic"] },
+    "name": { "type": "string" },
+    "specialty": { "type": "string" }
+  }
+}

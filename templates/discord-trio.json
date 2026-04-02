@@ -1,0 +1,11 @@
+{
+  "embeds": [
+    {
+      "title": "{{icon}} Trio Complete — {{project}}",
+      "description": "**Tasks:** {{task_count}}\n**Results:**\n{{task_results}}\n\n**Feedback Loop:**\n- Iterations: {{total_iterations}}\n- Critic fixes: {{critic_fixes}}/{{task_count}}\n- Hallucination flags: {{hallucination_flags}}\n\n**PM Decisions:**\n{{pm_summary}}\n\n**Git:** {{git_summary}}",
+      "color": "{{color}}",
+      "footer": { "text": "nysm trio — Tech + PM + Critic" },
+      "timestamp": "{{iso_timestamp}}"
+    }
+  ]
+}
