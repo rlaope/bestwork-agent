@@ -8,6 +8,11 @@ import { heatmapCommand } from "./commands/heatmap.js";
 import { replayCommand } from "./commands/replay.js";
 import { loopsCommand } from "./commands/loops.js";
 import { installCommand } from "./commands/install.js";
+import { outcomeCommand } from "./commands/outcome.js";
+import { cardCommand } from "./commands/card.js";
+import { effectivenessCommand } from "./commands/effectiveness.js";
+import { exportCommand } from "./commands/export.js";
+import { notifyConfigCommand, notifySendCommand } from "./commands/notify-config.js";
 
 const program = new Command();
 
@@ -62,5 +67,48 @@ program
   .command("install")
   .description("Install Claude Code hooks for advanced tracking")
   .action(installCommand);
+
+program
+  .command("outcome <id>")
+  .description("Session outcome analysis (productive/struggling)")
+  .action(outcomeCommand);
+
+program
+  .command("card")
+  .description("Shareable stats card")
+  .action(cardCommand);
+
+program
+  .command("effectiveness")
+  .description("Prompt effectiveness trend (calls/prompt over time)")
+  .action(effectivenessCommand);
+
+program
+  .command("export")
+  .description("Export session data")
+  .option("-f, --format <format>", "Output format (json|csv)", "json")
+  .option("-o, --output <file>", "Output file path")
+  .action(exportCommand);
+
+const notifyCmd = program
+  .command("notify")
+  .description("Notification settings");
+
+notifyCmd
+  .command("setup")
+  .description("Configure Discord/Slack/Telegram notifications")
+  .option("--discord <url>", "Discord webhook URL")
+  .option("--slack <url>", "Slack webhook URL")
+  .option("--telegram-token <token>", "Telegram bot token")
+  .option("--telegram-chat <id>", "Telegram chat ID")
+  .option("--test", "Send a test notification")
+  .action(notifyConfigCommand);
+
+notifyCmd
+  .command("send")
+  .description("Send a notification manually")
+  .requiredOption("--title <title>", "Notification title")
+  .requiredOption("--body <body>", "Notification body")
+  .action(notifySendCommand);
 
 program.parse();

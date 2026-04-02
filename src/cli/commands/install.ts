@@ -5,6 +5,7 @@ import { ensureDataDir } from "../../data/store.js";
 
 const HOOK_COMMAND = `NYSM_HOOK_EVENT=__EVENT__ bash "$(npm root -g)/nysm/hooks/nysm-hook.sh"`;
 const GATEWAY_COMMAND = `bash "$(npm root -g)/nysm/hooks/nysm-gateway.sh"`;
+const SESSION_END_COMMAND = `bash "$(npm root -g)/nysm/hooks/nysm-session-end.sh"`;
 
 export async function installCommand() {
   await ensureDataDir();
@@ -93,16 +94,41 @@ export async function installCommand() {
     });
   }
 
+  // Add Stop hook (session end notification)
+  if (!hooks.Stop) hooks.Stop = [];
+  const stopHooks = hooks.Stop as Array<Record<string, unknown>>;
+  const hasStopHook = stopHooks.some(
+    (h) =>
+      Array.isArray(h.hooks) &&
+      h.hooks.some(
+        (hh: Record<string, unknown>) =>
+          typeof hh.command === "string" && hh.command.includes("nysm-session-end")
+      )
+  );
+
+  if (!hasStopHook) {
+    stopHooks.push({
+      hooks: [
+        {
+          type: "command",
+          command: SESSION_END_COMMAND,
+          timeout: 15,
+        },
+      ],
+    });
+  }
+
   settings.hooks = hooks;
 
   await writeFile(settingsPath, JSON.stringify(settings, null, 2) + "\n");
 
   console.log("\n  nysm hooks installed successfully!\n");
   console.log("  Hooks added to ~/.claude/settings.json:");
-  console.log("  • PostToolUse       — captures tool results");
+  console.log("  • PostToolUse       — captures tool call data");
   console.log("  • PreToolUse        — captures tool inputs");
-  console.log("  • UserPromptSubmit  — gateway (natural language → nysm commands)");
-  console.log("\n  Try in Claude Code: '루프 감지해줘', '히트맵 보여줘', '세션 요약'");
+  console.log("  • UserPromptSubmit  — natural language gateway");
+  console.log("  • Stop              — session end notification (Discord/Slack/Telegram)");
+  console.log("\n  Setup notifications: nysm notify setup --discord <webhook-url>");
   console.log("  Data stored in ~/.nysm/data/");
   console.log("  Restart Claude Code to activate.\n");
 }
