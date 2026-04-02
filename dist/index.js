@@ -1369,6 +1369,12 @@ async function installCommand() {
     }
   }
   settings.hooks = hooks;
+  const existingStatusLine = settings.statusLine;
+  const isBestworkHud = typeof existingStatusLine === "object" ? typeof existingStatusLine?.command === "string" && existingStatusLine.command.includes("bestwork") : typeof existingStatusLine === "string" && existingStatusLine.includes("bestwork");
+  if (!existingStatusLine || isBestworkHud) {
+    const hudCommand = `${BW_HOOKS_RESOLVE} node "$BW_HOOKS/bestwork-hud.mjs"`;
+    settings.statusLine = { type: "command", command: hudCommand };
+  }
   const permissions = settings.permissions ?? {};
   const allow = permissions.allow ?? [];
   const bestworkPerms = [

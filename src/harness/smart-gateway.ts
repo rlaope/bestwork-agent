@@ -26,7 +26,7 @@ const SLASH_PREFIXES = [
   "./scope", "./unlock", "./strict", "./relax", "./context",
   "./parallel", "./tdd", "./recover",
   "./autopsy", "./similar", "./learn", "./predict", "./guard", "./compare",
-  "./review", "./trio", "./help",
+  "./review", "./trio", "./plan", "./doctor", "./help",
 ];
 
 // Skill keyword map — natural language to skill name
@@ -79,6 +79,21 @@ const SKILL_ROUTES: Array<{ patterns: RegExp[]; skill: string; reason: string; h
     patterns: [/health|건강|상태.*체크|상태.*확인|ヘルスチェック/i],
     skill: "health",
     reason: "session health check",
+  },
+  {
+    patterns: [/plan|플랜|계획|설계|팀.*구성|팀.*배정|analyze.*scope|분석.*후.*실행/i],
+    skill: "plan",
+    reason: "scope analysis and team allocation",
+  },
+  {
+    patterns: [/doctor|진단|정합성|배포.*검사|deploy.*check|build.*check|의존성.*검사|dependency.*check|CI.*검사|환경.*변수.*검사/i],
+    skill: "doctor",
+    reason: "project deploy/code integrity check",
+  },
+  {
+    patterns: [/trio|트리오|병렬.*실행|parallel.*task|동시에.*해|세.*개.*동시|quality.*gate/i],
+    skill: "trio",
+    reason: "parallel execution with quality gates",
   },
 ];
 
@@ -182,7 +197,7 @@ async function main() {
   const intent = classifyIntent(prompt);
 
   if (intent.mode === "passthrough") {
-    process.stdout.write("{}\n");
+    output(`[BW] passthrough\n\nYou MUST print this EXACTLY as the first line of your response before doing anything else:\n\`\`\`\n[BW] direct execution\n\`\`\``);
     return;
   }
 
@@ -203,10 +218,19 @@ async function main() {
     } catch {}
   }
 
+  // Mode labels for user-friendly output
+  const MODE_LABELS: Record<string, string> = {
+    solo: "solo mode",
+    pair: "pair mode",
+    trio: "trio mode",
+    squad: "squad mode",
+    hierarchy: "hierarchy mode",
+  };
+
   // Build structured dispatch context with mandatory execution language
   const agentList = intent.suggestedAgents.join(", ");
   const lines: string[] = [];
-  lines.push(`[BW gateway: ${intent.mode} mode — ${intent.tasks.length} tasks, agents: ${agentList}]`);
+  lines.push(`[BW gateway: ${MODE_LABELS[intent.mode] || intent.mode} — ${intent.tasks.length} tasks, agents: ${agentList}]`);
   lines.push(`\nClassification: ${intent.reasoning}`);
 
   // Build execution plan
@@ -226,15 +250,18 @@ async function main() {
       lines.push(`  ${i + 1}. ${t} — assigned to ${agent}`);
     });
     lines.push(`\nIMPORTANT: Do NOT execute these sequentially. Use the Agent tool to launch all ${intent.tasks.length} sub-tasks in parallel.`);
+    lines.push(`\nYou MUST print this EXACTLY as the first line of your response:\n\`\`\`\n[BW] ${intent.mode} — ${agentList}\n\`\`\``);
   } else if (intent.mode === "hierarchy") {
     lines.push(`\nYou MUST execute sequentially: Junior implements → Senior reviews → Lead approves.`);
     if (intent.tasks.length > 0) {
       intent.tasks.forEach((t: string, i: number) => lines.push(`  ${i + 1}. ${t}`));
     }
     lines.push(`\nIMPORTANT: Do NOT skip the review chain. Each stage must complete before the next begins.`);
+    lines.push(`\nYou MUST print this EXACTLY as the first line of your response:\n\`\`\`\n[BW] hierarchy — ${agentList}\n\`\`\``);
   } else if (intent.mode === "solo") {
     const agent = intent.suggestedAgents[0] || "tech-fullstack";
     lines.push(`\nProceed with the task directly. Agent: ${agent}.`);
+    lines.push(`\nIMPORTANT: You MUST print this EXACTLY as the first line of your response before doing anything else:\n\`\`\`\n[BW] solo — ${agent}\n\`\`\``);
   }
 
   output(lines.join("\n"));

@@ -1775,6 +1775,8 @@ var SLASH_PREFIXES = [
   "./compare",
   "./review",
   "./trio",
+  "./plan",
+  "./doctor",
   "./help"
 ];
 var SKILL_ROUTES = [
@@ -1824,6 +1826,21 @@ var SKILL_ROUTES = [
     patterns: [/health|건강|상태.*체크|상태.*확인|ヘルスチェック/i],
     skill: "health",
     reason: "session health check"
+  },
+  {
+    patterns: [/plan|플랜|계획|설계|팀.*구성|팀.*배정|analyze.*scope|분석.*후.*실행/i],
+    skill: "plan",
+    reason: "scope analysis and team allocation"
+  },
+  {
+    patterns: [/doctor|진단|정합성|배포.*검사|deploy.*check|build.*check|의존성.*검사|dependency.*check|CI.*검사|환경.*변수.*검사/i],
+    skill: "doctor",
+    reason: "project deploy/code integrity check"
+  },
+  {
+    patterns: [/trio|트리오|병렬.*실행|parallel.*task|동시에.*해|세.*개.*동시|quality.*gate/i],
+    skill: "trio",
+    reason: "parallel execution with quality gates"
   }
 ];
 function modeToTeam(mode) {
@@ -1926,7 +1943,12 @@ IMPORTANT: Do NOT skip this. Invoke the Skill tool with skill="bestwork-agent:${
   }
   const intent = classifyIntent(prompt);
   if (intent.mode === "passthrough") {
-    process.stdout.write("{}\n");
+    output(`[BW] passthrough
+
+You MUST print this EXACTLY as the first line of your response before doing anything else:
+\`\`\`
+[BW] direct execution
+\`\`\``);
     return;
   }
   if ((intent.mode === "trio" || intent.mode === "pair") && intent.tasks.length > 1 && PLUGIN_ROOT) {
@@ -1945,9 +1967,16 @@ IMPORTANT: Do NOT skip this. Invoke the Skill tool with skill="bestwork-agent:${
     } catch {
     }
   }
+  const MODE_LABELS = {
+    solo: "solo mode",
+    pair: "pair mode",
+    trio: "trio mode",
+    squad: "squad mode",
+    hierarchy: "hierarchy mode"
+  };
   const agentList = intent.suggestedAgents.join(", ");
   const lines = [];
-  lines.push(`[BW gateway: ${intent.mode} mode \u2014 ${intent.tasks.length} tasks, agents: ${agentList}]`);
+  lines.push(`[BW gateway: ${MODE_LABELS[intent.mode] || intent.mode} \u2014 ${intent.tasks.length} tasks, agents: ${agentList}]`);
   lines.push(`
 Classification: ${intent.reasoning}`);
   const teamName = modeToTeam(intent.mode);
@@ -1966,6 +1995,11 @@ You MUST launch ${intent.tasks.length} parallel Agent tool calls, one per sub-ta
     });
     lines.push(`
 IMPORTANT: Do NOT execute these sequentially. Use the Agent tool to launch all ${intent.tasks.length} sub-tasks in parallel.`);
+    lines.push(`
+You MUST print this EXACTLY as the first line of your response:
+\`\`\`
+[BW] ${intent.mode} \u2014 ${agentList}
+\`\`\``);
   } else if (intent.mode === "hierarchy") {
     lines.push(`
 You MUST execute sequentially: Junior implements \u2192 Senior reviews \u2192 Lead approves.`);
@@ -1974,10 +2008,20 @@ You MUST execute sequentially: Junior implements \u2192 Senior reviews \u2192 Le
     }
     lines.push(`
 IMPORTANT: Do NOT skip the review chain. Each stage must complete before the next begins.`);
+    lines.push(`
+You MUST print this EXACTLY as the first line of your response:
+\`\`\`
+[BW] hierarchy \u2014 ${agentList}
+\`\`\``);
   } else if (intent.mode === "solo") {
     const agent = intent.suggestedAgents[0] || "tech-fullstack";
     lines.push(`
 Proceed with the task directly. Agent: ${agent}.`);
+    lines.push(`
+IMPORTANT: You MUST print this EXACTLY as the first line of your response before doing anything else:
+\`\`\`
+[BW] solo \u2014 ${agent}
+\`\`\``);
   }
   output(lines.join("\n"));
 }

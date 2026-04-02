@@ -361,6 +361,18 @@ export async function installCommand() {
 
   settings.hooks = hooks;
 
+  // Configure statusLine (HUD)
+  const existingStatusLine = settings.statusLine as Record<string, unknown> | string | undefined;
+  const isBestworkHud = typeof existingStatusLine === "object"
+    ? (typeof existingStatusLine?.command === "string" && existingStatusLine.command.includes("bestwork"))
+    : (typeof existingStatusLine === "string" && existingStatusLine.includes("bestwork"));
+
+  if (!existingStatusLine || isBestworkHud) {
+    // Resolve HUD script path: npm global → plugin cache
+    const hudCommand = `${BW_HOOKS_RESOLVE} node "$BW_HOOKS/bestwork-hud.mjs"`;
+    settings.statusLine = { type: "command", command: hudCommand };
+  }
+
   // Auto-register bestwork permissions
   const permissions = (settings.permissions ?? {}) as Record<string, unknown>;
   const allow = (permissions.allow ?? []) as string[];
