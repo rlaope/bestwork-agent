@@ -66,49 +66,64 @@ If already read, say nothing.`,
     type: "agent",
     timeout: 60,
     model: "claude-haiku-4-5-20251001",
-    prompt: `You are nysm's smart gateway agent. The user typed: $ARGUMENTS
+    prompt: `You are nysm's smart gateway. The user typed: $ARGUMENTS
 
-You route to the correct nysm action. Match the user's intent:
+You understand intent — not keywords. Decide what the user wants and execute it directly.
 
-SLASH COMMANDS (if prompt starts with ./):
-- ./review → Run \`nysm review\`: check git diff for platform mismatches (Linux code on macOS, wrong runtime APIs, etc.)
-- ./trio <tasks separated by |> → Execute parallel trio: for EACH task, spawn 3 Agents: Tech (implement), PM (verify requirements), Critic (check quality + hallucination). Run task groups in parallel with run_in_background.
-- ./scope <path> → Write the path to ~/.nysm/scope.lock. Respond: "Scope locked to <path>."
-- ./unlock → Delete ~/.nysm/scope.lock. Respond: "Scope unlocked."
-- ./strict → Write "true" to ~/.nysm/strict.lock. Respond: "Strict mode ON."
-- ./relax → Delete ~/.nysm/strict.lock. Respond: "Strict mode OFF."
-- ./tdd <desc> → Instruct: Write tests FIRST, run to see fail, then implement to make pass.
-- ./context [files] → Read the specified files (or recently changed files from \`git diff --name-only\`) and summarize them.
-- ./recover → Analyze what's going wrong. Read recent errors. Suggest a completely different approach.
-- ./autopsy [id] → Run \`nysm session <id>\` and \`nysm outcome <id>\`, analyze why it struggled.
-- ./learn → Run \`nysm effectiveness\` and \`nysm sessions\`, extract concrete prompting rules.
-- ./predict <task> → Based on \`nysm sessions\` history, estimate complexity and calls needed.
-- ./guard → Run \`nysm outcome\` on current session, report health status.
-- ./compare <id1> <id2> → Run \`nysm session\` on both, compare productivity.
-- ./help → List all available commands.
+If the prompt starts with ./ it's a nysm command. Otherwise, understand the intent from any language.
 
-NATURAL LANGUAGE (no ./ prefix — match intent):
-- Review/hallucination keywords (리뷰, review, 검증, platform, 확인) → same as ./review
-- Parallel/trio keywords (병렬, parallel, 동시, trio) → same as ./trio
-- Autopsy keywords (왜 실패, why fail, 분석, post-mortem) → same as ./autopsy
-- Learn keywords (프롬프트 개선, improve prompts, 배우, learn) → same as ./learn
-- Loop keywords (루프, loop, 삽질, detect) → Run \`nysm loops\` and report
-- Heatmap keywords (히트맵, heatmap, 활동) → Run \`nysm heatmap\` and report
-- Summary keywords (세션 요약, summary, 통계) → Run \`nysm summary\` and report
-- Weekly keywords (주간, weekly) → Run \`nysm summary -w\` and report
-- TDD keywords (tdd, 테스트 먼저, test first) → same as ./tdd
-- Scope keywords (범위, 제한, restrict) → same as ./scope
-- Guard keywords (건강, health, 괜찮) → same as ./guard
+CAPABILITIES YOU CAN EXECUTE:
 
-If no match, do nothing. Do NOT respond to normal coding prompts.
+1. REVIEW — check code for platform/runtime mismatches
+   Run \`git diff\`, \`uname -s\`, scan for OS-specific code that doesn't belong. Report mismatches.
 
-IMPORTANT for ./trio execution:
-When executing trio, you MUST actually spawn Agent tools. For each task:
-1. Agent(Tech, run_in_background=true): "Implement: <task>. Read files first. Write tests. Run tests."
-2. After Tech completes, Agent(PM): "Review the implementation of <task>. Does it meet requirements? Check completeness. Verdict: APPROVE or REQUEST_CHANGES."
-3. After Tech completes, Agent(Critic): "Review the implementation of <task>. Check: code quality, platform correctness (this is ${process.platform} ${process.arch}), hallucination (do imports exist?), test coverage. Verdict: APPROVE or REQUEST_CHANGES."
-4. If rejected, feed back to Tech and retry (max 3 rounds).
-5. After all tasks done, run full test suite.`,
+2. TRIO — parallel execution with quality gates
+   Split tasks by |. For EACH task, spawn 3 Agents:
+   - Tech (run_in_background): implement, write tests, run tests
+   - PM: verify requirements met, completeness check. Verdict: APPROVE or REQUEST_CHANGES
+   - Critic: code quality, platform correctness, hallucination check (do imports exist? are APIs real?). Verdict: APPROVE or REQUEST_CHANGES
+   If rejected → feed back to Tech, retry (max 3 rounds). After all tasks → full test suite.
+
+3. SCOPE — restrict file modifications
+   Write path to ~/.nysm/scope.lock (./scope) or delete it (./unlock).
+
+4. STRICT — enable/disable guardrails
+   Write "true" to ~/.nysm/strict.lock (./strict) or delete it (./relax).
+
+5. TDD — test-driven development enforcement
+   Instruct: write test first, confirm it fails, then implement to pass.
+
+6. CONTEXT — preload files
+   Read specified files or \`git diff --name-only\` and summarize.
+
+7. RECOVER — reset when stuck
+   Analyze recent errors, suggest a completely different approach.
+
+8. AUTOPSY — session post-mortem
+   Run \`nysm session <id>\` and \`nysm outcome <id>\`, analyze what went wrong.
+
+9. LEARN — extract prompting patterns
+   Run \`nysm effectiveness\` and \`nysm sessions\`, derive concrete rules.
+
+10. PREDICT — estimate task complexity
+    Based on \`nysm sessions\` history, estimate calls needed.
+
+11. GUARD — session health check
+    Run \`nysm outcome\` on current session, assess trajectory.
+
+12. COMPARE — compare two sessions
+    Run \`nysm session\` on both IDs, analyze differences.
+
+13. OBSERVABILITY — loops, heatmap, summary, weekly
+    Run the corresponding \`nysm\` CLI command and report output.
+
+14. HELP — list available commands.
+
+RULES:
+- Understand intent from ANY language. No keyword matching.
+- If the prompt is a normal coding request (not nysm-related), do nothing.
+- For trio, ACTUALLY spawn Agent tools — do not just describe what to do.
+- Be concise. Execute, don't explain.`,
   },
 
   // Stop — platform review on completion
