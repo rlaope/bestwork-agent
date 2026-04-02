@@ -37,26 +37,43 @@ if command -v bestwork &>/dev/null; then
 fi
 
 # Git: changed files list + diff stat
+# Check: unstaged → staged → last commit
 GIT_LINE="No changes"
 CHANGED_FILES=""
 CODE_SNIPPET=""
+DIFF_SOURCE=""
 if git rev-parse --is-inside-work-tree &>/dev/null; then
+  # Try unstaged changes first
   DIFF_STAT=$(git diff --stat 2>/dev/null | tail -1 | tr -d '\n')
-  [ -z "$DIFF_STAT" ] && DIFF_STAT=$(git diff --cached --stat 2>/dev/null | tail -1 | tr -d '\n')
+  [ -n "$DIFF_STAT" ] && DIFF_SOURCE="unstaged"
+
+  # Then staged
+  if [ -z "$DIFF_STAT" ]; then
+    DIFF_STAT=$(git diff --cached --stat 2>/dev/null | tail -1 | tr -d '\n')
+    [ -n "$DIFF_STAT" ] && DIFF_SOURCE="staged"
+  fi
+
+  # Then last commit (most common — changes already committed)
+  if [ -z "$DIFF_STAT" ]; then
+    DIFF_STAT=$(git diff HEAD~1 --stat 2>/dev/null | tail -1 | tr -d '\n')
+    [ -n "$DIFF_STAT" ] && DIFF_SOURCE="committed"
+  fi
 
   if [ -n "$DIFF_STAT" ]; then
     GIT_LINE="$DIFF_STAT"
 
-    # Key changed files (top 5)
-    FILES=$(git diff --name-only 2>/dev/null | head -5)
-    [ -z "$FILES" ] && FILES=$(git diff --cached --name-only 2>/dev/null | head -5)
-    if [ -n "$FILES" ]; then
-      CHANGED_FILES=$(echo "$FILES" | tr '\n' ', ' | sed 's/,$//')
-    fi
+    case "$DIFF_SOURCE" in
+      unstaged)  FILES=$(git diff --name-only 2>/dev/null | head -5) ;;
+      staged)    FILES=$(git diff --cached --name-only 2>/dev/null | head -5) ;;
+      committed) FILES=$(git diff HEAD~1 --name-only 2>/dev/null | head -5) ;;
+    esac
+    [ -n "$FILES" ] && CHANGED_FILES=$(echo "$FILES" | tr '\n' ', ' | sed 's/,$//')
 
-    # Code snippet: first meaningful hunk from diff (skip headers, take key changes)
-    CODE_SNIPPET=$(git diff 2>/dev/null | grep -E '^\+[^+]' | grep -v '^\+\+\+' | head -8 | sed 's/^\+//' | head -c 300)
-    [ -z "$CODE_SNIPPET" ] && CODE_SNIPPET=$(git diff --cached 2>/dev/null | grep -E '^\+[^+]' | grep -v '^\+\+\+' | head -8 | sed 's/^\+//' | head -c 300)
+    case "$DIFF_SOURCE" in
+      unstaged)  CODE_SNIPPET=$(git diff 2>/dev/null | grep -E '^\+[^+]' | grep -v '^\+\+\+' | head -8 | sed 's/^\+//' | head -c 300) ;;
+      staged)    CODE_SNIPPET=$(git diff --cached 2>/dev/null | grep -E '^\+[^+]' | grep -v '^\+\+\+' | head -8 | sed 's/^\+//' | head -c 300) ;;
+      committed) CODE_SNIPPET=$(git diff HEAD~1 2>/dev/null | grep -E '^\+[^+]' | grep -v '^\+\+\+' | head -8 | sed 's/^\+//' | head -c 300) ;;
+    esac
   fi
 fi
 
