@@ -22,6 +22,8 @@ import { i18nAgent } from "./i18n.js";
 import { accessibilityAgent } from "./accessibility.js";
 import { graphqlAgent } from "./graphql.js";
 import { monorepoAgent } from "./monorepo.js";
+import { agentEngineerAgent } from "./agent-engineer.js";
+import { pluginAgent } from "./plugin.js";
 
 export const TECH_AGENTS: AgentProfile[] = [
   backendAgent,
@@ -47,6 +49,8 @@ export const TECH_AGENTS: AgentProfile[] = [
   accessibilityAgent,
   graphqlAgent,
   monorepoAgent,
+  agentEngineerAgent,
+  pluginAgent,
 ];
 
 export {
@@ -73,4 +77,6 @@ export {
   accessibilityAgent,
   graphqlAgent,
   monorepoAgent,
+  agentEngineerAgent,
+  pluginAgent,
 };

@@ -260,31 +260,32 @@ async function main() {
   // Outcome-based descriptions (what the user actually gets)
   // Result-focused descriptions (what's different about the output, not the process)
   const DESC = isKo ? {
-    trio: "3관점 검증된 코드. 요구사항 충족 확인 + 품질 리포트 포함",
-    squad: "멀티 도메인 동시 커버. 넓은 범위를 빠르게 완성",
-    hierarchy: "아키텍처 레벨 검토 완료된 코드. 기술 부채 최소화",
-    pair: "상호 검증된 집중 코드. 빠른 딜리버리 + 크로스체크",
-    solo: "즉시 완성. 최소 지연, 단일 전문가 품질",
+    trio: "개발자가 구현 → PM이 요구사항 충족 확인 → 크리틱이 코드 품질 리뷰. 예: '로그인 기능 추가해줘' → 구현 + 보안 검증 + 테스트 리포트",
+    squad: "백엔드+프론트+QA가 각자 영역 동시에 작업. 예: 'API + UI + 테스트 한번에' → 3명이 병렬로 각각 완성",
+    hierarchy: "주니어가 구현 → 시니어가 개선 → 리드가 아키텍처 확인 → CTO 최종 승인. 예: '인증 시스템 리팩토링' → 4단계 검토 거친 코드",
+    pair: "2명이 각자 영역 구현 후 서로 크로스 리뷰. 예: 'API 추가하고 프론트도' → 백엔드+프론트 동시에, 상호 검증",
+    solo: "전문가 1명이 바로 작업. 예: '버그 수정해줘' → 즉시 완료",
   } : isJa ? {
-    trio: "3視点で検証済みコード。要件確認+品質レポート付き",
-    squad: "マルチドメイン同時カバー。広範囲を高速完成",
-    hierarchy: "アーキテクチャレベル検証済みコード。技術的負債最小化",
-    pair: "相互検証された集中コード。高速デリバリー+クロスチェック",
-    solo: "即時完成。最小遅延、単一専門家品質",
+    trio: "開発→PM検証→クリティックレビュー。例: 'ログイン機能追加' → 実装+セキュリティ検証+テストレポート",
+    squad: "各専門家が並列作業。例: 'API+UI+テスト' → 3名同時に各自完成",
+    hierarchy: "ジュニア実装→シニア改善→リード確認→CTO承認。例: '認証リファクタ' → 4段階レビュー済みコード",
+    pair: "2名が実装後クロスレビュー。例: 'APIとフロント' → 同時実装+相互検証",
+    solo: "専門家1名が即座に作業。例: 'バグ修正' → 即完了",
   } : {
-    trio: "Code verified from 3 perspectives. Requirements confirmed + quality report included",
-    squad: "Multi-domain covered simultaneously. Wide scope delivered fast",
-    hierarchy: "Architecture-level reviewed code. Minimal tech debt",
-    pair: "Cross-verified focused code. Fast delivery + mutual check",
-    solo: "Instant completion. Minimal latency, single expert quality",
+    trio: "Dev implements → PM verifies requirements → Critic reviews quality. e.g. 'Add login' → code + security check + test report",
+    squad: "Specialists work their domains in parallel. e.g. 'API + UI + tests' → 3 people build simultaneously",
+    hierarchy: "Junior builds → Senior improves → Lead reviews → CTO approves. e.g. 'Refactor auth' → 4-stage reviewed code",
+    pair: "2 specialists build then cross-review. e.g. 'API + frontend' → parallel build + mutual verification",
+    solo: "Single expert works directly. e.g. 'Fix bug' → instant completion",
   };
 
   const qLabel = isKo ? "어떤 팀 구조로 진행할까요?" : isJa ? "どのチーム構成で進めますか？" : "Which team structure?";
 
-  // Build options: recommended first, then alternatives
+  // Build options: recommended first, then 3 alternatives (4 max for AskUserQuestion)
   const modes = ["trio", "squad", "hierarchy", "pair"] as const;
   const rec = intent.mode;
-  const sorted = [rec, ...modes.filter(m => m !== rec)];
+  const others = modes.filter(m => m !== rec).slice(0, 3);
+  const sorted = [rec, ...others];
   const optionLines = sorted.map((m, i) => {
     const label = i === 0 ? `${m.charAt(0).toUpperCase() + m.slice(1)} (Recommended)` : m.charAt(0).toUpperCase() + m.slice(1);
     return `  ${i + 1}. label: "${label}", description: "${DESC[m as keyof typeof DESC]}"`;

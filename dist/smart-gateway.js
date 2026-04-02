@@ -1416,7 +1416,9 @@ var DOMAIN_KEYWORDS = {
   security: ["auth", "oauth", "jwt", "token", "permission", "role", "acl", "xss", "csrf", "encryption", "hash", "ssl", "tls", "vulnerability", "\uC778\uC99D", "\uBCF4\uC548", "\uAD8C\uD55C", "\uC554\uD638\uD654", "\uCDE8\uC57D\uC810"],
   data: ["data", "analytics", "etl", "pipeline", "warehouse", "schema", "migration", "seed", "report", "dashboard", "metrics", "\uB370\uC774\uD130", "\uBD84\uC11D", "\uB9C8\uC774\uADF8\uB808\uC774\uC158", "\uC2A4\uD0A4\uB9C8"],
   ml: ["ml", "ai", "model", "training", "inference", "embedding", "vector", "llm", "neural", "dataset", "prediction", "\uBAA8\uB378", "\uD559\uC2B5", "\uCD94\uB860"],
-  testing: ["test", "testing", "spec", "e2e", "unit test", "integration test", "coverage", "jest", "vitest", "mocha", "pytest", "tdd", "bug", "debug", "\uD14C\uC2A4\uD2B8", "\uBC84\uADF8", "\uB514\uBC84\uADF8", "\u30C6\u30B9\u30C8", "\u30D0\u30B0"]
+  testing: ["test", "testing", "spec", "e2e", "unit test", "integration test", "coverage", "jest", "vitest", "mocha", "pytest", "tdd", "bug", "debug", "\uD14C\uC2A4\uD2B8", "\uBC84\uADF8", "\uB514\uBC84\uADF8", "\u30C6\u30B9\u30C8", "\u30D0\u30B0"],
+  agent: ["agent", "orchestrat", "prompt engineer", "multi-agent", "hook system", "gateway", "harness", "bestwork", "agent lifecycle", "quality gate", "\uC5D0\uC774\uC804\uD2B8", "\uC624\uCF00\uC2A4\uD2B8", "\uD504\uB86C\uD504\uD2B8"],
+  plugin: ["plugin", "skill", "hud", "statusline", "marketplace", "plugin.json", "hooks.json", "slash command", "\uD50C\uB7EC\uADF8\uC778", "\uC2A4\uD0AC"]
 };
 var DOMAIN_TO_AGENT = {
   backend: "sr-backend",
@@ -1425,7 +1427,9 @@ var DOMAIN_TO_AGENT = {
   security: "sr-security",
   data: "sr-backend",
   ml: "sr-backend",
-  testing: "qa-lead"
+  testing: "qa-lead",
+  agent: "agent-engineer",
+  plugin: "tech-plugin"
 };
 function splitTasks(task) {
   if (task.includes("|")) {
@@ -1766,28 +1770,29 @@ Proceed directly. You are operating as a bestwork agent (bestwork:${agent}).`);
   const isKo = /[가-힣]/.test(prompt);
   const isJa = /[\u3040-\u309F\u30A0-\u30FF]/.test(prompt);
   const DESC = isKo ? {
-    trio: "3\uAD00\uC810 \uAC80\uC99D\uB41C \uCF54\uB4DC. \uC694\uAD6C\uC0AC\uD56D \uCDA9\uC871 \uD655\uC778 + \uD488\uC9C8 \uB9AC\uD3EC\uD2B8 \uD3EC\uD568",
-    squad: "\uBA40\uD2F0 \uB3C4\uBA54\uC778 \uB3D9\uC2DC \uCEE4\uBC84. \uB113\uC740 \uBC94\uC704\uB97C \uBE60\uB974\uAC8C \uC644\uC131",
-    hierarchy: "\uC544\uD0A4\uD14D\uCC98 \uB808\uBCA8 \uAC80\uD1A0 \uC644\uB8CC\uB41C \uCF54\uB4DC. \uAE30\uC220 \uBD80\uCC44 \uCD5C\uC18C\uD654",
-    pair: "\uC0C1\uD638 \uAC80\uC99D\uB41C \uC9D1\uC911 \uCF54\uB4DC. \uBE60\uB978 \uB51C\uB9AC\uBC84\uB9AC + \uD06C\uB85C\uC2A4\uCCB4\uD06C",
-    solo: "\uC989\uC2DC \uC644\uC131. \uCD5C\uC18C \uC9C0\uC5F0, \uB2E8\uC77C \uC804\uBB38\uAC00 \uD488\uC9C8"
+    trio: "\uAC1C\uBC1C\uC790\uAC00 \uAD6C\uD604 \u2192 PM\uC774 \uC694\uAD6C\uC0AC\uD56D \uCDA9\uC871 \uD655\uC778 \u2192 \uD06C\uB9AC\uD2F1\uC774 \uCF54\uB4DC \uD488\uC9C8 \uB9AC\uBDF0. \uC608: '\uB85C\uADF8\uC778 \uAE30\uB2A5 \uCD94\uAC00\uD574\uC918' \u2192 \uAD6C\uD604 + \uBCF4\uC548 \uAC80\uC99D + \uD14C\uC2A4\uD2B8 \uB9AC\uD3EC\uD2B8",
+    squad: "\uBC31\uC5D4\uB4DC+\uD504\uB860\uD2B8+QA\uAC00 \uAC01\uC790 \uC601\uC5ED \uB3D9\uC2DC\uC5D0 \uC791\uC5C5. \uC608: 'API + UI + \uD14C\uC2A4\uD2B8 \uD55C\uBC88\uC5D0' \u2192 3\uBA85\uC774 \uBCD1\uB82C\uB85C \uAC01\uAC01 \uC644\uC131",
+    hierarchy: "\uC8FC\uB2C8\uC5B4\uAC00 \uAD6C\uD604 \u2192 \uC2DC\uB2C8\uC5B4\uAC00 \uAC1C\uC120 \u2192 \uB9AC\uB4DC\uAC00 \uC544\uD0A4\uD14D\uCC98 \uD655\uC778 \u2192 CTO \uCD5C\uC885 \uC2B9\uC778. \uC608: '\uC778\uC99D \uC2DC\uC2A4\uD15C \uB9AC\uD329\uD1A0\uB9C1' \u2192 4\uB2E8\uACC4 \uAC80\uD1A0 \uAC70\uCE5C \uCF54\uB4DC",
+    pair: "2\uBA85\uC774 \uAC01\uC790 \uC601\uC5ED \uAD6C\uD604 \uD6C4 \uC11C\uB85C \uD06C\uB85C\uC2A4 \uB9AC\uBDF0. \uC608: 'API \uCD94\uAC00\uD558\uACE0 \uD504\uB860\uD2B8\uB3C4' \u2192 \uBC31\uC5D4\uB4DC+\uD504\uB860\uD2B8 \uB3D9\uC2DC\uC5D0, \uC0C1\uD638 \uAC80\uC99D",
+    solo: "\uC804\uBB38\uAC00 1\uBA85\uC774 \uBC14\uB85C \uC791\uC5C5. \uC608: '\uBC84\uADF8 \uC218\uC815\uD574\uC918' \u2192 \uC989\uC2DC \uC644\uB8CC"
   } : isJa ? {
-    trio: "3\u8996\u70B9\u3067\u691C\u8A3C\u6E08\u307F\u30B3\u30FC\u30C9\u3002\u8981\u4EF6\u78BA\u8A8D+\u54C1\u8CEA\u30EC\u30DD\u30FC\u30C8\u4ED8\u304D",
-    squad: "\u30DE\u30EB\u30C1\u30C9\u30E1\u30A4\u30F3\u540C\u6642\u30AB\u30D0\u30FC\u3002\u5E83\u7BC4\u56F2\u3092\u9AD8\u901F\u5B8C\u6210",
-    hierarchy: "\u30A2\u30FC\u30AD\u30C6\u30AF\u30C1\u30E3\u30EC\u30D9\u30EB\u691C\u8A3C\u6E08\u307F\u30B3\u30FC\u30C9\u3002\u6280\u8853\u7684\u8CA0\u50B5\u6700\u5C0F\u5316",
-    pair: "\u76F8\u4E92\u691C\u8A3C\u3055\u308C\u305F\u96C6\u4E2D\u30B3\u30FC\u30C9\u3002\u9AD8\u901F\u30C7\u30EA\u30D0\u30EA\u30FC+\u30AF\u30ED\u30B9\u30C1\u30A7\u30C3\u30AF",
-    solo: "\u5373\u6642\u5B8C\u6210\u3002\u6700\u5C0F\u9045\u5EF6\u3001\u5358\u4E00\u5C02\u9580\u5BB6\u54C1\u8CEA"
+    trio: "\u958B\u767A\u2192PM\u691C\u8A3C\u2192\u30AF\u30EA\u30C6\u30A3\u30C3\u30AF\u30EC\u30D3\u30E5\u30FC\u3002\u4F8B: '\u30ED\u30B0\u30A4\u30F3\u6A5F\u80FD\u8FFD\u52A0' \u2192 \u5B9F\u88C5+\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u691C\u8A3C+\u30C6\u30B9\u30C8\u30EC\u30DD\u30FC\u30C8",
+    squad: "\u5404\u5C02\u9580\u5BB6\u304C\u4E26\u5217\u4F5C\u696D\u3002\u4F8B: 'API+UI+\u30C6\u30B9\u30C8' \u2192 3\u540D\u540C\u6642\u306B\u5404\u81EA\u5B8C\u6210",
+    hierarchy: "\u30B8\u30E5\u30CB\u30A2\u5B9F\u88C5\u2192\u30B7\u30CB\u30A2\u6539\u5584\u2192\u30EA\u30FC\u30C9\u78BA\u8A8D\u2192CTO\u627F\u8A8D\u3002\u4F8B: '\u8A8D\u8A3C\u30EA\u30D5\u30A1\u30AF\u30BF' \u2192 4\u6BB5\u968E\u30EC\u30D3\u30E5\u30FC\u6E08\u307F\u30B3\u30FC\u30C9",
+    pair: "2\u540D\u304C\u5B9F\u88C5\u5F8C\u30AF\u30ED\u30B9\u30EC\u30D3\u30E5\u30FC\u3002\u4F8B: 'API\u3068\u30D5\u30ED\u30F3\u30C8' \u2192 \u540C\u6642\u5B9F\u88C5+\u76F8\u4E92\u691C\u8A3C",
+    solo: "\u5C02\u9580\u5BB61\u540D\u304C\u5373\u5EA7\u306B\u4F5C\u696D\u3002\u4F8B: '\u30D0\u30B0\u4FEE\u6B63' \u2192 \u5373\u5B8C\u4E86"
   } : {
-    trio: "Code verified from 3 perspectives. Requirements confirmed + quality report included",
-    squad: "Multi-domain covered simultaneously. Wide scope delivered fast",
-    hierarchy: "Architecture-level reviewed code. Minimal tech debt",
-    pair: "Cross-verified focused code. Fast delivery + mutual check",
-    solo: "Instant completion. Minimal latency, single expert quality"
+    trio: "Dev implements \u2192 PM verifies requirements \u2192 Critic reviews quality. e.g. 'Add login' \u2192 code + security check + test report",
+    squad: "Specialists work their domains in parallel. e.g. 'API + UI + tests' \u2192 3 people build simultaneously",
+    hierarchy: "Junior builds \u2192 Senior improves \u2192 Lead reviews \u2192 CTO approves. e.g. 'Refactor auth' \u2192 4-stage reviewed code",
+    pair: "2 specialists build then cross-review. e.g. 'API + frontend' \u2192 parallel build + mutual verification",
+    solo: "Single expert works directly. e.g. 'Fix bug' \u2192 instant completion"
   };
   const qLabel = isKo ? "\uC5B4\uB5A4 \uD300 \uAD6C\uC870\uB85C \uC9C4\uD589\uD560\uAE4C\uC694?" : isJa ? "\u3069\u306E\u30C1\u30FC\u30E0\u69CB\u6210\u3067\u9032\u3081\u307E\u3059\u304B\uFF1F" : "Which team structure?";
   const modes = ["trio", "squad", "hierarchy", "pair"];
   const rec = intent.mode;
-  const sorted = [rec, ...modes.filter((m) => m !== rec)];
+  const others = modes.filter((m) => m !== rec).slice(0, 3);
+  const sorted = [rec, ...others];
   const optionLines = sorted.map((m, i) => {
     const label = i === 0 ? `${m.charAt(0).toUpperCase() + m.slice(1)} (Recommended)` : m.charAt(0).toUpperCase() + m.slice(1);
     return `  ${i + 1}. label: "${label}", description: "${DESC[m]}"`;
