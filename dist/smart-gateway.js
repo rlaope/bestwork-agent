@@ -1753,37 +1753,39 @@ IMPORTANT: Do NOT skip this. Invoke the Skill tool with skill="bestwork-agent:${
   }
   if (intent.mode === "solo") {
     const agent = intent.suggestedAgents[0] || "tech-fullstack";
-    output(`[BW] solo \u2014 ${agent}
+    output(`[BW] solo \u2014 bestwork:${agent}
 
 Classification: ${intent.reasoning}
-Proceed directly.`);
+Proceed directly. You are operating as a bestwork agent (bestwork:${agent}).`);
     return;
   }
   const tasks = intent.tasks.map((t, i) => {
     const agent = intent.suggestedAgents[i] || intent.suggestedAgents[0] || "tech-fullstack";
     return `  ${i + 1}. ${t} \u2192 ${agent}`;
   }).join("\n");
+  const RECOMMEND_MAP = {
+    trio: "Trio",
+    squad: "Squad",
+    hierarchy: "Hierarchy",
+    pair: "Pair"
+  };
+  const recLabel = RECOMMEND_MAP[intent.mode] || "Trio";
   output(
-    `[BW] ${intent.tasks.length} sub-tasks detected (${intent.reasoning})
+    `[BW] ${intent.tasks.length} sub-tasks detected (bestwork:${agentList})
 
 Tasks:
 ${tasks}
 
-You MUST print this EXACTLY, then STOP and WAIT for user response:
+You MUST use AskUserQuestion tool to let the user pick the team structure. Use these EXACT options:
+- question: "Which team structure for this task?"
+- header: "BW Team"
+- options (4 max):
+  1. label: "${recLabel} (Recommended)", description: "${intent.mode === "trio" ? "Tech + PM + Critic quality gates. 3 rounds max." : intent.mode === "squad" ? "All parallel, flat, majority vote." : intent.mode === "hierarchy" ? "Junior\u2192Senior\u2192Lead\u2192CTO review chain." : "2 specialists, cross-review."}"
+  2. label: "${recLabel === "Trio" ? "Squad" : "Trio"}", description: "${recLabel === "Trio" ? "All parallel, flat, majority vote. Fast." : "Tech + PM + Critic quality gates."}"
+  3. label: "${recLabel === "Hierarchy" ? "Pair" : "Hierarchy"}", description: "${recLabel === "Hierarchy" ? "2 specialists, cross-review. Focused." : "Junior\u2192Senior\u2192Lead\u2192CTO chain. Architecture-level."}"
+  4. label: "Solo", description: "Single bestwork specialist, no overhead."
 
-[BW] ${intent.tasks.length} sub-tasks detected \u2014 which team structure?
-
-  1. trio      \u2014 Tech + PM + Critic quality gates. Best for: features needing review.
-  2. squad     \u2014 All agents parallel, flat, majority vote. Best for: speed on multi-domain.
-  3. hierarchy \u2014 Junior\u2192Senior\u2192Lead\u2192CTO chain. Best for: architecture, security-critical.
-  4. pair      \u2014 2 specialists, cross-review. Best for: focused fullstack work.
-  5. solo      \u2014 Single specialist, no overhead. Best for: when you know exactly what to do.
-
-  \u2192 recommended: ${intent.mode}
-
-Pick a number (1-5):
-
-After printing the above, do NOT execute anything. WAIT for user to respond with a number or mode name. Only then execute.`
+After user picks, execute that mode with the tasks listed above. Print [BW] {mode} \u2014 bestwork:{agents} as first line.`
   );
 }
 main().catch(() => process.stdout.write("{}\n"));

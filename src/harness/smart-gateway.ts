@@ -243,7 +243,7 @@ async function main() {
 
   if (intent.mode === "solo") {
     const agent = intent.suggestedAgents[0] || "tech-fullstack";
-    output(`[BW] solo — ${agent}\n\nClassification: ${intent.reasoning}\nProceed directly.`);
+    output(`[BW] solo — bestwork:${agent}\n\nClassification: ${intent.reasoning}\nProceed directly. You are operating as a bestwork agent (bestwork:${agent}).`);
     return;
   }
 
@@ -253,27 +253,31 @@ async function main() {
     return `  ${i + 1}. ${t} → ${agent}`;
   }).join("\n");
 
+  // Map recommended mode to option label for marking
+  const RECOMMEND_MAP: Record<string, string> = {
+    trio: "Trio",
+    squad: "Squad",
+    hierarchy: "Hierarchy",
+    pair: "Pair",
+  };
+  const recLabel = RECOMMEND_MAP[intent.mode] || "Trio";
+
   output(
-`[BW] ${intent.tasks.length} sub-tasks detected (${intent.reasoning})
+`[BW] ${intent.tasks.length} sub-tasks detected (bestwork:${agentList})
 
 Tasks:
 ${tasks}
 
-You MUST print this EXACTLY, then STOP and WAIT for user response:
+You MUST use AskUserQuestion tool to let the user pick the team structure. Use these EXACT options:
+- question: "Which team structure for this task?"
+- header: "BW Team"
+- options (4 max):
+  1. label: "${recLabel} (Recommended)", description: "${intent.mode === "trio" ? "Tech + PM + Critic quality gates. 3 rounds max." : intent.mode === "squad" ? "All parallel, flat, majority vote." : intent.mode === "hierarchy" ? "Junior→Senior→Lead→CTO review chain." : "2 specialists, cross-review."}"
+  2. label: "${recLabel === "Trio" ? "Squad" : "Trio"}", description: "${recLabel === "Trio" ? "All parallel, flat, majority vote. Fast." : "Tech + PM + Critic quality gates."}"
+  3. label: "${recLabel === "Hierarchy" ? "Pair" : "Hierarchy"}", description: "${recLabel === "Hierarchy" ? "2 specialists, cross-review. Focused." : "Junior→Senior→Lead→CTO chain. Architecture-level."}"
+  4. label: "Solo", description: "Single bestwork specialist, no overhead."
 
-[BW] ${intent.tasks.length} sub-tasks detected — which team structure?
-
-  1. trio      — Tech + PM + Critic quality gates. Best for: features needing review.
-  2. squad     — All agents parallel, flat, majority vote. Best for: speed on multi-domain.
-  3. hierarchy — Junior→Senior→Lead→CTO chain. Best for: architecture, security-critical.
-  4. pair      — 2 specialists, cross-review. Best for: focused fullstack work.
-  5. solo      — Single specialist, no overhead. Best for: when you know exactly what to do.
-
-  → recommended: ${intent.mode}
-
-Pick a number (1-5):
-
-After printing the above, do NOT execute anything. WAIT for user to respond with a number or mode name. Only then execute.`
+After user picks, execute that mode with the tasks listed above. Print [BW] {mode} — bestwork:{agents} as first line.`
   );
 }
 
