@@ -12,6 +12,11 @@
 
 import { classifyIntent, buildExecutionPlan, formatPlan, type ExecutionMode } from "./orchestrator.js";
 import { TEAM_PRESETS } from "./org.js";
+import { appendFileSync, mkdirSync } from "node:fs";
+import { join } from "node:path";
+import { homedir } from "node:os";
+
+const BW_DIR = join(homedir(), ".bestwork");
 
 // Slash command prefixes that should passthrough to the shell handler
 const SLASH_PREFIXES = [
@@ -100,9 +105,12 @@ async function readStdin(): Promise<{ prompt: string; session_id?: string } | nu
 }
 
 function output(context: string): void {
-  // Show [BW] log to user via stderr (visible in terminal)
-  const firstLine = context.split("\n")[0];
-  process.stderr.write(`\x1b[36m${firstLine}\x1b[0m\n`);
+  // Log to file — user can `tail -f ~/.bestwork/gateway.log`
+  try {
+    mkdirSync(BW_DIR, { recursive: true });
+    const ts = new Date().toISOString().slice(11, 19);
+    appendFileSync(join(BW_DIR, "gateway.log"), `[${ts}] ${context.split("\n")[0]}\n`);
+  } catch {}
 
   const result = {
     hookSpecificOutput: {
