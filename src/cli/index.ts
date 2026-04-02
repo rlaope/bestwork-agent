@@ -16,6 +16,7 @@ import { notifyConfigCommand, notifySendCommand } from "./commands/notify/notify
 import { watchCommand } from "./commands/harness/watch.js";
 import { agentsCommand } from "./commands/harness/agents.js";
 import { setupCommand } from "./commands/harness/setup.js";
+import { orgCommand } from "./commands/harness/org.js";
 
 const program = new Command();
 
@@ -107,6 +108,11 @@ program
   .command("agents")
   .description("List all available specialist agent profiles")
   .action(agentsCommand);
+
+program
+  .command("org")
+  .description("Show organization chart — roles, levels, team presets")
+  .action(orgCommand);
 
 const notifyCmd = program
   .command("notify")

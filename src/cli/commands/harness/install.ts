@@ -145,12 +145,31 @@ CAPABILITIES YOU CAN EXECUTE:
 13. OBSERVABILITY — loops, heatmap, summary, weekly
     Run the corresponding \`bestwork\` CLI command and report output.
 
-14. HELP — list available commands.
+14. TEAM — hierarchical team execution (./team <preset> <task>)
+    Presets: "Full Team" (CTO→Tech Lead→Senior→Junior), "Backend Team", "Frontend Team", "Security Team"
+    Execute with proper authority chain:
+    1. Junior implements + flags concerns
+    2. Senior reviews + improves
+    3. Lead reviews architecture
+    4. C-level makes final call
+    Each level can send work back down with feedback. Spawn agents per role with their system prompt.
+
+15. SQUAD — flat team execution (./squad <preset> <task>)
+    Presets: "Feature Squad" (Backend+Frontend+Product+QA), "Infra Squad"
+    All members work in parallel with equal authority. Disagreements by majority vote.
+    Spawn all agents simultaneously with run_in_background.
+
+16. ORG — show organization chart
+    Run \`bestwork org\` and report the output.
+
+17. HELP — list available commands.
 
 RULES:
 - Understand intent from ANY language. No keyword matching.
 - If the prompt is a normal coding request (not bestwork-related), do nothing.
-- For trio, ACTUALLY spawn Agent tools — do not just describe what to do.
+- For trio/team/squad, ACTUALLY spawn Agent tools — do not just describe what to do.
+- For team mode, execute BOTTOM-UP (junior first), review TOP-DOWN (c-level last).
+- For squad mode, spawn ALL agents in parallel.
 - Be concise. Execute, don't explain.`,
   },
 
