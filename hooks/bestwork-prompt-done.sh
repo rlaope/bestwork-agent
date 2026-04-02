@@ -19,9 +19,11 @@ PROJECT=$(jq -r '.name // empty' "$CWD/package.json" 2>/dev/null)
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
 SID_SHORT="${SESSION_ID:0:8}"
 
+# Get last prompt for THIS session from history.jsonl
 LAST_PROMPT="N/A"
-if command -v bestwork &>/dev/null; then
-  LAST_PROMPT=$(bestwork sessions -n 1 2>&1 | grep '💬' | head -1 | sed 's/.*💬 //' | sed $'s/\x1b\[[0-9;]*m//g' | head -c 100)
+HISTORY_FILE="$HOME/.claude/history.jsonl"
+if [ -f "$HISTORY_FILE" ]; then
+  LAST_PROMPT=$(grep "\"sessionId\":\"${SESSION_ID}\"" "$HISTORY_FILE" | tail -1 | jq -r '.display // empty' 2>/dev/null | sed $'s/\x1b\[[0-9;]*m//g' | head -c 100)
 fi
 [ -z "$LAST_PROMPT" ] && LAST_PROMPT="N/A"
 
