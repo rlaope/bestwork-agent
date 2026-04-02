@@ -7,10 +7,7 @@
   "plugins": [
     {
       "name": "bestwork-agent",
-      "source": {
-        "source": "git",
-        "url": "https://github.com/rlaope/bestwork-agent.git"
-      },
+      "source": "./",
       "description": "Harness engineering for Claude Code. Work like a corporation team, not just a club.",
       "version": "0.8.0"
     }
