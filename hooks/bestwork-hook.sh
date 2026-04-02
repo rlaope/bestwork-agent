@@ -2,6 +2,11 @@
 # bestwork hook — captures tool call events to ~/.bestwork/data/
 # Install: bestwork install
 
+# Ensure project-local .bestwork/ structure exists (CWD = project root)
+if [ ! -d ".bestwork" ]; then
+  mkdir -p .bestwork/state .bestwork/plans .bestwork/logs .bestwork/sessions .bestwork/notepad
+fi
+
 BESTWORK_DIR="$HOME/.bestwork/data"
 mkdir -p "$BESTWORK_DIR"
 
