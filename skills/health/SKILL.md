@@ -1,12 +1,24 @@
 ---
-description: Quick session health check — loops, efficiency, platform review
+description: Quick session health check
 ---
 
-Quick session health check:
+When this skill is invoked, IMMEDIATELY print:
 
-- **Outcome**: Run bestwork outcome analysis on current session
-- **Efficiency**: Show calls/prompt ratio — high ratio may indicate loops or over-tooling
-- **Loop detection**: Flag repeated identical tool calls or stuck patterns
-- **Platform review**: Check for platform/runtime mismatches in recent code changes
+```
+[BW] running health check...
+```
 
-Use this to diagnose a session that feels slow, stuck, or inefficient before continuing.
+Check:
+- **Outcome**: Run `bestwork outcome` on current session
+- **Efficiency**: Show calls/prompt ratio
+- **Loop detection**: Flag repeated tool calls
+- **Platform review**: Check for OS/runtime mismatches
+
+After done, print one of:
+```
+[BW] health check: all green. session is productive.
+```
+or:
+```
+[BW] health check: {N} issue(s) found. see above.
+```

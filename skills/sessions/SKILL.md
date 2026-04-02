@@ -1,10 +1,16 @@
 ---
-description: List Claude Code sessions with CWD, last prompt, and usage percentage
+description: List Claude Code sessions with stats
 ---
 
-Run `bestwork sessions` to display all tracked sessions. Shows session ID, time, call count, usage percentage, project path, and last prompt.
+When this skill is invoked, IMMEDIATELY print:
 
-Options:
-- `bestwork sessions -n 20` — show 20 sessions
-- `bestwork summary` — today's summary
-- `bestwork summary -w` — weekly overview
+```
+[BW] loading session data...
+```
+
+Run `bestwork sessions` and display the output.
+
+After output, print:
+```
+[BW] {N} sessions loaded. use `bestwork session <id>` for details.
+```

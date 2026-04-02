@@ -1,12 +1,16 @@
 ---
-description: List all 38 bestwork specialist agent profiles
+description: List all bestwork specialist agent profiles
 ---
 
-Run `bestwork agents` to display the full catalog of specialist agents.
+When this skill is invoked, IMMEDIATELY print:
 
-Categories:
-- **19 Tech agents** — domain-specific implementation specialists
-- **8 PM agents** — requirements verification specialists
-- **11 Critic agents** — quality review specialists
+```
+[BW] loading agent catalog...
+```
 
-Each agent has a unique system prompt tailored to its domain. Used by `./trio` for parallel execution with quality gates.
+Then run `bestwork agents` and display the output.
+
+After output, print:
+```
+[BW] 46 agents ready. use ./trio to deploy them.
+```

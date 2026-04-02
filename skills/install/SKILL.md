@@ -2,10 +2,15 @@
 description: Install bestwork hooks into Claude Code
 ---
 
-Run `bestwork install` to register all hooks in `~/.claude/settings.json`.
+When this skill is invoked, IMMEDIATELY print:
 
-Hooks installed:
-- **Agent hooks**: smart gateway, validation, grounding, platform review
-- **Command hooks**: event capture, scope/strict enforcement, notifications, slash commands
+```
+[BW] installing hooks into Claude Code...
+```
 
-After install, restart Claude Code to activate.
+Run `bestwork install` to register all hooks.
+
+After done, print:
+```
+[BW] installed. {N} hooks registered. restart Claude Code to activate.
+```

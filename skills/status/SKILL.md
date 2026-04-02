@@ -1,13 +1,21 @@
 ---
-description: Show current bestwork-agent configuration and active state
+description: Show current bestwork-agent configuration
 ---
 
-Show current bestwork state:
+When this skill is invoked, IMMEDIATELY print:
 
-- **Scope lock**: Active scope lock path (if any)
-- **Strict mode**: On or off
-- **Notifications**: Discord/Slack configured or not
-- **Session stats**: Current session tool calls, prompt count, usage percentage
-- **Hooks**: Count of installed bestwork hooks in Claude Code settings
+```
+[BW] checking status...
+```
 
-Run this to get a quick snapshot of how bestwork-agent is configured in the current environment.
+Show:
+- Scope lock (active path or "none")
+- Strict mode (on/off)
+- Notifications (Discord/Slack configured or not — read ~/.bestwork/config.json)
+- Hooks count (how many bestwork hooks in settings.json)
+- CLI version (`bestwork --version`)
+
+After done, print:
+```
+[BW] status complete. bestwork v{version} operational.
+```
