@@ -327,6 +327,24 @@ export async function installCommand() {
   }
 
   settings.hooks = hooks;
+
+  // Auto-register bestwork permissions
+  const permissions = (settings.permissions ?? {}) as Record<string, unknown>;
+  const allow = (permissions.allow ?? []) as string[];
+  const bestworkPerms = [
+    "Bash(bestwork:*)",
+    "Bash(curl *discord.com*)",
+    "Bash(curl *hooks.slack.com*)",
+    "Bash(curl *api.telegram.org*)",
+  ];
+  for (const perm of bestworkPerms) {
+    if (!allow.includes(perm)) {
+      allow.push(perm);
+    }
+  }
+  permissions.allow = allow;
+  settings.permissions = permissions;
+
   await writeFile(settingsPath, JSON.stringify(settings, null, 2) + "\n");
 
   console.log(`\n  bestwork installed — ${added} added, ${removed} upgraded\n`);

@@ -1,5 +1,5 @@
 #!/bin/bash
-# bestwork prompt completion — rich notification + auto-review + feedback loop detection
+# bestwork prompt completion — rich notification
 # Stop hook: fires when Claude Code finishes processing
 
 INPUT=$(cat)
@@ -13,130 +13,105 @@ SLACK_URL=$(jq -r '.notify.slack.webhookUrl // empty' "$CONFIG" 2>/dev/null)
 
 [ -z "$DISCORD_URL" ] && [ -z "$SLACK_URL" ] && echo '{}' && exit 0
 
-# === Collect session data ===
+# === Collect data ===
 
 CWD=$(pwd)
 PROJECT=$(basename "$CWD")
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
 SID_SHORT="${SESSION_ID:0:8}"
 
-# Last prompt (what the user asked)
+# Last prompt — strip ANSI escape codes
 LAST_PROMPT=""
 if command -v bestwork &>/dev/null; then
-  LAST_PROMPT=$(bestwork sessions -n 1 2>&1 | grep '💬' | head -1 | sed 's/.*💬 //')
+  LAST_PROMPT=$(bestwork sessions -n 1 2>&1 | grep '💬' | head -1 | sed 's/.*💬 //' | sed 's/\x1b\[[0-9;]*m//g' | head -c 100)
 fi
+[ -z "$LAST_PROMPT" ] && LAST_PROMPT="N/A"
 
-# Session stats
-STATS=""
+# Session stats — strip ANSI
+TOTAL_CALLS="?"
+TOTAL_PROMPTS="?"
 if command -v bestwork &>/dev/null; then
-  TOTAL_CALLS=$(bestwork session "$SID_SHORT" 2>&1 | grep "Total calls" | sed 's/.*Total calls: //' | sed 's/ .*//')
-  PROMPTS=$(bestwork session "$SID_SHORT" 2>&1 | grep "Prompts:" | sed 's/.*Prompts: //')
-  STATS="Calls: ${TOTAL_CALLS:-?} | Prompts: ${PROMPTS:-?}"
+  RAW=$(bestwork session "$SID_SHORT" 2>&1 | sed 's/\x1b\[[0-9;]*m//g')
+  TOTAL_CALLS=$(echo "$RAW" | grep "Total calls" | sed 's/.*Total calls: //' | sed 's/ .*//' | tr -d ' ')
+  TOTAL_PROMPTS=$(echo "$RAW" | grep "Prompts:" | sed 's/.*Prompts: //' | tr -d ' ')
 fi
 
-# Git changes summary
-GIT_SUMMARY=""
+# Git changes
+GIT_LINE=""
 if git rev-parse --is-inside-work-tree &>/dev/null; then
-  CHANGED_FILES=$(git diff --name-only 2>/dev/null | wc -l | tr -d ' ')
-  DIFF_STAT=$(git diff --stat 2>/dev/null | tail -1)
-
-  if [ "$CHANGED_FILES" -gt 10 ] 2>/dev/null; then
-    # Too many files — summarize key changes
-    KEY_FILES=$(git diff --name-only 2>/dev/null | head -5 | tr '\n' ', ')
-    GIT_SUMMARY="📦 ${CHANGED_FILES} files changed (key: ${KEY_FILES}...)\n${DIFF_STAT}"
-  elif [ -n "$DIFF_STAT" ]; then
-    GIT_SUMMARY="📦 ${DIFF_STAT}"
-  fi
-
-  STAGED_STAT=$(git diff --cached --stat 2>/dev/null | tail -1)
-  [ -n "$STAGED_STAT" ] && GIT_SUMMARY="${GIT_SUMMARY}\n📋 Staged: ${STAGED_STAT}"
+  DIFF_STAT=$(git diff --stat 2>/dev/null | tail -1 | tr -d '\n')
+  [ -n "$DIFF_STAT" ] && GIT_LINE="$DIFF_STAT"
 fi
 
-# === Auto platform review ===
-REVIEW_RESULT=""
+# Platform review
+REVIEW_LINE="✅ No issues"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [ -n "$(git diff HEAD 2>/dev/null)" ] || [ -n "$(git diff 2>/dev/null)" ]; then
   REVIEW_OUTPUT=$(echo '{}' | BESTWORK_REVIEW_TRIGGER=1 bash "$SCRIPT_DIR/bestwork-review.sh" 2>/dev/null)
   if echo "$REVIEW_OUTPUT" | grep -q "⚠️"; then
-    REVIEW_RESULT=$(echo "$REVIEW_OUTPUT" | jq -r '.hookSpecificOutput.additionalContext // ""' 2>/dev/null | head -10)
+    REVIEW_LINE="⚠️ Platform mismatches found"
   fi
-fi
-
-# === Feedback loop detection ===
-FEEDBACK_NOTE=""
-BESTWORK_LOG="$HOME/.bestwork/data/${SESSION_ID}.jsonl"
-if [ -f "$BESTWORK_LOG" ]; then
-  TOTAL_EVENTS=$(wc -l < "$BESTWORK_LOG" | tr -d ' ')
-  FAIL_EVENTS=$(grep -c '"event":"fail"' "$BESTWORK_LOG" 2>/dev/null || echo 0)
-  EDIT_COUNT=$(grep -c '"toolName":"Edit"' "$BESTWORK_LOG" 2>/dev/null || echo 0)
-
-  # Detect if session had too many issues
-  if [ "$TOTAL_EVENTS" -gt 20 ] 2>/dev/null; then
-    FAIL_RATIO=$(awk "BEGIN {printf \"%.0f\", ($FAIL_EVENTS / $TOTAL_EVENTS) * 100}")
-    if [ "$FAIL_RATIO" -gt 20 ] 2>/dev/null; then
-      FEEDBACK_NOTE="⚠️ High failure rate (${FAIL_RATIO}% of ${TOTAL_EVENTS} events). Consider reviewing approach."
-    fi
-  fi
-
-  # Detect excessive edits on same files (loop indicator)
-  if [ "$EDIT_COUNT" -gt 30 ] 2>/dev/null; then
-    FEEDBACK_NOTE="${FEEDBACK_NOTE}\n🔄 High edit count (${EDIT_COUNT}). Possible loop pattern detected."
-  fi
-fi
-
-# === Build notification message ===
-
-TITLE="✅ ${PROJECT} — prompt complete"
-
-BODY="**📝 Prompt:** ${LAST_PROMPT:-N/A}\n"
-BODY="${BODY}**📊 Stats:** ${STATS}\n"
-BODY="${BODY}**⏰ Time:** ${TIMESTAMP}\n"
-
-[ -n "$GIT_SUMMARY" ] && BODY="${BODY}\n${GIT_SUMMARY}\n"
-
-if [ -n "$REVIEW_RESULT" ]; then
-  BODY="${BODY}\n**🔍 Platform Review:**\n${REVIEW_RESULT}\n"
-else
-  BODY="${BODY}\n**🔍 Platform Review:** ✅ No issues\n"
-fi
-
-if [ -n "$FEEDBACK_NOTE" ]; then
-  BODY="${BODY}\n**⚡ Session Health:**\n${FEEDBACK_NOTE}\n"
 fi
 
 # === Send Discord ===
 if [ -n "$DISCORD_URL" ]; then
-  # Color: green if clean, yellow if warnings, red if feedback issues
-  COLOR=55467  # green
-  [ -n "$REVIEW_RESULT" ] && COLOR=16776960  # yellow
-  [ -n "$FEEDBACK_NOTE" ] && COLOR=16711680  # red
+  COLOR=55467
+  echo "$REVIEW_LINE" | grep -q "⚠️" && COLOR=16776960
+
+  # Build description with jq to handle escaping properly
+  DESC=$(jq -n \
+    --arg prompt "$LAST_PROMPT" \
+    --arg calls "$TOTAL_CALLS" \
+    --arg prompts "$TOTAL_PROMPTS" \
+    --arg time "$TIMESTAMP" \
+    --arg git "${GIT_LINE:-No changes}" \
+    --arg review "$REVIEW_LINE" \
+    '"**Prompt:** " + $prompt + "\n\n**Stats:** " + $calls + " calls | " + $prompts + " prompts\n**Time:** " + $time + "\n**Git:** " + $git + "\n**Review:** " + $review')
+
+  # Remove outer quotes from jq output
+  DESC=$(echo "$DESC" | sed 's/^"//;s/"$//')
 
   PAYLOAD=$(jq -n \
-    --arg title "$TITLE" \
-    --arg body "$BODY" \
+    --arg title "bestwork-agent result — ${PROJECT}" \
+    --arg desc "$DESC" \
     --argjson color "$COLOR" \
     '{
       "embeds": [{
         "title": $title,
-        "description": $body,
+        "description": $desc,
         "color": $color,
-        "footer": {"text": "bestwork"},
+        "footer": {"text": "bestwork-agent"},
         "timestamp": (now | todate)
       }]
     }')
+
   curl -s -X POST "$DISCORD_URL" -H "Content-Type: application/json" -d "$PAYLOAD" > /dev/null 2>&1
 fi
 
 # === Send Slack ===
 if [ -n "$SLACK_URL" ]; then
-  SLACK_BODY=$(echo -e "$BODY" | sed 's/\*\*/*/g')
-  PAYLOAD=$(jq -n --arg title "$TITLE" --arg body "$SLACK_BODY" '{
-    "blocks": [
-      {"type": "header", "text": {"type": "plain_text", "text": $title}},
-      {"type": "section", "text": {"type": "mrkdwn", "text": $body}},
-      {"type": "context", "elements": [{"type": "mrkdwn", "text": "bestwork"}]}
-    ]
-  }')
+  SLACK_DESC=$(jq -n \
+    --arg prompt "$LAST_PROMPT" \
+    --arg calls "$TOTAL_CALLS" \
+    --arg prompts "$TOTAL_PROMPTS" \
+    --arg time "$TIMESTAMP" \
+    --arg git "${GIT_LINE:-No changes}" \
+    --arg review "$REVIEW_LINE" \
+    '"*Prompt:* " + $prompt + "\n\n*Stats:* " + $calls + " calls | " + $prompts + " prompts\n*Time:* " + $time + "\n*Git:* " + $git + "\n*Review:* " + $review')
+
+  SLACK_DESC=$(echo "$SLACK_DESC" | sed 's/^"//;s/"$//')
+
+  PAYLOAD=$(jq -n \
+    --arg title "bestwork-agent result — ${PROJECT}" \
+    --arg body "$SLACK_DESC" \
+    '{
+      "blocks": [
+        {"type": "header", "text": {"type": "plain_text", "text": $title}},
+        {"type": "section", "text": {"type": "mrkdwn", "text": $body}},
+        {"type": "context", "elements": [{"type": "mrkdwn", "text": "bestwork-agent"}]}
+      ]
+    }')
+
   curl -s -X POST "$SLACK_URL" -H "Content-Type: application/json" -d "$PAYLOAD" > /dev/null 2>&1
 fi
 
