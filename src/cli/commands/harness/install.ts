@@ -29,6 +29,8 @@ const HOOKS_REGISTRY: HookEntry[] = [
   { event: "UserPromptSubmit", id: "bestwork-slash", type: "command", command: `bash "${NPM_ROOT}/bestwork-slash.sh"`, timeout: 10 },
   // Stop — notifications (needs curl, not LLM)
   { event: "Stop", id: "bestwork-prompt-done", type: "command", command: `bash "${NPM_ROOT}/bestwork-prompt-done.sh"`, timeout: 20 },
+  // SessionStart — update check
+  { event: "SessionStart", id: "bestwork-update-check", type: "command", command: `bash "${NPM_ROOT}/bestwork-update-check.sh"`, timeout: 5 },
 
   // === agent hooks (full LLM agent with tool access) ===
 

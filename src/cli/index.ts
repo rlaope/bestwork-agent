@@ -17,6 +17,8 @@ import { watchCommand } from "./commands/harness/watch.js";
 import { agentsCommand } from "./commands/harness/agents.js";
 import { setupCommand } from "./commands/harness/setup.js";
 import { orgCommand } from "./commands/harness/org.js";
+import { updateCommand } from "./commands/harness/update.js";
+import { doctorCommand } from "./commands/harness/doctor.js";
 
 const program = new Command();
 
@@ -113,6 +115,16 @@ program
   .command("org")
   .description("Show organization chart — roles, levels, team presets")
   .action(orgCommand);
+
+program
+  .command("update")
+  .description("Check for updates and show upgrade instructions")
+  .action(updateCommand);
+
+program
+  .command("doctor")
+  .description("Diagnose bestwork installation health")
+  .action(doctorCommand);
 
 const notifyCmd = program
   .command("notify")
