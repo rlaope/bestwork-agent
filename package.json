@@ -7,7 +7,7 @@
     "bestwork": "./dist/index.js"
   },
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && node scripts/sync-plugin.mjs",
     "dev": "tsup --watch",
     "test": "vitest run",
     "test:watch": "vitest",

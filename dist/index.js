@@ -1045,21 +1045,24 @@ function bwErr(msg) {
 }
 
 // src/cli/commands/harness/install.ts
-var NPM_ROOT = `$(npm root -g)/bestwork-agent/hooks`;
+var BW_HOOKS_RESOLVE = `BW_HOOKS="$(npm root -g 2>/dev/null)/bestwork-agent/hooks"; [ ! -d "$BW_HOOKS" ] && BW_HOOKS="$(ls -d ~/.claude/plugins/cache/bestwork-tools/bestwork-agent/*/hooks 2>/dev/null | tail -1)"; [ ! -d "$BW_HOOKS" ] && exit 0;`;
+function bwCmd(script, extraEnv = "") {
+  return `${BW_HOOKS_RESOLVE} ${extraEnv}bash "$BW_HOOKS/${script}"`;
+}
 var HOOKS_REGISTRY = [
   // === command hooks (lightweight, fast, no LLM needed) ===
   // PostToolUse — event capture
-  { event: "PostToolUse", id: "bestwork-hook", type: "command", command: `BESTWORK_HOOK_EVENT=post bash "${NPM_ROOT}/bestwork-hook.sh"`, timeout: 5 },
+  { event: "PostToolUse", id: "bestwork-hook", type: "command", command: bwCmd("bestwork-hook.sh", "BESTWORK_HOOK_EVENT=post "), timeout: 5 },
   // PreToolUse — enforcement
-  { event: "PreToolUse", id: "bestwork-hook-pre", type: "command", command: `BESTWORK_HOOK_EVENT=pre bash "${NPM_ROOT}/bestwork-hook.sh"`, timeout: 5 },
-  { event: "PreToolUse", id: "bestwork-scope-enforce", type: "command", command: `bash "${NPM_ROOT}/bestwork-scope-enforce.sh"`, timeout: 3, matcher: "Write|Edit" },
-  { event: "PreToolUse", id: "bestwork-strict-enforce", type: "command", command: `bash "${NPM_ROOT}/bestwork-strict-enforce.sh"`, timeout: 3 },
+  { event: "PreToolUse", id: "bestwork-hook-pre", type: "command", command: bwCmd("bestwork-hook.sh", "BESTWORK_HOOK_EVENT=pre "), timeout: 5 },
+  { event: "PreToolUse", id: "bestwork-scope-enforce", type: "command", command: bwCmd("bestwork-scope-enforce.sh"), timeout: 3, matcher: "Write|Edit" },
+  { event: "PreToolUse", id: "bestwork-strict-enforce", type: "command", command: bwCmd("bestwork-strict-enforce.sh"), timeout: 3 },
   // UserPromptSubmit — slash routing (fast, just pattern match + config write)
-  { event: "UserPromptSubmit", id: "bestwork-slash", type: "command", command: `bash "${NPM_ROOT}/bestwork-slash.sh"`, timeout: 10 },
+  { event: "UserPromptSubmit", id: "bestwork-slash", type: "command", command: bwCmd("bestwork-slash.sh"), timeout: 10 },
   // Stop — notifications (needs curl, not LLM)
-  { event: "Stop", id: "bestwork-prompt-done", type: "command", command: `bash "${NPM_ROOT}/bestwork-prompt-done.sh"`, timeout: 20 },
+  { event: "Stop", id: "bestwork-prompt-done", type: "command", command: bwCmd("bestwork-prompt-done.sh"), timeout: 20 },
   // SessionStart — update check
-  { event: "SessionStart", id: "bestwork-update-check", type: "command", command: `bash "${NPM_ROOT}/bestwork-update-check.sh"`, timeout: 5 },
+  { event: "SessionStart", id: "bestwork-update-check", type: "command", command: bwCmd("bestwork-update-check.sh"), timeout: 5 },
   // === agent hooks (full LLM agent with tool access) ===
   // PostToolUse — auto validation with understanding
   {

@@ -10,7 +10,7 @@ When this skill is invoked, IMMEDIATELY print this before doing anything:
 ```
 
 Steps:
-1. Read the current version:
+1. Read the current installed version:
    ```bash
    cat ~/.claude/plugins/cache/bestwork-tools/bestwork-agent/*/package.json 2>/dev/null | jq -r '.version'
    ```
@@ -23,12 +23,15 @@ Steps:
 3. If newer version available, print:
    ```
    [BW] update available: {current} → {latest}
-   [BW] upgrading... hang tight
+   [BW] upgrading...
    ```
-   Then run `/plugin update bestwork-agent` and `/reload-plugins`.
+   Then run:
+   ```bash
+   claude plugin update bestwork-agent
+   ```
    After done, print:
    ```
-   [BW] done! you're on {latest} now. restart to apply.
+   [BW] done! you're on {latest} now. restart session to apply.
    ```
 
 4. If already on latest, print:
