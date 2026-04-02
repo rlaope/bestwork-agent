@@ -6,9 +6,10 @@ import { relativeTime, shortSessionId, formatNumber, truncate } from "../utils/f
 interface SessionListProps {
   sessions: Session[];
   selectedIndex: number;
+  totalCalls: number;
 }
 
-export function SessionList({ sessions, selectedIndex }: SessionListProps) {
+export function SessionList({ sessions, selectedIndex, totalCalls }: SessionListProps) {
   const visibleCount = 10;
   const start = Math.max(0, selectedIndex - Math.floor(visibleCount / 2));
   const visible = sessions.slice(start, start + visibleCount);
@@ -30,6 +31,9 @@ export function SessionList({ sessions, selectedIndex }: SessionListProps) {
         const promptText = lastPrompt
           ? truncate(lastPrompt.display, 50)
           : "";
+        const pct = totalCalls > 0
+          ? ((session.totalCalls / totalCalls) * 100).toFixed(1)
+          : "0";
 
         return (
           <Box key={session.id} flexDirection="column">
@@ -42,6 +46,7 @@ export function SessionList({ sessions, selectedIndex }: SessionListProps) {
               </Text>
               <Text color="gray">  {relativeTime(session.startedAt)}</Text>
               <Text color="yellow">  {formatNumber(session.totalCalls)} calls</Text>
+              <Text color="magenta">  {pct}%</Text>
               <Text>  {session.lastTool || "N/A"}</Text>
               {session.isActive ? (
                 <Text color="green" bold>  ● live</Text>

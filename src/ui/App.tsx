@@ -3,6 +3,7 @@ import { Box, Text, useApp, useInput } from "ink";
 import { SessionList } from "./SessionList.js";
 import { SessionDetail } from "./SessionDetail.js";
 import { aggregateSessions } from "../core/aggregator.js";
+import { format } from "date-fns";
 import type { Session } from "../core/types.js";
 
 type View = "list" | "detail";
@@ -71,20 +72,34 @@ export function App({ watchMode = false }: AppProps) {
 
   return (
     <Box flexDirection="column" padding={1}>
-      <Box marginBottom={1}>
-        <Text bold color="cyan">
-          nysm
-        </Text>
-        <Text color="gray"> — now you see me</Text>
-        {watchMode && (
-          <Text color="green"> [LIVE]</Text>
-        )}
+      <Box marginBottom={1} flexDirection="column">
+        <Box>
+          <Text bold color="cyan">
+            nysm
+          </Text>
+          <Text color="gray"> — now you see me</Text>
+          {watchMode && (
+            <Text color="green"> [LIVE]</Text>
+          )}
+        </Box>
+        <Box>
+          <Text color="gray">
+            {format(new Date(), "yyyy-MM-dd HH:mm")}
+          </Text>
+          <Text color="yellow">
+            {"  "}Total: {sessions.reduce((s, sess) => s + sess.totalCalls, 0).toLocaleString()} calls
+          </Text>
+          <Text color="gray">
+            {"  "}{sessions.length} sessions
+          </Text>
+        </Box>
       </Box>
 
       {view === "list" ? (
         <SessionList
           sessions={sessions}
           selectedIndex={selectedIndex}
+          totalCalls={sessions.reduce((s, sess) => s + sess.totalCalls, 0)}
         />
       ) : (
         <SessionDetail session={sessions[selectedIndex]!} />
