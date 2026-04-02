@@ -24,28 +24,25 @@ export async function sessionsCommand(options: SessionsOptions) {
   console.log(`\n  Sessions (${sessions.length} total, ${formatNumber(totalCalls)} calls)\n`);
 
   for (const s of display) {
-    const status = s.isActive ? "\x1b[32m● live\x1b[0m" : "\x1b[90m○ done\x1b[0m";
+    const status = s.isActive ? "\x1b[32m●\x1b[0m" : "\x1b[90m○\x1b[0m";
     const cwd = s.meta?.cwd ?? "";
-    const cwdShort = cwd.length > 40 ? "…" + cwd.slice(-39) : cwd;
+    const cwdShort = cwd ? cwd.split("/").slice(-2).join("/") : "";
     const lastPrompt = s.prompts[s.prompts.length - 1];
-    const promptText = lastPrompt ? truncate(lastPrompt.display, 60) : "";
+    const promptText = lastPrompt ? truncate(lastPrompt.display, 40) : "";
     const pct = totalCalls > 0 ? ((s.totalCalls / totalCalls) * 100).toFixed(1) : "0";
 
-    console.log(
+    let line =
       "  " +
-        shortSessionId(s.id).padEnd(10) +
-        relativeTime(s.startedAt).padEnd(20) +
-        formatNumber(s.totalCalls).padStart(5) + " calls " +
-        `\x1b[35m${pct.padStart(5)}%\x1b[0m  ` +
-        (s.lastTool || "N/A").padEnd(12) +
-        status
-    );
-    if (cwdShort) {
-      console.log(`  \x1b[90m  📁 ${cwdShort}\x1b[0m`);
-    }
-    if (promptText) {
-      console.log(`  \x1b[90m  💬 ${promptText}\x1b[0m`);
-    }
+      shortSessionId(s.id) + " " +
+      status + " " +
+      formatNumber(s.totalCalls).padStart(4) + " " +
+      `\x1b[35m${pct.padStart(5)}%\x1b[0m ` +
+      relativeTime(s.startedAt).padEnd(18);
+
+    if (cwdShort) line += ` \x1b[34m${cwdShort}\x1b[0m`;
+    if (promptText) line += ` \x1b[90m💬 ${promptText}\x1b[0m`;
+
+    console.log(line);
   }
   console.log();
 }
