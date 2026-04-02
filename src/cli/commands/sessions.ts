@@ -3,6 +3,7 @@ import {
   shortSessionId,
   relativeTime,
   formatNumber,
+  truncate,
 } from "../../utils/format.js";
 
 interface SessionsOptions {
@@ -20,26 +21,28 @@ export async function sessionsCommand(options: SessionsOptions) {
   }
 
   console.log(`\n  Sessions (${sessions.length} total)\n`);
-  console.log(
-    "  " +
-      "ID".padEnd(12) +
-      "Started".padEnd(22) +
-      "Calls".padEnd(10) +
-      "Last Tool".padEnd(16) +
-      "Status"
-  );
-  console.log("  " + "─".repeat(68));
 
   for (const s of display) {
     const status = s.isActive ? "\x1b[32m● live\x1b[0m" : "\x1b[90m○ done\x1b[0m";
+    const cwd = s.meta?.cwd ?? "";
+    const cwdShort = cwd.length > 40 ? "…" + cwd.slice(-39) : cwd;
+    const lastPrompt = s.prompts[s.prompts.length - 1];
+    const promptText = lastPrompt ? truncate(lastPrompt.display, 60) : "";
+
     console.log(
       "  " +
-        shortSessionId(s.id).padEnd(12) +
-        relativeTime(s.startedAt).padEnd(22) +
-        formatNumber(s.totalCalls).padEnd(10) +
-        (s.lastTool || "N/A").padEnd(16) +
+        shortSessionId(s.id).padEnd(10) +
+        relativeTime(s.startedAt).padEnd(20) +
+        formatNumber(s.totalCalls).padStart(5) + " calls  " +
+        (s.lastTool || "N/A").padEnd(12) +
         status
     );
+    if (cwdShort) {
+      console.log(`  \x1b[90m  📁 ${cwdShort}\x1b[0m`);
+    }
+    if (promptText) {
+      console.log(`  \x1b[90m  💬 ${promptText}\x1b[0m`);
+    }
   }
   console.log();
 }

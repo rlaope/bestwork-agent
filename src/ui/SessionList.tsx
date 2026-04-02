@@ -1,7 +1,7 @@
 import React from "react";
 import { Box, Text } from "ink";
 import type { Session } from "../core/types.js";
-import { relativeTime, shortSessionId, formatNumber } from "../utils/format.js";
+import { relativeTime, shortSessionId, formatNumber, truncate } from "../utils/format.js";
 
 interface SessionListProps {
   sessions: Session[];
@@ -9,7 +9,7 @@ interface SessionListProps {
 }
 
 export function SessionList({ sessions, selectedIndex }: SessionListProps) {
-  const visibleCount = 15;
+  const visibleCount = 12;
   const start = Math.max(0, selectedIndex - Math.floor(visibleCount / 2));
   const visible = sessions.slice(start, start + visibleCount);
 
@@ -21,59 +21,44 @@ export function SessionList({ sessions, selectedIndex }: SessionListProps) {
         </Text>
       </Box>
 
-      <Box>
-        <Box width={4}>
-          <Text bold color="gray">#</Text>
-        </Box>
-        <Box width={12}>
-          <Text bold color="gray">ID</Text>
-        </Box>
-        <Box width={20}>
-          <Text bold color="gray">Started</Text>
-        </Box>
-        <Box width={10}>
-          <Text bold color="gray">Calls</Text>
-        </Box>
-        <Box width={15}>
-          <Text bold color="gray">Last Tool</Text>
-        </Box>
-        <Box width={8}>
-          <Text bold color="gray">Status</Text>
-        </Box>
-      </Box>
-
       {visible.map((session, i) => {
         const globalIndex = start + i;
         const isSelected = globalIndex === selectedIndex;
+        const lastPrompt = session.prompts[session.prompts.length - 1];
+        const cwd = session.meta?.cwd ?? "";
+        const cwdShort = cwd.length > 30 ? "…" + cwd.slice(-29) : cwd;
+        const promptText = lastPrompt
+          ? truncate(lastPrompt.display, 50)
+          : "";
 
         return (
-          <Box key={session.id}>
-            <Box width={4}>
+          <Box key={session.id} flexDirection="column" marginBottom={0}>
+            <Box>
               <Text color={isSelected ? "cyan" : "gray"}>
-                {isSelected ? "▸" : " "} {globalIndex + 1}
+                {isSelected ? "▸ " : "  "}
               </Text>
-            </Box>
-            <Box width={12}>
               <Text color={isSelected ? "cyan" : "white"} bold={isSelected}>
                 {shortSessionId(session.id)}
               </Text>
-            </Box>
-            <Box width={20}>
-              <Text color="gray">{relativeTime(session.startedAt)}</Text>
-            </Box>
-            <Box width={10}>
-              <Text color="yellow">{formatNumber(session.totalCalls)}</Text>
-            </Box>
-            <Box width={15}>
-              <Text>{session.lastTool || "N/A"}</Text>
-            </Box>
-            <Box width={8}>
+              <Text color="gray">  {relativeTime(session.startedAt)}</Text>
+              <Text color="yellow">  {formatNumber(session.totalCalls)} calls</Text>
+              <Text>  {session.lastTool || "N/A"}</Text>
               {session.isActive ? (
-                <Text color="green" bold>● live</Text>
+                <Text color="green" bold>  ● live</Text>
               ) : (
-                <Text color="gray">○ done</Text>
+                <Text color="gray">  ○ done</Text>
               )}
             </Box>
+            {isSelected && (
+              <Box marginLeft={3} flexDirection="column">
+                {cwdShort && (
+                  <Text color="gray">  📁 {cwdShort}</Text>
+                )}
+                {promptText && (
+                  <Text color="gray">  💬 {promptText}</Text>
+                )}
+              </Box>
+            )}
           </Box>
         );
       })}
