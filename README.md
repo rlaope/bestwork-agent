@@ -131,14 +131,19 @@ bestwork install
 ./bw-install --strict
 ```
 
-### Discord / Slack notifications
+### Notifications
 
-```
-./discord <webhook_url> --lang ko     # Korean notifications
-./discord <webhook_url> --lang en     # English (default)
-./discord <webhook_url> --lang ja     # Japanese
-./slack <webhook_url> --lang ko       # Same for Slack
-```
+Connect your team's channel to receive rich alerts after every prompt:
+
+| Platform | Command |
+|----------|---------|
+| Discord | `./discord <webhook_url> --lang ko` |
+| Slack | `./slack <webhook_url> --lang en` |
+| Telegram | `bestwork notify setup --telegram-token <token> --telegram-chat <id>` |
+
+Supported languages: `en` (default), `ko`, `ja`
+
+Each notification includes: team composition, agent decisions, code snippets, git diff, platform review, and session health — color-coded green/yellow/red.
 
 ### Verify
 
