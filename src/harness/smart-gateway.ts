@@ -15,8 +15,10 @@ import { TEAM_PRESETS } from "./org.js";
 import { appendFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
+import { execSync } from "node:child_process";
 
 const BW_DIR = join(homedir(), ".bestwork");
+const PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT || "";
 
 // Slash command prefixes that should passthrough to the shell handler
 const SLASH_PREFIXES = [
@@ -104,13 +106,16 @@ async function readStdin(): Promise<{ prompt: string; session_id?: string } | nu
   });
 }
 
-function output(context: string): void {
-  // Log to file — user can `tail -f ~/.bestwork/gateway.log`
+function log(msg: string): void {
   try {
     mkdirSync(BW_DIR, { recursive: true });
     const ts = new Date().toISOString().slice(11, 19);
-    appendFileSync(join(BW_DIR, "gateway.log"), `[${ts}] ${context.split("\n")[0]}\n`);
+    appendFileSync(join(BW_DIR, "gateway.log"), `[${ts}] ${msg}\n`);
   } catch {}
+}
+
+function output(context: string): void {
+  log(context.split("\n")[0]);
 
   const result = {
     hookSpecificOutput: {
@@ -153,15 +158,21 @@ async function main() {
     return;
   }
 
-  // Build execution plan
-  const teamName = modeToTeam(intent.mode);
-  let planText = "";
-
-  if (teamName) {
-    const plan = buildExecutionPlan(teamName, prompt);
-    if (plan) {
-      planText = formatPlan(plan);
-    }
+  // Tier 2a: trio/pair → delegate to trio hook (same as ./trio)
+  if ((intent.mode === "trio" || intent.mode === "pair") && intent.tasks.length > 1 && PLUGIN_ROOT) {
+    const tasksStr = intent.tasks.join(" | ");
+    try {
+      const hookInput = JSON.stringify({ prompt: `./trio ${tasksStr}`, session_id: input.session_id ?? "" });
+      const result = execSync(
+        `echo '${hookInput.replace(/'/g, "'\\''")}' | BESTWORK_TRIO_TRIGGER=1 bash "${PLUGIN_ROOT}/hooks/bestwork-trio.sh"`,
+        { encoding: "utf-8", timeout: 5000 }
+      ).trim();
+      if (result && result !== "{}") {
+        log(`[BW gateway → trio] ${intent.tasks.length} tasks: ${tasksStr}`);
+        process.stdout.write(result + "\n");
+        return;
+      }
+    } catch {}
   }
 
   // Build structured dispatch context
@@ -179,17 +190,17 @@ async function main() {
     lines.push(`\nAssigned agents: ${intent.suggestedAgents.join(", ")}`);
   }
 
-  if (planText) {
-    lines.push(planText);
+  // Build execution plan
+  const teamName = modeToTeam(intent.mode);
+  if (teamName) {
+    const plan = buildExecutionPlan(teamName, prompt);
+    if (plan) {
+      lines.push(formatPlan(plan));
+    }
   }
 
   // Execution instructions based on mode
-  if (intent.mode === "trio" || intent.mode === "squad") {
-    lines.push("\nExecution: Launch parallel Agent tool calls for each sub-task. Each agent works independently.");
-    lines.push("After all complete: merge results, run tests, check for conflicts.");
-  } else if (intent.mode === "pair") {
-    lines.push("\nExecution: Launch 2 parallel Agent tool calls. One implements, one reviews.");
-  } else if (intent.mode === "hierarchy") {
+  if (intent.mode === "hierarchy") {
     lines.push("\nExecution: Sequential chain. Junior implements → Senior reviews → Lead approves.");
   } else if (intent.mode === "solo") {
     lines.push("\nExecution: Single agent. Proceed directly.");
