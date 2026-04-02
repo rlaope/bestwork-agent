@@ -24,4 +24,15 @@ rl.on('close', async () => {
 " 2>/dev/null
 fi
 
+# Refresh usage cache if stale (>90s since last update)
+CACHE="$HOME/.bestwork/.usage-cache.json"
+if [ -f "$CACHE" ]; then
+  CACHE_AGE=$(( $(date +%s) * 1000 - $(jq -r '.ts // 0' "$CACHE" 2>/dev/null) ))
+  if [ "$CACHE_AGE" -gt 90000 ]; then
+    # Background refresh — don't block the hook
+    HUD_SCRIPT="$HOME/.bestwork/hud.mjs"
+    [ -f "$HUD_SCRIPT" ] && node "$HUD_SCRIPT" < /dev/null > /dev/null 2>&1 &
+  fi
+fi
+
 echo '{}'

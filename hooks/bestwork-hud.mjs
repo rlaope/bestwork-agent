@@ -197,6 +197,13 @@ async function getUsage() {
   }
 
   try {
+    // Re-check cache inside lock (another process may have refreshed it)
+    const freshCheck = readUsageCache();
+    if (freshCheck && !freshCheck.rateLimited && !freshCheck.error && Date.now() - freshCheck.ts < POLL_INTERVAL_MS) {
+      releaseLock();
+      return freshCheck.data;
+    }
+
     const creds = getCredentials();
     if (!creds) { releaseLock(); return staleDataOrNull(cache); }
 
