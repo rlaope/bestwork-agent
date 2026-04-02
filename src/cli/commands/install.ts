@@ -11,10 +11,13 @@ const HOOKS_REGISTRY = [
   // PreToolUse hooks
   { event: "PreToolUse", id: "nysm-hook-pre", command: `NYSM_HOOK_EVENT=pre bash "${NPM_ROOT}/nysm-hook.sh"`, timeout: 5 },
   { event: "PreToolUse", id: "nysm-ground", command: `bash "${NPM_ROOT}/nysm-ground.sh"`, timeout: 5, matcher: "Write|Edit" },
+  { event: "PreToolUse", id: "nysm-scope-enforce", command: `bash "${NPM_ROOT}/nysm-scope-enforce.sh"`, timeout: 3, matcher: "Write|Edit" },
+  { event: "PreToolUse", id: "nysm-strict-enforce", command: `bash "${NPM_ROOT}/nysm-strict-enforce.sh"`, timeout: 3 },
   // UserPromptSubmit hooks
   { event: "UserPromptSubmit", id: "nysm-gateway", command: `bash "${NPM_ROOT}/nysm-gateway.sh"`, timeout: 10 },
   { event: "UserPromptSubmit", id: "nysm-slash", command: `bash "${NPM_ROOT}/nysm-slash.sh"`, timeout: 10 },
   { event: "UserPromptSubmit", id: "nysm-agents", command: `bash "${NPM_ROOT}/nysm-agents.sh"`, timeout: 15 },
+  { event: "UserPromptSubmit", id: "nysm-harness", command: `bash "${NPM_ROOT}/nysm-harness.sh"`, timeout: 10 },
   // Stop hooks
   { event: "Stop", id: "nysm-prompt-done", command: `bash "${NPM_ROOT}/nysm-prompt-done.sh"`, timeout: 15 },
 ];
