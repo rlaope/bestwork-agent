@@ -24,4 +24,14 @@ export default defineConfig([
     sourcemap: false,
     dts: false,
   },
+  {
+    entry: ["src/harness/smart-gateway.ts"],
+    format: ["esm"],
+    target: "node18",
+    outDir: "dist",
+    clean: false,
+    splitting: false,
+    sourcemap: false,
+    dts: false,
+  },
 ]);

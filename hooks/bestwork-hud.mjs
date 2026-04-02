@@ -148,11 +148,23 @@ function getSessionInfo() {
     const timeStr = elapsed < 60 ? `${elapsed}s` : elapsed < 3600 ? `${Math.floor(elapsed / 60)}m` : `${Math.floor(elapsed / 3600)}h${Math.floor((elapsed % 3600) / 60)}m`;
 
     let calls = 0, prompts = 0;
-    const statsPath = join(claudeDir, ".session-stats.json");
-    if (existsSync(statsPath)) {
-      const stats = JSON.parse(readFileSync(statsPath, "utf-8"));
-      calls = stats.sessions?.[latest.sessionId]?.total_calls ?? 0;
+
+    // Primary: read from bestwork's own event log
+    const bwDataPath = join(bwDir, "data", `${latest.sessionId}.jsonl`);
+    if (existsSync(bwDataPath)) {
+      const lines = readFileSync(bwDataPath, "utf-8").split("\n").filter(Boolean);
+      calls = lines.filter(l => l.includes('"post"')).length;
     }
+
+    // Fallback: Claude Code's session stats
+    if (calls === 0) {
+      const statsPath = join(claudeDir, ".session-stats.json");
+      if (existsSync(statsPath)) {
+        const stats = JSON.parse(readFileSync(statsPath, "utf-8"));
+        calls = stats.sessions?.[latest.sessionId]?.total_calls ?? 0;
+      }
+    }
+
     // Count prompts from history
     const histPath = join(claudeDir, "history.jsonl");
     if (existsSync(histPath)) {

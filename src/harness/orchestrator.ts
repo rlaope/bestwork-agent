@@ -270,12 +270,12 @@ export interface IntentClassification {
 }
 
 const DOMAIN_KEYWORDS: Record<string, string[]> = {
-  backend:  ["api", "server", "endpoint", "database", "db", "query", "rest", "graphql", "auth", "authentication", "authorization", "middleware", "route", "controller"],
-  frontend: ["ui", "component", "page", "css", "style", "button", "modal", "form", "dark mode", "toggle", "layout", "react", "vue", "angular", "html"],
-  infra:    ["deploy", "docker", "kubernetes", "k8s", "ci", "cd", "pipeline", "terraform", "cloud", "aws", "gcp", "azure", "nginx", "devops"],
-  security: ["auth", "oauth", "jwt", "token", "permission", "role", "acl", "xss", "csrf", "encryption", "hash", "ssl", "tls", "vulnerability"],
-  data:     ["data", "analytics", "etl", "pipeline", "warehouse", "schema", "migration", "seed", "report", "dashboard", "metrics"],
-  ml:       ["ml", "ai", "model", "training", "inference", "embedding", "vector", "llm", "neural", "dataset", "prediction"],
+  backend:  ["api", "server", "endpoint", "database", "db", "query", "rest", "graphql", "auth", "authentication", "authorization", "middleware", "route", "controller", "서버", "백엔드", "엔드포인트", "라우트", "미들웨어"],
+  frontend: ["ui", "component", "page", "css", "style", "button", "modal", "form", "dark mode", "toggle", "layout", "react", "vue", "angular", "html", "프론트", "컴포넌트", "페이지", "스타일", "레이아웃", "화면"],
+  infra:    ["deploy", "docker", "kubernetes", "k8s", "ci", "cd", "pipeline", "terraform", "cloud", "aws", "gcp", "azure", "nginx", "devops", "배포", "인프라", "파이프라인"],
+  security: ["auth", "oauth", "jwt", "token", "permission", "role", "acl", "xss", "csrf", "encryption", "hash", "ssl", "tls", "vulnerability", "인증", "보안", "권한", "암호화", "취약점"],
+  data:     ["data", "analytics", "etl", "pipeline", "warehouse", "schema", "migration", "seed", "report", "dashboard", "metrics", "데이터", "분석", "마이그레이션", "스키마"],
+  ml:       ["ml", "ai", "model", "training", "inference", "embedding", "vector", "llm", "neural", "dataset", "prediction", "모델", "학습", "추론"],
 };
 
 const DOMAIN_TO_AGENT: Record<string, string> = {
@@ -293,9 +293,10 @@ function splitTasks(task: string): string[] {
     return task.split("|").map((t) => t.trim()).filter(Boolean);
   }
 
-  // Split by "and then"
-  if (/\band then\b/i.test(task)) {
-    return task.split(/\band then\b/i).map((t) => t.trim()).filter(Boolean);
+  // Split by "and then" / Korean conjunctions
+  const conjunctionPattern = /\band then\b|그리고|하고\s|하고$|다음에|그다음/i;
+  if (conjunctionPattern.test(task)) {
+    return task.split(conjunctionPattern).map((t) => t.trim()).filter(Boolean);
   }
 
   // Split by numbered list: "1. ... 2. ... 3. ..."

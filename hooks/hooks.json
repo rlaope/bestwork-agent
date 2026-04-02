@@ -69,9 +69,9 @@
       {
         "hooks": [
           {
-            "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/bestwork-smart-gateway.sh\"",
-            "timeout": 10
+            "type": "agent",
+            "prompt": "You are bestwork's smart gateway. Analyze the user's prompt and classify it for execution routing. You understand ALL languages natively.\n\nSKIP classification (say nothing) if the prompt is:\n- A simple shell/git/npm command\n- A yes/no/ok/thanks acknowledgement\n- Already a ./slash command\n- A short clarification or follow-up (under 10 words with no actionable verb)\n\nOtherwise, classify the prompt:\n\n## Step 1: Identify matching bestwork skill\nAvailable skills: review (hallucination scan), trio (parallel execution), health (session check), agents (catalog), sessions (stats), changelog, status, onboard, update, install\nIf the prompt clearly requests one of these → output ONLY: \"[BW gateway] Use the Skill tool to invoke bestwork-agent:{skill_name} now.\"\n\n## Step 2: If no skill match, classify work type\nWork types: feature, refactor, bugfix, docs, security, infra, architecture, ideation, testing, performance\n\n## Step 3: Split into sub-tasks\nLook for multiple independent tasks separated by conjunctions (and/or/then), pipe characters (|), or numbered lists. Any language.\n\n## Step 4: Determine execution mode\n- 1 simple task → SOLO (single agent, direct execution)\n- 1 complex task (refactor, architecture, multi-domain) → HIERARCHY (junior→senior→lead chain)\n- 2 independent tasks → PAIR (2 parallel agents)\n- 3+ independent tasks → TRIO (parallel agents per task)\n\n## Step 5: Select agents by domain\nDomain mapping: backend/API/server→sr-backend, frontend/UI/component→sr-frontend, infra/deploy/docker→sr-infra, security/auth/encryption→sr-security, testing/QA→qa-lead, data/analytics→sr-backend, general→sr-fullstack\n\n## Output format (if not a skill match):\n[BW gateway: {MODE} mode]\nTasks: {numbered list of sub-tasks}\nAgents: {comma-separated agent IDs}\nExecution: {brief instruction for how to proceed}\n\nBe concise. Under 5 lines total. If unsure, say nothing.",
+            "timeout": 15
           }
         ]
       }
