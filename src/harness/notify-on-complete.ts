@@ -9,6 +9,7 @@ import { readFile } from "node:fs/promises";
 import { join, basename } from "node:path";
 import { homedir } from "node:os";
 import { execSync } from "node:child_process";
+import { readMeeting, clearMeeting, formatMeetingForNotification } from "./meeting-state.js";
 
 interface Config {
   notify?: {
@@ -190,21 +191,40 @@ export async function run(inputJson?: string): Promise<void> {
   const review = getReviewResult();
   const timestamp = new Date().toISOString();
 
+  // Check for meeting state (trio/team/squad execution)
+  const meeting = await readMeeting();
+
   const hasWarnings = review.includes("⚠️");
-  const color = hasWarnings ? 0xffaa00 : 0x00d4aa;
+  const hasMeeting = meeting && meeting.entries.length > 0;
+  const color = hasMeeting
+    ? (meeting.verdict === "APPROVED" ? 0x00d4aa : meeting.verdict === "REJECTED" ? 0xff4444 : 0xffaa00)
+    : hasWarnings ? 0xffaa00 : 0x00d4aa;
 
   // Build description
   let desc = `**Project:** ${project}\n`;
   desc += `**Prompt:** ${prompt}\n`;
   desc += `**Stats:** ${stats.calls} calls | ${stats.prompts} prompts\n\n`;
+
+  // If meeting data exists, show agent decisions
+  if (hasMeeting) {
+    desc += formatMeetingForNotification(meeting);
+    desc += "\n\n";
+  }
+
   desc += `**Changes:** ${git.stat}\n`;
   if (git.files.length > 0) {
     desc += `**Files:** ${git.files.join(", ")}\n`;
   }
-  if (git.snippet) {
+  if (git.snippet && !hasMeeting) {
+    // Only show raw snippet if no meeting (meeting has its own snippets)
     desc += `\`\`\`ts\n${git.snippet}\n\`\`\`\n`;
   }
   desc += `\n**Review:** ${review}`;
+
+  // Clean up meeting state after sending
+  if (hasMeeting) {
+    await clearMeeting();
+  }
 
   if (discordUrl) {
     await sendDiscord(discordUrl, {
