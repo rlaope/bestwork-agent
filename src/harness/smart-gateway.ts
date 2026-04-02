@@ -26,7 +26,11 @@ const SLASH_PREFIXES = [
   "./scope", "./unlock", "./strict", "./relax", "./context",
   "./parallel", "./tdd", "./recover",
   "./autopsy", "./similar", "./learn", "./predict", "./guard", "./compare",
-  "./review", "./trio", "./plan", "./doctor", "./help",
+  "./help",
+  // All skills — passthrough when invoked as ./command
+  "./agents", "./changelog", "./doctor", "./health", "./install",
+  "./onboard", "./plan", "./review", "./sessions", "./status",
+  "./trio", "./update",
 ];
 
 // Skill keyword map — natural language to skill name
@@ -34,14 +38,20 @@ const SLASH_PREFIXES = [
 // no hook: use Skill tool invocation via additionalContext message
 const SKILL_ROUTES: Array<{ patterns: RegExp[]; skill: string; reason: string; hook?: string; env?: string }> = [
   {
-    patterns: [/리뷰|review|검증|verify|할루시네이션|hallucination|검사|scan|コードレビュー|レビュー/i],
+    patterns: [
+      /리뷰.*(해줘|해|하자|부탁|시작|돌려)/i,
+      /코드.*검증|검증.*해|할루시네이션.*(검사|체크|확인|scan)/i,
+      /(?:please\s+|run\s+|do\s+)?review\s+(?:this|the|my|code|pr|changes)/i,
+      /(?:scan|check)\s+(?:for\s+)?hallucination/i,
+      /コードレビュー.*(して|お願い|実行)/i,
+    ],
     skill: "review",
     reason: "code review and hallucination scan",
     hook: "bestwork-review.sh",
     env: "BESTWORK_REVIEW_TRIGGER=1",
   },
   {
-    patterns: [/에이전트.*목록|에이전트.*리스트|agent.*list|agents|프로필|エージェント一覧|エージェント/i],
+    patterns: [/에이전트.*목록|에이전트.*리스트|agent.*list|프로필.*보여|エージェント一覧/i],
     skill: "agents",
     reason: "agent catalog lookup",
   },
@@ -51,7 +61,7 @@ const SKILL_ROUTES: Array<{ patterns: RegExp[]; skill: string; reason: string; h
     reason: "session stats",
   },
   {
-    patterns: [/changelog|변경.*로그|변경.*이력|릴리즈.*노트/i],
+    patterns: [/changelog.*(만들|생성|해줘|해|generate)|변경.*로그|변경.*이력|릴리즈.*노트/i],
     skill: "changelog",
     reason: "changelog generation",
   },
@@ -61,7 +71,7 @@ const SKILL_ROUTES: Array<{ patterns: RegExp[]; skill: string; reason: string; h
     reason: "configuration status check",
   },
   {
-    patterns: [/onboard|온보딩|시작.*가이드|setup.*guide/i],
+    patterns: [/온보딩.*(해|시작|가이드)|setup.*guide|시작.*가이드/i],
     skill: "onboard",
     reason: "onboarding guide",
   },
@@ -76,22 +86,50 @@ const SKILL_ROUTES: Array<{ patterns: RegExp[]; skill: string; reason: string; h
     reason: "hook installation",
   },
   {
-    patterns: [/health|건강|상태.*체크|상태.*확인|ヘルスチェック/i],
+    patterns: [
+      /health\s*(check|scan|report|status)/i,
+      /(?:run|do|check)\s+health/i,
+      /건강.*(확인|체크|검사|봐줘)/i,
+      /상태.*(체크|확인).*(해|줘|하자)/i,
+      /ヘルスチェック/i,
+    ],
     skill: "health",
     reason: "session health check",
   },
   {
-    patterns: [/plan|플랜|계획|설계|팀.*구성|팀.*배정|analyze.*scope|분석.*후.*실행/i],
+    patterns: [
+      /(?:make|create|build|run|do)\s+(?:a\s+)?plan/i,
+      /plan\s+(?:this|the|for|out)/i,
+      /플랜.*(짜|세워|만들|해줘|해|하자|부탁)/i,
+      /계획.*(세워|짜|만들|해줘|해|하자|수립)/i,
+      /설계.*(해줘|해|하자|시작)/i,
+      /팀.*(구성|배정).*(해|줘|하자)/i,
+      /analyze\s+scope/i,
+      /분석.*후.*실행/i,
+    ],
     skill: "plan",
     reason: "scope analysis and team allocation",
   },
   {
-    patterns: [/doctor|진단|정합성|배포.*검사|deploy.*check|build.*check|의존성.*검사|dependency.*check|CI.*검사|환경.*변수.*검사/i],
+    patterns: [
+      /(?:run|do|execute)\s+doctor/i,
+      /doctor\s+(?:check|scan|this|the|my|project)/i,
+      /진단.*(해줘|해|하자|돌려|시작|부탁)/i,
+      /정합성.*(검사|확인|체크)/i,
+      /배포.*검사|deploy\s*check|build\s*check/i,
+      /의존성.*검사|dependency\s*check|CI\s*검사|환경.*변수.*검사/i,
+    ],
     skill: "doctor",
     reason: "project deploy/code integrity check",
   },
   {
-    patterns: [/trio|트리오|병렬.*실행|parallel.*task|동시에.*해|세.*개.*동시|quality.*gate/i],
+    patterns: [
+      /trio.*(돌려|해줘|해|하자|실행|시작)/i,
+      /트리오.*(돌려|해줘|해|하자|실행)/i,
+      /병렬.*실행|parallel.*task/i,
+      /동시에.*(해|돌려|실행)/i,
+      /quality.*gate/i,
+    ],
     skill: "trio",
     reason: "parallel execution with quality gates",
   },
@@ -242,23 +280,26 @@ async function main() {
     }
   }
 
-  // Mandatory execution instructions based on mode
-  if (intent.mode === "trio" || intent.mode === "pair" || intent.mode === "squad") {
-    lines.push(`\nYou MUST launch ${intent.tasks.length} parallel Agent tool calls, one per sub-task:`);
+  // For non-solo modes: present options to user, don't auto-execute
+  if (intent.mode !== "solo") {
+    lines.push(`\nYou MUST present these team structure options to the user BEFORE executing. Do NOT auto-execute.`);
+    lines.push(`\nPrint this EXACTLY:\n\`\`\``);
+    lines.push(`[BW] this looks like a ${intent.mode}-scale task (${intent.tasks.length} sub-tasks, ${agentList})\n`);
+    lines.push(`Available structures:`);
+    lines.push(`  1. trio   — Tech + PM + Critic per task, quality gates, max 3 rounds`);
+    lines.push(`  2. squad  — all agents parallel, flat, majority vote`);
+    lines.push(`  3. hierarchy — Junior→Senior→Lead→CTO chain, bottom-up implementation`);
+    lines.push(`  4. pair   — 2 specialists, fast, cross-review at end`);
+    lines.push(`  5. solo   — single specialist, no overhead\n`);
+    lines.push(`→ recommended: ${intent.mode} (${intent.reasoning})`);
+    lines.push(`\`\`\``);
+    lines.push(`\nThen WAIT for user to pick a number or type a mode name. Do NOT proceed until the user responds.`);
+    lines.push(`When user picks, execute the chosen mode with these tasks:`);
     intent.tasks.forEach((t: string, i: number) => {
       const agent = intent.suggestedAgents[i] || intent.suggestedAgents[0] || "tech-fullstack";
       lines.push(`  ${i + 1}. ${t} — assigned to ${agent}`);
     });
-    lines.push(`\nIMPORTANT: Do NOT execute these sequentially. Use the Agent tool to launch all ${intent.tasks.length} sub-tasks in parallel.`);
-    lines.push(`\nYou MUST print this EXACTLY as the first line of your response:\n\`\`\`\n[BW] ${intent.mode} — ${agentList}\n\`\`\``);
-  } else if (intent.mode === "hierarchy") {
-    lines.push(`\nYou MUST execute sequentially: Junior implements → Senior reviews → Lead approves.`);
-    if (intent.tasks.length > 0) {
-      intent.tasks.forEach((t: string, i: number) => lines.push(`  ${i + 1}. ${t}`));
-    }
-    lines.push(`\nIMPORTANT: Do NOT skip the review chain. Each stage must complete before the next begins.`);
-    lines.push(`\nYou MUST print this EXACTLY as the first line of your response:\n\`\`\`\n[BW] hierarchy — ${agentList}\n\`\`\``);
-  } else if (intent.mode === "solo") {
+  } else {
     const agent = intent.suggestedAgents[0] || "tech-fullstack";
     lines.push(`\nProceed with the task directly. Agent: ${agent}.`);
     lines.push(`\nIMPORTANT: You MUST print this EXACTLY as the first line of your response before doing anything else:\n\`\`\`\n[BW] solo — ${agent}\n\`\`\``);

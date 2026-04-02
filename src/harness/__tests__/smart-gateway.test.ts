@@ -194,8 +194,8 @@ describe("MAGIC KEYWORD: skill routing via gateway", () => {
   });
 
   describe("Japanese keywords", () => {
-    it("'コードレビュー' → review skill", () => {
-      const result = parseGateway("コードレビュー");
+    it("'コードレビューしてください' → review skill", () => {
+      const result = parseGateway("コードレビューしてください");
       expect(result.isEmpty).toBe(false);
       expect(result.additionalContext).toContain("bestwork-agent:review");
     });
@@ -511,9 +511,10 @@ describe("Edge cases", () => {
     expect(() => JSON.parse(raw)).not.toThrow();
   });
 
-  it("gateway returns {} for passthrough prompts", () => {
+  it("gateway returns [BW] passthrough for passthrough prompts", () => {
     const raw = runGateway("git status");
-    expect(raw).toBe("{}");
+    const parsed = JSON.parse(raw);
+    expect(parsed.hookSpecificOutput.additionalContext).toContain("[BW] passthrough");
   });
 });
 

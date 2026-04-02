@@ -7,7 +7,7 @@
  * Shows: version | 5h usage(reset) | weekly | context% | session | efficiency
  */
 
-import { readFileSync, existsSync, readdirSync, statSync, mkdirSync, writeFileSync } from "node:fs";
+import { readFileSync, existsSync, readdirSync, statSync, mkdirSync, writeFileSync, unlinkSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { join } from "node:path";
 import { homedir } from "node:os";
@@ -51,14 +51,39 @@ async function readStdin() {
   });
 }
 
-// === OAuth token management ===
-const CACHE_TTL_MS = 600000; // 10min normal cache
-const MAX_STALE_MS = 1800000; // 30min stale data OK
+// === Caching constants (OMC-aligned) ===
+const POLL_INTERVAL_MS = 90_000;       // 90s between successful API calls
+const CACHE_TTL_FAILURE_MS = 15_000;   // 15s for non-transient errors
+const CACHE_TTL_NETWORK_MS = 120_000;  // 2min for network errors
+const MAX_BACKOFF_MS = 300_000;        // 5min cap for 429 backoff
+const MAX_STALE_MS = 900_000;          // 15min stale data cutoff
+const API_TIMEOUT_MS = 5_000;          // 5s API timeout
+const LOCK_TIMEOUT_MS = 15_000;        // 15s lock staleness
 
-const API_TIMEOUT = 5000;
+const CACHE_PATH = join(bwDir, ".usage-cache.json");
+const LOCK_PATH = join(bwDir, ".usage-cache.lock");
 
+// === File locking — prevent concurrent API calls ===
+function acquireLock() {
+  try {
+    mkdirSync(bwDir, { recursive: true });
+    if (existsSync(LOCK_PATH)) {
+      const lock = JSON.parse(readFileSync(LOCK_PATH, "utf-8"));
+      if (Date.now() - lock.ts < LOCK_TIMEOUT_MS) return false; // lock is fresh
+      // Stale lock — remove it
+      try { unlinkSync(LOCK_PATH); } catch {}
+    }
+    writeFileSync(LOCK_PATH, JSON.stringify({ ts: Date.now(), pid: process.pid }));
+    return true;
+  } catch { return false; }
+}
+
+function releaseLock() {
+  try { unlinkSync(LOCK_PATH); } catch {}
+}
+
+// === OAuth credentials (READ-ONLY) ===
 function getCredentials() {
-  // macOS Keychain
   if (process.platform === "darwin") {
     try {
       const raw = execFileSync("security", [
@@ -70,7 +95,6 @@ function getCredentials() {
       }
     } catch {}
   }
-  // Fallback: credentials file
   const credPath = join(claudeDir, ".credentials.json");
   if (existsSync(credPath)) {
     try {
@@ -84,15 +108,16 @@ function getCredentials() {
 }
 
 function isTokenExpired(creds) {
-  if (!creds.expiresAt) return false; // no expiry info, assume OK
+  if (!creds.expiresAt) return false;
   return Date.now() > creds.expiresAt;
 }
 
+// === API call ===
 function fetchUsage(accessToken) {
   return new Promise((resolve, reject) => {
     const req = https.get("https://api.anthropic.com/api/oauth/usage", {
       headers: { Authorization: `Bearer ${accessToken}` },
-      timeout: API_TIMEOUT,
+      timeout: API_TIMEOUT_MS,
     }, (res) => {
       let body = "";
       res.on("data", (c) => body += c);
@@ -106,31 +131,29 @@ function fetchUsage(accessToken) {
         } catch { reject("parse_error"); }
       });
     });
-    req.on("error", reject);
-    req.on("timeout", () => { req.destroy(); reject("timeout"); });
+    req.on("error", () => reject("network"));
+    req.on("timeout", () => { req.destroy(); reject("network"); });
   });
 }
 
+// === Cache read/write ===
 function readUsageCache() {
-  const cachePath = join(bwDir, ".usage-cache.json");
-  if (!existsSync(cachePath)) return null;
-  try { return JSON.parse(readFileSync(cachePath, "utf-8")); } catch { return null; }
+  if (!existsSync(CACHE_PATH)) return null;
+  try { return JSON.parse(readFileSync(CACHE_PATH, "utf-8")); } catch { return null; }
 }
 
-function writeUsageCache(data, rateLimited = false) {
-  const cachePath = join(bwDir, ".usage-cache.json");
+function writeUsageCache(entry) {
   try {
     mkdirSync(bwDir, { recursive: true });
-    const cache = readUsageCache() || {};
-    const entry = {
-      ts: Date.now(),
-      data,
-      rateLimited,
-      rateLimitedCount: rateLimited ? ((cache.rateLimitedCount || 0) + 1) : 0,
-      lastSuccessAt: rateLimited ? (cache.lastSuccessAt || null) : Date.now(),
-    };
-    writeFileSync(cachePath, JSON.stringify(entry));
+    writeFileSync(CACHE_PATH, JSON.stringify(entry));
   } catch {}
+}
+
+// Helper: return stale data if available. Prefer recent data,
+// but always return cached data over nothing (better UX than --)
+function staleDataOrNull(cache) {
+  if (cache?.data) return cache.data;
+  return null;
 }
 
 // === Anthropic Usage API (READ-ONLY — never refresh tokens) ===
@@ -138,27 +161,40 @@ function writeUsageCache(data, rateLimited = false) {
 // statusline hook on every render. Refreshing the OAuth token invalidates
 // the token Claude Code holds, causing 401 auth errors for the user.
 async function getUsage() {
-  try {
-    const cache = readUsageCache();
-    if (cache) {
-      if (cache.rateLimited) {
-        const count = cache.rateLimitedCount || 1;
-        const backoff = Math.min(CACHE_TTL_MS * Math.pow(2, count - 1), MAX_STALE_MS);
-        if (Date.now() - cache.ts < backoff) {
-          return cache.data || "rate_limited";
-        }
-      } else if (Date.now() - cache.ts < CACHE_TTL_MS) {
-        return cache.data;
-      }
-    }
+  const cache = readUsageCache();
 
+  // Check if cache is still valid
+  if (cache) {
+    if (cache.rateLimited) {
+      const count = cache.rateLimitedCount || 1;
+      const backoff = Math.min(POLL_INTERVAL_MS * Math.pow(2, Math.max(0, count - 1)), MAX_BACKOFF_MS);
+      if (Date.now() - cache.ts < backoff) {
+        return staleDataOrNull(cache);
+      }
+    } else if (cache.error === "network") {
+      if (Date.now() - cache.ts < CACHE_TTL_NETWORK_MS) {
+        return staleDataOrNull(cache);
+      }
+    } else if (cache.error) {
+      if (Date.now() - cache.ts < CACHE_TTL_FAILURE_MS) {
+        return staleDataOrNull(cache);
+      }
+    } else if (Date.now() - cache.ts < POLL_INTERVAL_MS) {
+      return cache.data;
+    }
+  }
+
+  // Try to acquire lock — if can't, return cached data
+  if (!acquireLock()) {
+    return staleDataOrNull(cache);
+  }
+
+  try {
     const creds = getCredentials();
-    if (!creds) return cache?.data || null;
+    if (!creds) { releaseLock(); return staleDataOrNull(cache); }
 
     // If token is expired, just use cache — do NOT refresh
-    if (isTokenExpired(creds)) {
-      return cache?.data || null;
-    }
+    if (isTokenExpired(creds)) { releaseLock(); return staleDataOrNull(cache); }
 
     const data = await fetchUsage(creds.accessToken);
     const result = {
@@ -168,28 +204,36 @@ async function getUsage() {
       weeklyReset: data.seven_day?.resets_at ? new Date(data.seven_day.resets_at) : null,
     };
 
-    writeUsageCache(result, false);
+    writeUsageCache({ ts: Date.now(), data: result, rateLimited: false, rateLimitedCount: 0, lastSuccessAt: Date.now(), error: null });
+    releaseLock();
     return result;
   } catch (e) {
-    const cache = readUsageCache();
-
-    if (e === "auth_expired") {
-      // Token expired mid-flight — return cached data, don't refresh
-      return cache?.data || null;
-    }
+    const freshCache = readUsageCache() || cache;
 
     if (e === "rate_limited") {
-      writeUsageCache(cache?.data || null, true);
-      if (cache?.data && cache.lastSuccessAt && Date.now() - cache.lastSuccessAt < MAX_STALE_MS) {
-        return cache.data;
-      }
-      return "rate_limited";
+      const count = (freshCache?.rateLimitedCount || 0) + 1;
+      writeUsageCache({
+        ts: Date.now(), data: freshCache?.data || null,
+        rateLimited: true, rateLimitedCount: count,
+        lastSuccessAt: freshCache?.lastSuccessAt || null, error: null,
+      });
+    } else if (e === "network") {
+      writeUsageCache({
+        ts: Date.now(), data: freshCache?.data || null,
+        rateLimited: false, rateLimitedCount: 0,
+        lastSuccessAt: freshCache?.lastSuccessAt || null, error: "network",
+      });
+    } else {
+      // auth_expired, parse_error, etc.
+      writeUsageCache({
+        ts: Date.now(), data: freshCache?.data || null,
+        rateLimited: false, rateLimitedCount: 0,
+        lastSuccessAt: freshCache?.lastSuccessAt || null, error: String(e),
+      });
     }
 
-    if (cache?.data && cache.lastSuccessAt && Date.now() - cache.lastSuccessAt < MAX_STALE_MS) {
-      return cache.data;
-    }
-    return null;
+    releaseLock();
+    return staleDataOrNull(freshCache);
   }
 }
 
@@ -298,9 +342,9 @@ async function main() {
   let out = `${B}${CC}BW${R}${D}#${VERSION}${R}`;
 
   // 5h usage + reset time
-  if (usage === "rate_limited") {
-    out += ` ${D}|${R} ${D}--%(5h) --%(wk)${R}`;
-  } else if (usage) {
+  if (!usage || typeof usage !== "object") {
+    out += ` ${D}|${R} ${D}--%${R}${D}(5h)${R} ${D}--%${R}${D}(wk)${R}`;
+  } else {
     const c5 = pctColor(usage.fiveHour);
     out += ` ${D}|${R} ${c5}${usage.fiveHour}%${R}${D}(5h)${R}`;
     if (usage.fiveHourReset) {
