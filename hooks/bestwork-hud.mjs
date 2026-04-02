@@ -84,7 +84,7 @@ async function getUsage() {
     if (existsSync(cachePath)) {
       try {
         const cache = JSON.parse(readFileSync(cachePath, "utf-8"));
-        if (Date.now() - cache.ts < 60000) return cache.data; // 1min cache
+        if (Date.now() - cache.ts < 300000) return cache.data; // 5min cache
       } catch {}
     }
 
@@ -96,6 +96,7 @@ async function getUsage() {
         let body = "";
         res.on("data", (c) => body += c);
         res.on("end", () => {
+          if (res.statusCode === 429) { reject("rate_limited"); return; }
           try {
             const j = JSON.parse(body);
             if (j.error) { reject(j.error); return; }
@@ -122,12 +123,14 @@ async function getUsage() {
     } catch {}
 
     return result;
-  } catch {
-    // Try read stale cache
+  } catch (e) {
+    // Try read stale cache first
     const cachePath = join(bwDir, ".usage-cache.json");
     if (existsSync(cachePath)) {
       try { return JSON.parse(readFileSync(cachePath, "utf-8")).data; } catch {}
     }
+    // If rate limited and no cache, return marker
+    if (e === "rate_limited") return "rate_limited";
     return null;
   }
 }
@@ -184,7 +187,9 @@ async function main() {
   let out = `${B}${CC}BW${R}${D}#${VERSION}${R}`;
 
   // 5h usage + reset time
-  if (usage) {
+  if (usage === "rate_limited") {
+    out += ` ${D}|${R} ${CY}usage: wait${R}`;
+  } else if (usage) {
     const c5 = pctColor(usage.fiveHour);
     out += ` ${D}|${R} ${c5}${usage.fiveHour}%${R}${D}(5h)${R}`;
     if (usage.fiveHourReset) {
