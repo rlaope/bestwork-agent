@@ -26,7 +26,7 @@ const program = new Command();
 program
   .name("bestwork")
   .description("bestwork-agent — harness engineering for Claude Code")
-  .version("0.1.0");
+  .version("0.9.0");
 
 program
   .command("sessions")
