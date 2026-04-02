@@ -1,6 +1,8 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, writeFile, copyFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { homedir } from "node:os";
+import { existsSync } from "node:fs";
+import { execSync } from "node:child_process";
 import { ensureDataDir } from "../../../data/store.js";
 import { bwOk, bwLog } from "../../../utils/brand.js";
 
@@ -361,16 +363,35 @@ export async function installCommand() {
 
   settings.hooks = hooks;
 
-  // Configure statusLine (HUD)
+  // Configure statusLine (HUD) — copy to fixed path for short command
+  const bwDir = join(homedir(), ".bestwork");
+  await mkdir(bwDir, { recursive: true });
+
+  // Find and copy HUD script to ~/.bestwork/hud.mjs
+  let hudSrc: string | null = null;
+  const npmHud = join(execSync("npm root -g 2>/dev/null", { encoding: "utf-8" }).trim(), "bestwork-agent", "hooks", "bestwork-hud.mjs");
+  if (existsSync(npmHud)) {
+    hudSrc = npmHud;
+  } else {
+    // Plugin cache
+    try {
+      const cacheDir = execSync("ls -d ~/.claude/plugins/cache/bestwork-tools/bestwork-agent/*/hooks 2>/dev/null | sort -V | tail -1", { encoding: "utf-8", shell: "/bin/bash" }).trim();
+      const cacheHud = join(cacheDir, "bestwork-hud.mjs");
+      if (cacheDir && existsSync(cacheHud)) hudSrc = cacheHud;
+    } catch {}
+  }
+
+  if (hudSrc) {
+    await copyFile(hudSrc, join(bwDir, "hud.mjs"));
+  }
+
   const existingStatusLine = settings.statusLine as Record<string, unknown> | string | undefined;
   const isBestworkHud = typeof existingStatusLine === "object"
     ? (typeof existingStatusLine?.command === "string" && existingStatusLine.command.includes("bestwork"))
     : (typeof existingStatusLine === "string" && existingStatusLine.includes("bestwork"));
 
   if (!existingStatusLine || isBestworkHud) {
-    // Resolve HUD script path: npm global → plugin cache
-    const hudCommand = `${BW_HOOKS_RESOLVE} node "$BW_HOOKS/bestwork-hud.mjs"`;
-    settings.statusLine = { type: "command", command: hudCommand };
+    settings.statusLine = { type: "command", command: "node ~/.bestwork/hud.mjs" };
   }
 
   // Auto-register bestwork permissions

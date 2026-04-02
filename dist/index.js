@@ -1022,9 +1022,11 @@ function shortPath(path) {
 }
 
 // src/cli/commands/harness/install.ts
-import { readFile as readFile3, writeFile } from "fs/promises";
+import { readFile as readFile3, writeFile, copyFile, mkdir as mkdir2 } from "fs/promises";
 import { join as join3 } from "path";
 import { homedir as homedir3 } from "os";
+import { existsSync } from "fs";
+import { execSync } from "child_process";
 
 // src/utils/brand.ts
 var BW = "\x1B[36m\x1B[1m[BW]\x1B[0m";
@@ -1369,11 +1371,27 @@ async function installCommand() {
     }
   }
   settings.hooks = hooks;
+  const bwDir = join3(homedir3(), ".bestwork");
+  await mkdir2(bwDir, { recursive: true });
+  let hudSrc = null;
+  const npmHud = join3(execSync("npm root -g 2>/dev/null", { encoding: "utf-8" }).trim(), "bestwork-agent", "hooks", "bestwork-hud.mjs");
+  if (existsSync(npmHud)) {
+    hudSrc = npmHud;
+  } else {
+    try {
+      const cacheDir = execSync("ls -d ~/.claude/plugins/cache/bestwork-tools/bestwork-agent/*/hooks 2>/dev/null | sort -V | tail -1", { encoding: "utf-8", shell: "/bin/bash" }).trim();
+      const cacheHud = join3(cacheDir, "bestwork-hud.mjs");
+      if (cacheDir && existsSync(cacheHud)) hudSrc = cacheHud;
+    } catch {
+    }
+  }
+  if (hudSrc) {
+    await copyFile(hudSrc, join3(bwDir, "hud.mjs"));
+  }
   const existingStatusLine = settings.statusLine;
   const isBestworkHud = typeof existingStatusLine === "object" ? typeof existingStatusLine?.command === "string" && existingStatusLine.command.includes("bestwork") : typeof existingStatusLine === "string" && existingStatusLine.includes("bestwork");
   if (!existingStatusLine || isBestworkHud) {
-    const hudCommand = `${BW_HOOKS_RESOLVE} node "$BW_HOOKS/bestwork-hud.mjs"`;
-    settings.statusLine = { type: "command", command: hudCommand };
+    settings.statusLine = { type: "command", command: "node ~/.bestwork/hud.mjs" };
   }
   const permissions = settings.permissions ?? {};
   const allow = permissions.allow ?? [];
@@ -1658,7 +1676,7 @@ async function exportCommand(options) {
 }
 
 // src/harness/notify.ts
-import { readFile as readFile4, writeFile as writeFile3, mkdir as mkdir2 } from "fs/promises";
+import { readFile as readFile4, writeFile as writeFile3, mkdir as mkdir3 } from "fs/promises";
 import { join as join4 } from "path";
 import { homedir as homedir4 } from "os";
 var CONFIG_DIR = join4(homedir4(), ".bestwork");
@@ -1672,7 +1690,7 @@ async function loadConfig() {
   }
 }
 async function saveConfig(config) {
-  await mkdir2(CONFIG_DIR, { recursive: true });
+  await mkdir3(CONFIG_DIR, { recursive: true });
   await writeFile3(CONFIG_FILE, JSON.stringify(config, null, 2) + "\n", { mode: 384 });
 }
 var ALLOWED_WEBHOOK_HOSTS = {
@@ -3733,7 +3751,7 @@ async function updateCommand() {
 import { readFile as readFile7, access } from "fs/promises";
 import { join as join7 } from "path";
 import { homedir as homedir5 } from "os";
-import { execSync } from "child_process";
+import { execSync as execSync2 } from "child_process";
 var OK = BW_OK;
 var WARN = BW_WARN;
 var FAIL = BW_ERR;
@@ -3747,7 +3765,7 @@ async function doctorCommand() {
     currentVersion = pkg.version;
   } catch {
     try {
-      const out = execSync("bestwork --version 2>/dev/null", { encoding: "utf-8" }).trim();
+      const out = execSync2("bestwork --version 2>/dev/null", { encoding: "utf-8" }).trim();
       currentVersion = out;
     } catch {
     }
@@ -3833,7 +3851,7 @@ async function doctorCommand() {
     issues++;
   }
   try {
-    const npmRoot = execSync("npm root -g", { encoding: "utf-8" }).trim();
+    const npmRoot = execSync2("npm root -g", { encoding: "utf-8" }).trim();
     const hooksDir = join7(npmRoot, "bestwork-agent", "hooks");
     await access(hooksDir);
     console.log(`  ${OK} Hook scripts: ${hooksDir}`);
@@ -3900,12 +3918,12 @@ async function welcomeCommand() {
 }
 
 // src/harness/session-recovery.ts
-import { readFile as readFile8, writeFile as writeFile4, mkdir as mkdir3, readdir as readdir2 } from "fs/promises";
+import { readFile as readFile8, writeFile as writeFile4, mkdir as mkdir4, readdir as readdir2 } from "fs/promises";
 import { join as join8 } from "path";
 import { homedir as homedir6 } from "os";
 var SESSIONS_DIR = join8(homedir6(), ".bestwork", "sessions");
 async function ensureSessionsDir() {
-  await mkdir3(SESSIONS_DIR, { recursive: true });
+  await mkdir4(SESSIONS_DIR, { recursive: true });
 }
 function sessionFile(id) {
   const safeId = id.replace(/[^a-zA-Z0-9_-]/g, "");
