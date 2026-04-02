@@ -100,6 +100,10 @@ async function readStdin(): Promise<{ prompt: string; session_id?: string } | nu
 }
 
 function output(context: string): void {
+  // Show [BW] log to user via stderr (visible in terminal)
+  const firstLine = context.split("\n")[0];
+  process.stderr.write(`\x1b[36m${firstLine}\x1b[0m\n`);
+
   const result = {
     hookSpecificOutput: {
       hookEventName: "UserPromptSubmit",
