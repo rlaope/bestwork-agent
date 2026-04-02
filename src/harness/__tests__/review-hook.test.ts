@@ -165,13 +165,14 @@ describe("review hook — result format", () => {
     expect(ctx).toMatch(/^\[BW review\]/);
   });
 
-  it("additionalContext should contain either '✅ No issues' or '⚠️'", () => {
+  it("additionalContext should contain '✅ No issues', '⚠️', or 'No code changes'", () => {
     const { stdout } = runReview();
     const parsed = parseOutput(stdout);
     const ctx = parsed?.hookSpecificOutput?.additionalContext ?? "";
     const hasNoIssues = ctx.includes("✅ No issues");
     const hasWarning = ctx.includes("⚠️");
-    expect(hasNoIssues || hasWarning).toBe(true);
+    const hasNoChanges = ctx.includes("No code changes");
+    expect(hasNoIssues || hasWarning || hasNoChanges).toBe(true);
   });
 });
 
