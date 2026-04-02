@@ -87,7 +87,7 @@ STEP 1: CLASSIFY THE TASK — identify what type of work this is:
 - PERFORMANCE (optimize, profile) → Hierarchy: Backend Team
 - DEVSECOPS (secrets, CVE, license) → Security Team + compliance review
 - RELEASE (Dockerfile, CI pipeline) → Infra Squad + DevOps focus
-- BESTWORK COMMAND (./ prefix or natural language nysm intent) → route to matching capability
+- BESTWORK COMMAND (./ prefix or natural language bestwork intent) → route to matching capability
 
 Announce: "[bestwork: {TYPE} → {TEAM} ({MODE})]" then execute.
 

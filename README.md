@@ -109,16 +109,42 @@ Everyone works in parallel. No single authority. Consensus-driven. Fast.
 
 ## Install
 
+### Option 1: Claude Code Plugin (recommended)
+
+```bash
+/plugin marketplace add https://github.com/rlaope/bestwork-agent
+/plugin install bestwork-agent
+```
+
+### Option 2: npm
+
 ```bash
 npm install -g bestwork-agent
 bestwork install
 ```
 
-Or inside Claude Code:
+### Option 3: Inside Claude Code
+
 ```
 ./bw-install
-./bw-install --discord <webhook_url>
+./bw-install --discord <webhook_url> --lang ko
 ./bw-install --strict
+```
+
+### Discord / Slack notifications
+
+```
+./discord <webhook_url> --lang ko     # Korean notifications
+./discord <webhook_url> --lang en     # English (default)
+./discord <webhook_url> --lang ja     # Japanese
+./slack <webhook_url> --lang ko       # Same for Slack
+```
+
+### Verify
+
+```bash
+bestwork doctor    # check installation health
+bestwork update    # check for updates
 ```
 
 ---
