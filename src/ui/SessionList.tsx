@@ -9,7 +9,7 @@ interface SessionListProps {
 }
 
 export function SessionList({ sessions, selectedIndex }: SessionListProps) {
-  const visibleCount = 12;
+  const visibleCount = 10;
   const start = Math.max(0, selectedIndex - Math.floor(visibleCount / 2));
   const visible = sessions.slice(start, start + visibleCount);
 
@@ -32,7 +32,7 @@ export function SessionList({ sessions, selectedIndex }: SessionListProps) {
           : "";
 
         return (
-          <Box key={session.id} flexDirection="column" marginBottom={0}>
+          <Box key={session.id} flexDirection="column">
             <Box>
               <Text color={isSelected ? "cyan" : "gray"}>
                 {isSelected ? "▸ " : "  "}
@@ -49,16 +49,14 @@ export function SessionList({ sessions, selectedIndex }: SessionListProps) {
                 <Text color="gray">  ○ done</Text>
               )}
             </Box>
-            {isSelected && (
-              <Box marginLeft={3} flexDirection="column">
-                {cwdShort && (
-                  <Text color="gray">  📁 {cwdShort}</Text>
-                )}
-                {promptText && (
-                  <Text color="gray">  💬 {promptText}</Text>
-                )}
-              </Box>
-            )}
+            <Box marginLeft={3}>
+              {cwdShort ? (
+                <Text color="gray">📁 {cwdShort}</Text>
+              ) : null}
+              {promptText ? (
+                <Text color="gray">  💬 {promptText}</Text>
+              ) : null}
+            </Box>
           </Box>
         );
       })}
