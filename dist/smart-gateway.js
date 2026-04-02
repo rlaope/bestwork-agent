@@ -1763,27 +1763,46 @@ Proceed directly. You are operating as a bestwork agent (bestwork:${agent}).`);
     const agent = intent.suggestedAgents[i] || intent.suggestedAgents[0] || "tech-fullstack";
     return `  ${i + 1}. ${t} \u2192 ${agent}`;
   }).join("\n");
-  const RECOMMEND_MAP = {
-    trio: "Trio",
-    squad: "Squad",
-    hierarchy: "Hierarchy",
-    pair: "Pair"
+  const isKo = /[가-힣]/.test(prompt);
+  const isJa = /[\u3040-\u309F\u30A0-\u30FF]/.test(prompt);
+  const DESC = isKo ? {
+    trio: "3\uAD00\uC810 \uAC80\uC99D\uB41C \uCF54\uB4DC. \uC694\uAD6C\uC0AC\uD56D \uCDA9\uC871 \uD655\uC778 + \uD488\uC9C8 \uB9AC\uD3EC\uD2B8 \uD3EC\uD568",
+    squad: "\uBA40\uD2F0 \uB3C4\uBA54\uC778 \uB3D9\uC2DC \uCEE4\uBC84. \uB113\uC740 \uBC94\uC704\uB97C \uBE60\uB974\uAC8C \uC644\uC131",
+    hierarchy: "\uC544\uD0A4\uD14D\uCC98 \uB808\uBCA8 \uAC80\uD1A0 \uC644\uB8CC\uB41C \uCF54\uB4DC. \uAE30\uC220 \uBD80\uCC44 \uCD5C\uC18C\uD654",
+    pair: "\uC0C1\uD638 \uAC80\uC99D\uB41C \uC9D1\uC911 \uCF54\uB4DC. \uBE60\uB978 \uB51C\uB9AC\uBC84\uB9AC + \uD06C\uB85C\uC2A4\uCCB4\uD06C",
+    solo: "\uC989\uC2DC \uC644\uC131. \uCD5C\uC18C \uC9C0\uC5F0, \uB2E8\uC77C \uC804\uBB38\uAC00 \uD488\uC9C8"
+  } : isJa ? {
+    trio: "3\u8996\u70B9\u3067\u691C\u8A3C\u6E08\u307F\u30B3\u30FC\u30C9\u3002\u8981\u4EF6\u78BA\u8A8D+\u54C1\u8CEA\u30EC\u30DD\u30FC\u30C8\u4ED8\u304D",
+    squad: "\u30DE\u30EB\u30C1\u30C9\u30E1\u30A4\u30F3\u540C\u6642\u30AB\u30D0\u30FC\u3002\u5E83\u7BC4\u56F2\u3092\u9AD8\u901F\u5B8C\u6210",
+    hierarchy: "\u30A2\u30FC\u30AD\u30C6\u30AF\u30C1\u30E3\u30EC\u30D9\u30EB\u691C\u8A3C\u6E08\u307F\u30B3\u30FC\u30C9\u3002\u6280\u8853\u7684\u8CA0\u50B5\u6700\u5C0F\u5316",
+    pair: "\u76F8\u4E92\u691C\u8A3C\u3055\u308C\u305F\u96C6\u4E2D\u30B3\u30FC\u30C9\u3002\u9AD8\u901F\u30C7\u30EA\u30D0\u30EA\u30FC+\u30AF\u30ED\u30B9\u30C1\u30A7\u30C3\u30AF",
+    solo: "\u5373\u6642\u5B8C\u6210\u3002\u6700\u5C0F\u9045\u5EF6\u3001\u5358\u4E00\u5C02\u9580\u5BB6\u54C1\u8CEA"
+  } : {
+    trio: "Code verified from 3 perspectives. Requirements confirmed + quality report included",
+    squad: "Multi-domain covered simultaneously. Wide scope delivered fast",
+    hierarchy: "Architecture-level reviewed code. Minimal tech debt",
+    pair: "Cross-verified focused code. Fast delivery + mutual check",
+    solo: "Instant completion. Minimal latency, single expert quality"
   };
-  const recLabel = RECOMMEND_MAP[intent.mode] || "Trio";
+  const qLabel = isKo ? "\uC5B4\uB5A4 \uD300 \uAD6C\uC870\uB85C \uC9C4\uD589\uD560\uAE4C\uC694?" : isJa ? "\u3069\u306E\u30C1\u30FC\u30E0\u69CB\u6210\u3067\u9032\u3081\u307E\u3059\u304B\uFF1F" : "Which team structure?";
+  const modes = ["trio", "squad", "hierarchy", "pair"];
+  const rec = intent.mode;
+  const sorted = [rec, ...modes.filter((m) => m !== rec)];
+  const optionLines = sorted.map((m, i) => {
+    const label = i === 0 ? `${m.charAt(0).toUpperCase() + m.slice(1)} (Recommended)` : m.charAt(0).toUpperCase() + m.slice(1);
+    return `  ${i + 1}. label: "${label}", description: "${DESC[m]}"`;
+  }).join("\n");
   output(
     `[BW] ${intent.tasks.length} sub-tasks detected (bestwork:${agentList})
 
 Tasks:
 ${tasks}
 
-You MUST use AskUserQuestion tool to let the user pick the team structure. Use these EXACT options:
-- question: "Which team structure for this task?"
+You MUST use AskUserQuestion tool to let the user pick the team structure:
+- question: "${qLabel}"
 - header: "BW Team"
-- options (4 max):
-  1. label: "${recLabel} (Recommended)", description: "${intent.mode === "trio" ? "Tech + PM + Critic quality gates. 3 rounds max." : intent.mode === "squad" ? "All parallel, flat, majority vote." : intent.mode === "hierarchy" ? "Junior\u2192Senior\u2192Lead\u2192CTO review chain." : "2 specialists, cross-review."}"
-  2. label: "${recLabel === "Trio" ? "Squad" : "Trio"}", description: "${recLabel === "Trio" ? "All parallel, flat, majority vote. Fast." : "Tech + PM + Critic quality gates."}"
-  3. label: "${recLabel === "Hierarchy" ? "Pair" : "Hierarchy"}", description: "${recLabel === "Hierarchy" ? "2 specialists, cross-review. Focused." : "Junior\u2192Senior\u2192Lead\u2192CTO chain. Architecture-level."}"
-  4. label: "Solo", description: "Single bestwork specialist, no overhead."
+- options:
+${optionLines}
 
 After user picks, execute that mode with the tasks listed above. Print [BW] {mode} \u2014 bestwork:{agents} as first line.`
   );

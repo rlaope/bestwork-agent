@@ -253,14 +253,42 @@ async function main() {
     return `  ${i + 1}. ${t} → ${agent}`;
   }).join("\n");
 
-  // Map recommended mode to option label for marking
-  const RECOMMEND_MAP: Record<string, string> = {
-    trio: "Trio",
-    squad: "Squad",
-    hierarchy: "Hierarchy",
-    pair: "Pair",
+  // Detect language from prompt for localized descriptions
+  const isKo = /[가-힣]/.test(prompt);
+  const isJa = /[\u3040-\u309F\u30A0-\u30FF]/.test(prompt);
+
+  // Outcome-based descriptions (what the user actually gets)
+  // Result-focused descriptions (what's different about the output, not the process)
+  const DESC = isKo ? {
+    trio: "3관점 검증된 코드. 요구사항 충족 확인 + 품질 리포트 포함",
+    squad: "멀티 도메인 동시 커버. 넓은 범위를 빠르게 완성",
+    hierarchy: "아키텍처 레벨 검토 완료된 코드. 기술 부채 최소화",
+    pair: "상호 검증된 집중 코드. 빠른 딜리버리 + 크로스체크",
+    solo: "즉시 완성. 최소 지연, 단일 전문가 품질",
+  } : isJa ? {
+    trio: "3視点で検証済みコード。要件確認+品質レポート付き",
+    squad: "マルチドメイン同時カバー。広範囲を高速完成",
+    hierarchy: "アーキテクチャレベル検証済みコード。技術的負債最小化",
+    pair: "相互検証された集中コード。高速デリバリー+クロスチェック",
+    solo: "即時完成。最小遅延、単一専門家品質",
+  } : {
+    trio: "Code verified from 3 perspectives. Requirements confirmed + quality report included",
+    squad: "Multi-domain covered simultaneously. Wide scope delivered fast",
+    hierarchy: "Architecture-level reviewed code. Minimal tech debt",
+    pair: "Cross-verified focused code. Fast delivery + mutual check",
+    solo: "Instant completion. Minimal latency, single expert quality",
   };
-  const recLabel = RECOMMEND_MAP[intent.mode] || "Trio";
+
+  const qLabel = isKo ? "어떤 팀 구조로 진행할까요?" : isJa ? "どのチーム構成で進めますか？" : "Which team structure?";
+
+  // Build options: recommended first, then alternatives
+  const modes = ["trio", "squad", "hierarchy", "pair"] as const;
+  const rec = intent.mode;
+  const sorted = [rec, ...modes.filter(m => m !== rec)];
+  const optionLines = sorted.map((m, i) => {
+    const label = i === 0 ? `${m.charAt(0).toUpperCase() + m.slice(1)} (Recommended)` : m.charAt(0).toUpperCase() + m.slice(1);
+    return `  ${i + 1}. label: "${label}", description: "${DESC[m as keyof typeof DESC]}"`;
+  }).join("\n");
 
   output(
 `[BW] ${intent.tasks.length} sub-tasks detected (bestwork:${agentList})
@@ -268,14 +296,11 @@ async function main() {
 Tasks:
 ${tasks}
 
-You MUST use AskUserQuestion tool to let the user pick the team structure. Use these EXACT options:
-- question: "Which team structure for this task?"
+You MUST use AskUserQuestion tool to let the user pick the team structure:
+- question: "${qLabel}"
 - header: "BW Team"
-- options (4 max):
-  1. label: "${recLabel} (Recommended)", description: "${intent.mode === "trio" ? "Tech + PM + Critic quality gates. 3 rounds max." : intent.mode === "squad" ? "All parallel, flat, majority vote." : intent.mode === "hierarchy" ? "Junior→Senior→Lead→CTO review chain." : "2 specialists, cross-review."}"
-  2. label: "${recLabel === "Trio" ? "Squad" : "Trio"}", description: "${recLabel === "Trio" ? "All parallel, flat, majority vote. Fast." : "Tech + PM + Critic quality gates."}"
-  3. label: "${recLabel === "Hierarchy" ? "Pair" : "Hierarchy"}", description: "${recLabel === "Hierarchy" ? "2 specialists, cross-review. Focused." : "Junior→Senior→Lead→CTO chain. Architecture-level."}"
-  4. label: "Solo", description: "Single bestwork specialist, no overhead."
+- options:
+${optionLines}
 
 After user picks, execute that mode with the tasks listed above. Print [BW] {mode} — bestwork:{agents} as first line.`
   );
