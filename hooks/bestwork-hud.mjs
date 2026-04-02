@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 /**
- * bestwork HUD — Node.js statusline
- * Reads Anthropic usage API + session stats + config
+ * bestwork HUD — statusline for Claude Code
+ *
+ * Reads stdin JSON from Claude Code (context info)
+ * Fetches Anthropic usage API (5h + weekly)
+ * Shows: version | 5h usage(reset) | weekly | context% | session | efficiency
  */
 
 import { readFileSync, existsSync, readdirSync } from "node:fs";
@@ -20,65 +23,111 @@ const R = "\x1b[0m", B = "\x1b[1m", D = "\x1b[2m";
 const CC = "\x1b[36m", CG = "\x1b[32m", CY = "\x1b[33m", CR = "\x1b[31m";
 const CM = "\x1b[35m", CW = "\x1b[37m";
 
-// === Usage API (same approach as OMC) ===
+function pctColor(pct) {
+  if (pct > 80) return CR;
+  if (pct > 50) return CY;
+  return CG;
+}
+
+function formatDuration(ms) {
+  const s = Math.floor(ms / 1000);
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m`;
+  return `${Math.floor(m / 60)}h${m % 60}m`;
+}
+
+// === Read stdin (Claude Code passes context JSON) ===
+async function readStdin() {
+  return new Promise((resolve) => {
+    let data = "";
+    process.stdin.setEncoding("utf-8");
+    process.stdin.on("data", (c) => data += c);
+    process.stdin.on("end", () => {
+      try { resolve(JSON.parse(data)); } catch { resolve(null); }
+    });
+    // Timeout — don't hang if no stdin
+    setTimeout(() => resolve(null), 500);
+  });
+}
+
+// === Anthropic Usage API ===
 async function getUsage() {
   try {
     let token = null;
-
-    // Try macOS Keychain
+    // macOS Keychain
     if (process.platform === "darwin") {
       try {
         const raw = execFileSync("security", [
           "find-generic-password", "-s", "Claude Code-credentials", "-w"
         ], { encoding: "utf-8", timeout: 3000 }).trim();
         const creds = JSON.parse(raw);
-        // Find OAuth token
         for (const val of Object.values(creds)) {
-          if (typeof val === "object" && val.accessToken) {
-            token = val.accessToken;
-            break;
-          }
+          if (typeof val === "object" && val.accessToken) { token = val.accessToken; break; }
         }
-      } catch { /* not on macOS or no keychain entry */ }
+      } catch {}
     }
-
-    // Fallback: .credentials.json
+    // Fallback: credentials file
     if (!token) {
       const credPath = join(claudeDir, ".credentials.json");
       if (existsSync(credPath)) {
         const creds = JSON.parse(readFileSync(credPath, "utf-8"));
         for (const val of Object.values(creds)) {
-          if (typeof val === "object" && val.accessToken) {
-            token = val.accessToken;
-            break;
-          }
+          if (typeof val === "object" && val.accessToken) { token = val.accessToken; break; }
         }
       }
     }
-
     if (!token) return null;
 
-    // Fetch usage
+    // Check cache first (avoid rate limits)
+    const cachePath = join(bwDir, ".usage-cache.json");
+    if (existsSync(cachePath)) {
+      try {
+        const cache = JSON.parse(readFileSync(cachePath, "utf-8"));
+        if (Date.now() - cache.ts < 60000) return cache.data; // 1min cache
+      } catch {}
+    }
+
     const data = await new Promise((resolve, reject) => {
       const req = https.get("https://api.anthropic.com/api/oauth/usage", {
         headers: { Authorization: `Bearer ${token}` },
-        timeout: 5000,
+        timeout: 3000,
       }, (res) => {
         let body = "";
         res.on("data", (c) => body += c);
         res.on("end", () => {
-          try { resolve(JSON.parse(body)); } catch { reject(); }
+          try {
+            const j = JSON.parse(body);
+            if (j.error) { reject(j.error); return; }
+            resolve(j);
+          } catch { reject(); }
         });
       });
       req.on("error", reject);
       req.on("timeout", () => { req.destroy(); reject(); });
     });
 
-    return {
-      fiveHour: data.five_hour?.utilization ?? null,
-      weekly: data.seven_day?.utilization ?? null,
+    const result = {
+      fiveHour: Math.round((data.five_hour?.utilization ?? 0) * 100),
+      fiveHourReset: data.five_hour?.resets_at ? new Date(data.five_hour.resets_at) : null,
+      weekly: Math.round((data.seven_day?.utilization ?? 0) * 100),
+      weeklyReset: data.seven_day?.resets_at ? new Date(data.seven_day.resets_at) : null,
     };
+
+    // Cache
+    try {
+      const { mkdirSync, writeFileSync } = await import("node:fs");
+      mkdirSync(bwDir, { recursive: true });
+      writeFileSync(cachePath, JSON.stringify({ ts: Date.now(), data: result }));
+    } catch {}
+
+    return result;
   } catch {
+    // Try read stale cache
+    const cachePath = join(bwDir, ".usage-cache.json");
+    if (existsSync(cachePath)) {
+      try { return JSON.parse(readFileSync(cachePath, "utf-8")).data; } catch {}
+    }
     return null;
   }
 }
@@ -88,82 +137,91 @@ function getSessionInfo() {
   const sessDir = join(claudeDir, "sessions");
   try {
     const files = readdirSync(sessDir).filter(f => f.endsWith(".json")).sort().reverse();
-    if (files.length === 0) return null;
+    if (!files.length) return null;
     const latest = JSON.parse(readFileSync(join(sessDir, files[0]), "utf-8"));
     let started = latest.startedAt;
     if (started > 1e12) started = Math.floor(started / 1000);
     const elapsed = Math.floor(Date.now() / 1000) - started;
+    const timeStr = elapsed < 60 ? `${elapsed}s` : elapsed < 3600 ? `${Math.floor(elapsed / 60)}m` : `${Math.floor(elapsed / 3600)}h${Math.floor((elapsed % 3600) / 60)}m`;
 
-    let timeStr;
-    if (elapsed < 60) timeStr = `${elapsed}s`;
-    else if (elapsed < 3600) timeStr = `${Math.floor(elapsed / 60)}m`;
-    else timeStr = `${Math.floor(elapsed / 3600)}h${Math.floor((elapsed % 3600) / 60)}m`;
-
-    // Calls from session stats
-    let calls = 0;
+    let calls = 0, prompts = 0;
     const statsPath = join(claudeDir, ".session-stats.json");
     if (existsSync(statsPath)) {
       const stats = JSON.parse(readFileSync(statsPath, "utf-8"));
       calls = stats.sessions?.[latest.sessionId]?.total_calls ?? 0;
     }
+    // Count prompts from history
+    const histPath = join(claudeDir, "history.jsonl");
+    if (existsSync(histPath)) {
+      const lines = readFileSync(histPath, "utf-8").split("\n").filter(Boolean);
+      prompts = lines.filter(l => l.includes(latest.sessionId)).length;
+    }
 
-    return { timeStr, calls, sessionId: latest.sessionId };
+    return { timeStr, calls, prompts };
   } catch {
     return null;
   }
 }
 
-// === Config ===
-function getConfig() {
-  const configPath = join(bwDir, "config.json");
-  try {
-    return JSON.parse(readFileSync(configPath, "utf-8"));
-  } catch {
-    return {};
-  }
+// === Context % from stdin ===
+function getContextPercent(stdinData) {
+  if (!stdinData) return null;
+  // Claude Code passes context_window_tokens and context_used_tokens
+  const used = stdinData.context_used_tokens ?? stdinData.tokenCount;
+  const total = stdinData.context_window_tokens ?? stdinData.contextWindow;
+  if (used && total) return Math.round((used / total) * 100);
+  return null;
 }
 
 // === Render ===
-async function render() {
-  const [usage, session] = await Promise.all([
+async function main() {
+  const [stdinData, usage, session] = await Promise.all([
+    readStdin(),
     getUsage(),
     Promise.resolve(getSessionInfo()),
   ]);
-  const config = getConfig();
 
   let out = `${B}${CC}BW${R}${D}#${VERSION}${R}`;
 
-  // 5h usage
-  if (usage?.fiveHour != null) {
-    const pct = Math.round(usage.fiveHour * 100);
-    const c = pct > 80 ? CR : pct > 50 ? CY : CG;
-    out += `  ${D}5h${R} ${c}${pct}%${R}`;
+  // 5h usage + reset time
+  if (usage) {
+    const c5 = pctColor(usage.fiveHour);
+    out += ` ${D}|${R} ${c5}${usage.fiveHour}%${R}${D}(5h)${R}`;
+    if (usage.fiveHourReset) {
+      const ms = usage.fiveHourReset.getTime() - Date.now();
+      if (ms > 0) out += `${D}↻${formatDuration(ms)}${R}`;
+    }
+
+    const cw = pctColor(usage.weekly);
+    out += ` ${cw}${usage.weekly}%${R}${D}(wk)${R}`;
   }
 
-  // Weekly usage
-  if (usage?.weekly != null) {
-    const pct = Math.round(usage.weekly * 100);
-    const c = pct > 80 ? CR : pct > 50 ? CY : CG;
-    out += `  ${D}wk${R} ${c}${pct}%${R}`;
+  // Context %
+  const ctx = getContextPercent(stdinData);
+  if (ctx != null) {
+    const cc = pctColor(ctx);
+    out += ` ${D}|${R} ${D}ctx${R} ${cc}${ctx}%${R}`;
   }
 
   // Session
   if (session) {
-    out += `  ${D}ses${R} ${CW}${session.timeStr}${R}`;
-    if (session.calls > 0) {
-      out += `  ${D}calls${R} ${CM}${session.calls}${R}`;
+    out += ` ${D}|${R} ${D}ses${R} ${CW}${session.timeStr}${R}`;
+
+    // BW unique: efficiency score (calls per prompt — lower is better)
+    if (session.prompts > 0) {
+      const eff = Math.round(session.calls / session.prompts);
+      const ec = eff <= 10 ? CG : eff <= 20 ? CY : CR;
+      out += ` ${ec}⚡${eff}${R}${D}c/p${R}`;
     }
   }
 
-  // Guards
+  // Guards + notifications
   if (existsSync(join(bwDir, "scope.lock"))) out += ` 🔒`;
   if (existsSync(join(bwDir, "strict.lock"))) out += ` 🛡`;
-
-  // Notifications
-  if (config.notify?.discord?.webhookUrl) out += ` 📨`;
-  if (config.notify?.slack?.webhookUrl) out += ` 📨`;
+  const cfg = existsSync(join(bwDir, "config.json")) ? JSON.parse(readFileSync(join(bwDir, "config.json"), "utf-8")) : {};
+  if (cfg.notify?.discord?.webhookUrl || cfg.notify?.slack?.webhookUrl) out += ` 📨`;
 
   process.stdout.write(out + "\n");
 }
 
-render().catch(() => process.stdout.write(`${B}${CC}BW${R}${D}#${VERSION}${R}\n`));
+main().catch(() => process.stdout.write(`${B}${CC}BW${R}${D}#${VERSION}${R}\n`));
