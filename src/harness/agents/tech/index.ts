@@ -17,6 +17,7 @@ import { realtimeAgent } from "./realtime.js";
 import { authAgent } from "./auth.js";
 import { migrationAgent } from "./migration.js";
 import { configAgent } from "./config.js";
+import { writerAgent } from "./writer.js";
 
 export const TECH_AGENTS: AgentProfile[] = [
   backendAgent,
@@ -37,6 +38,7 @@ export const TECH_AGENTS: AgentProfile[] = [
   authAgent,
   migrationAgent,
   configAgent,
+  writerAgent,
 ];
 
 export {
@@ -58,4 +60,5 @@ export {
   authAgent,
   migrationAgent,
   configAgent,
+  writerAgent,
 };

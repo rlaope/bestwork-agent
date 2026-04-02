@@ -9,6 +9,7 @@ import { hallucinationCriticAgent } from "./hallucination.js";
 import { dxCriticAgent } from "./dx.js";
 import { typeCriticAgent } from "./type.js";
 import { costCriticAgent } from "./cost.js";
+import { devsecopsAgent } from "./devsecops.js";
 
 export const CRITIC_AGENTS: AgentProfile[] = [
   perfCriticAgent,
@@ -21,6 +22,7 @@ export const CRITIC_AGENTS: AgentProfile[] = [
   dxCriticAgent,
   typeCriticAgent,
   costCriticAgent,
+  devsecopsAgent,
 ];
 
 export {
@@ -34,4 +36,5 @@ export {
   dxCriticAgent,
   typeCriticAgent,
   costCriticAgent,
+  devsecopsAgent,
 };
