@@ -276,6 +276,7 @@ const DOMAIN_KEYWORDS: Record<string, string[]> = {
   security: ["auth", "oauth", "jwt", "token", "permission", "role", "acl", "xss", "csrf", "encryption", "hash", "ssl", "tls", "vulnerability", "인증", "보안", "권한", "암호화", "취약점"],
   data:     ["data", "analytics", "etl", "pipeline", "warehouse", "schema", "migration", "seed", "report", "dashboard", "metrics", "데이터", "분석", "마이그레이션", "스키마"],
   ml:       ["ml", "ai", "model", "training", "inference", "embedding", "vector", "llm", "neural", "dataset", "prediction", "모델", "학습", "추론"],
+  testing:  ["test", "testing", "spec", "e2e", "unit test", "integration test", "coverage", "jest", "vitest", "mocha", "pytest", "tdd", "bug", "debug", "테스트", "버그", "디버그", "テスト", "バグ"],
 };
 
 const DOMAIN_TO_AGENT: Record<string, string> = {
@@ -285,6 +286,7 @@ const DOMAIN_TO_AGENT: Record<string, string> = {
   security: "sr-security",
   data:     "sr-backend",
   ml:       "sr-backend",
+  testing:  "qa-lead",
 };
 
 function splitTasks(task: string): string[] {
