@@ -8,11 +8,11 @@
     {
       "name": "bestwork-agent",
       "source": {
-        "source": "github",
-        "repo": "rlaope/bestwork-agent"
+        "source": "git",
+        "url": "https://github.com/rlaope/bestwork-agent.git"
       },
       "description": "Harness engineering for Claude Code. Work like a corporation team, not just a club.",
-      "version": "0.1.0"
+      "version": "0.8.0"
     }
   ]
 }
