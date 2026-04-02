@@ -19,7 +19,7 @@ import { agentsCommand } from "./commands/harness/agents.js";
 const program = new Command();
 
 program
-  .name("nysm")
+  .name("bestwork")
   .description("now you see me — Claude Code Agent Observability & Session Analytics")
   .version("0.1.0");
 

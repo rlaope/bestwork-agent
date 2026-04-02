@@ -2,7 +2,7 @@ import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { homedir } from "node:os";
 
-const CONFIG_DIR = join(homedir(), ".nysm");
+const CONFIG_DIR = join(homedir(), ".bestwork");
 const CONFIG_FILE = join(CONFIG_DIR, "config.json");
 
 export interface NotifyConfig {
@@ -11,11 +11,11 @@ export interface NotifyConfig {
   telegram?: { botToken: string; chatId: string };
 }
 
-export interface NysmConfig {
+export interface BestworkConfig {
   notify: NotifyConfig;
 }
 
-export async function loadConfig(): Promise<NysmConfig> {
+export async function loadConfig(): Promise<BestworkConfig> {
   try {
     const raw = await readFile(CONFIG_FILE, "utf-8");
     return JSON.parse(raw);
@@ -24,7 +24,7 @@ export async function loadConfig(): Promise<NysmConfig> {
   }
 }
 
-export async function saveConfig(config: NysmConfig): Promise<void> {
+export async function saveConfig(config: BestworkConfig): Promise<void> {
   await mkdir(CONFIG_DIR, { recursive: true });
   await writeFile(CONFIG_FILE, JSON.stringify(config, null, 2) + "\n");
 }
@@ -81,10 +81,10 @@ async function sendDiscord(
     body: JSON.stringify({
       embeds: [
         {
-          title: `🔍 nysm — ${title}`,
+          title: `🔍 bestwork-agent — ${title}`,
           description: body,
           color: 0x00d4aa,
-          footer: { text: "nysm — now you see me" },
+          footer: { text: "bestwork-agent — now you see me" },
           timestamp: new Date().toISOString(),
         },
       ],
@@ -104,7 +104,7 @@ async function sendSlack(
       blocks: [
         {
           type: "header",
-          text: { type: "plain_text", text: `🔍 nysm — ${title}` },
+          text: { type: "plain_text", text: `🔍 bestwork-agent — ${title}` },
         },
         {
           type: "section",
@@ -113,7 +113,7 @@ async function sendSlack(
         {
           type: "context",
           elements: [
-            { type: "mrkdwn", text: "nysm — now you see me" },
+            { type: "mrkdwn", text: "bestwork-agent — now you see me" },
           ],
         },
       ],
@@ -127,7 +127,7 @@ async function sendTelegram(
   title: string,
   body: string
 ): Promise<void> {
-  const text = `🔍 *nysm — ${title}*\n\n${body}`;
+  const text = `🔍 *bestwork-agent — ${title}*\n\n${body}`;
   await fetch(
     `https://api.telegram.org/bot${botToken}/sendMessage`,
     {

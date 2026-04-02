@@ -1,18 +1,18 @@
 #!/bin/bash
-# nysm review agent — platform/context hallucination detector
+# bestwork review agent — platform/context hallucination detector
 # Checks if code matches actual OS, runtime, and project context
 
 INPUT=$(cat)
 PROMPT=$(echo "$INPUT" | jq -r '.prompt // .display // ""' 2>/dev/null)
 
 # Only trigger on ./review or when sourced by smart-gateway
-if ! echo "$PROMPT" | grep -qE '^\./review' && [ "$NYSM_REVIEW_TRIGGER" != "1" ]; then
+if ! echo "$PROMPT" | grep -qE '^\./review' && [ "$BESTWORK_REVIEW_TRIGGER" != "1" ]; then
   echo '{}'
   exit 0
 fi
 
-CACHE="$HOME/.nysm/env-cache.json"
-mkdir -p "$HOME/.nysm"
+CACHE="$HOME/.bestwork/env-cache.json"
+mkdir -p "$HOME/.bestwork"
 
 # Build or refresh env cache (1-hour TTL)
 REBUILD=0
@@ -54,7 +54,7 @@ HAS_DENO=$(jq -r '.deno' "$CACHE")
 DIFF=$(git diff HEAD 2>/dev/null)
 [ -z "$DIFF" ] && DIFF=$(git diff 2>/dev/null)
 [ -z "$DIFF" ] && {
-  echo "{\"hookSpecificOutput\":{\"hookEventName\":\"UserPromptSubmit\",\"additionalContext\":\"[nysm review] No code changes to review.\"}}"
+  echo "{\"hookSpecificOutput\":{\"hookEventName\":\"UserPromptSubmit\",\"additionalContext\":\"[bestwork review] No code changes to review.\"}}"
   exit 0
 }
 
@@ -94,9 +94,9 @@ DEPRECATED=$(echo "$DIFF" | grep -nE '(require\(.*\)|new Buffer\(|fs\.exists\()'
 [ -n "$DEPRECATED" ] && WARNINGS="${WARNINGS}\n⚠️ Deprecated Node.js patterns:\n${DEPRECATED}\n"
 
 if [ -z "$WARNINGS" ]; then
-  RESULT="[nysm review] ✅ No platform mismatches detected.\\nEnvironment: ${OS} ${ARCH}, Node ${NODE_VER}"
+  RESULT="[bestwork review] ✅ No platform mismatches detected.\\nEnvironment: ${OS} ${ARCH}, Node ${NODE_VER}"
 else
-  RESULT="[nysm review] Platform review for ${OS} ${ARCH}, Node ${NODE_VER}:\\n${WARNINGS}\\nFix these mismatches before proceeding."
+  RESULT="[bestwork review] Platform review for ${OS} ${ARCH}, Node ${NODE_VER}:\\n${WARNINGS}\\nFix these mismatches before proceeding."
 fi
 
 echo "{\"hookSpecificOutput\":{\"hookEventName\":\"UserPromptSubmit\",\"additionalContext\":\"${RESULT}\"}}"

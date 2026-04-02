@@ -20,7 +20,7 @@ export async function replayCommand(id: string) {
     if (events.length === 0) {
       console.log(
         "\n  No replay data found for this session." +
-          "\n  Run `nysm install` to enable hooks for future sessions.\n"
+          "\n  Run `bestwork install` to enable hooks for future sessions.\n"
       );
       return;
     }

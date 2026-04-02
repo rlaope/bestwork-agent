@@ -27,7 +27,7 @@ export function getAgentsByRole(
 export function formatAgentCatalog(): string {
   const lines: string[] = [];
 
-  lines.push("\n  nysm Agent Catalog\n");
+  lines.push("\n  bestwork-agent Agent Catalog\n");
 
   lines.push("  TECH AGENTS (implementation):");
   for (const a of TECH_AGENTS) {

@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { homedir } from "node:os";
 import { ensureDataDir } from "../../../data/store.js";
 
-const NPM_ROOT = `$(npm root -g)/nysm/hooks`;
+const NPM_ROOT = `$(npm root -g)/bestwork-agent/hooks`;
 
 interface HookEntry {
   event: string;
@@ -20,26 +20,26 @@ const HOOKS_REGISTRY: HookEntry[] = [
   // === command hooks (lightweight, fast, no LLM needed) ===
 
   // PostToolUse — event capture
-  { event: "PostToolUse", id: "nysm-hook", type: "command", command: `NYSM_HOOK_EVENT=post bash "${NPM_ROOT}/nysm-hook.sh"`, timeout: 5 },
+  { event: "PostToolUse", id: "bestwork-hook", type: "command", command: `BESTWORK_HOOK_EVENT=post bash "${NPM_ROOT}/bestwork-hook.sh"`, timeout: 5 },
   // PreToolUse — enforcement
-  { event: "PreToolUse", id: "nysm-hook-pre", type: "command", command: `NYSM_HOOK_EVENT=pre bash "${NPM_ROOT}/nysm-hook.sh"`, timeout: 5 },
-  { event: "PreToolUse", id: "nysm-scope-enforce", type: "command", command: `bash "${NPM_ROOT}/nysm-scope-enforce.sh"`, timeout: 3, matcher: "Write|Edit" },
-  { event: "PreToolUse", id: "nysm-strict-enforce", type: "command", command: `bash "${NPM_ROOT}/nysm-strict-enforce.sh"`, timeout: 3 },
+  { event: "PreToolUse", id: "bestwork-hook-pre", type: "command", command: `BESTWORK_HOOK_EVENT=pre bash "${NPM_ROOT}/bestwork-hook.sh"`, timeout: 5 },
+  { event: "PreToolUse", id: "bestwork-scope-enforce", type: "command", command: `bash "${NPM_ROOT}/bestwork-scope-enforce.sh"`, timeout: 3, matcher: "Write|Edit" },
+  { event: "PreToolUse", id: "bestwork-strict-enforce", type: "command", command: `bash "${NPM_ROOT}/bestwork-strict-enforce.sh"`, timeout: 3 },
   // UserPromptSubmit — slash routing (fast, just pattern match + config write)
-  { event: "UserPromptSubmit", id: "nysm-slash", type: "command", command: `bash "${NPM_ROOT}/nysm-slash.sh"`, timeout: 10 },
+  { event: "UserPromptSubmit", id: "bestwork-slash", type: "command", command: `bash "${NPM_ROOT}/bestwork-slash.sh"`, timeout: 10 },
   // Stop — notifications (needs curl, not LLM)
-  { event: "Stop", id: "nysm-prompt-done", type: "command", command: `bash "${NPM_ROOT}/nysm-prompt-done.sh"`, timeout: 20 },
+  { event: "Stop", id: "bestwork-prompt-done", type: "command", command: `bash "${NPM_ROOT}/bestwork-prompt-done.sh"`, timeout: 20 },
 
   // === agent hooks (full LLM agent with tool access) ===
 
   // PostToolUse — auto validation with understanding
   {
     event: "PostToolUse",
-    id: "nysm-validate-agent",
+    id: "bestwork-validate-agent",
     type: "agent",
     matcher: "Write|Edit",
     timeout: 30,
-    prompt: `You are nysm's validation agent. A file was just modified via $ARGUMENTS.
+    prompt: `You are bestwork's validation agent. A file was just modified via $ARGUMENTS.
 Check for:
 1. TypeScript errors: run \`npx tsc --noEmit\` and report any errors in the changed file
 2. If the file imports modules, verify the imports actually exist (grep for them)
@@ -49,28 +49,28 @@ Do NOT fix anything. Only report issues concisely (under 3 lines). If no issues,
   // PreToolUse — grounding check
   {
     event: "PreToolUse",
-    id: "nysm-ground-agent",
+    id: "bestwork-ground-agent",
     type: "agent",
     matcher: "Write|Edit",
     timeout: 15,
-    prompt: `You are nysm's grounding agent. The AI is about to modify a file via $ARGUMENTS.
+    prompt: `You are bestwork's grounding agent. The AI is about to modify a file via $ARGUMENTS.
 Check: has this file been Read in the current session? Look at the conversation history.
-If NOT read yet, output a warning: "nysm grounding: Read this file before editing to avoid hallucinated content."
+If NOT read yet, output a warning: "bestwork grounding: Read this file before editing to avoid hallucinated content."
 If already read, say nothing.`,
   },
 
   // UserPromptSubmit — smart gateway (the brain)
   {
     event: "UserPromptSubmit",
-    id: "nysm-smart-agent",
+    id: "bestwork-smart-agent",
     type: "agent",
     timeout: 60,
     model: "claude-haiku-4-5-20251001",
-    prompt: `You are nysm's smart gateway. The user typed: $ARGUMENTS
+    prompt: `You are bestwork's smart gateway. The user typed: $ARGUMENTS
 
 You understand intent — not keywords. Decide what the user wants and execute it directly.
 
-If the prompt starts with ./ it's a nysm command. Otherwise, understand the intent from any language.
+If the prompt starts with ./ it's a bestwork command. Otherwise, understand the intent from any language.
 
 CAPABILITIES YOU CAN EXECUTE:
 
@@ -113,10 +113,10 @@ CAPABILITIES YOU CAN EXECUTE:
    ALWAYS include critic-hallucination as secondary critic for every task.
 
 3. SCOPE — restrict file modifications
-   Write path to ~/.nysm/scope.lock (./scope) or delete it (./unlock).
+   Write path to ~/.bestwork/scope.lock (./scope) or delete it (./unlock).
 
 4. STRICT — enable/disable guardrails
-   Write "true" to ~/.nysm/strict.lock (./strict) or delete it (./relax).
+   Write "true" to ~/.bestwork/strict.lock (./strict) or delete it (./relax).
 
 5. TDD — test-driven development enforcement
    Instruct: write test first, confirm it fails, then implement to pass.
@@ -128,28 +128,28 @@ CAPABILITIES YOU CAN EXECUTE:
    Analyze recent errors, suggest a completely different approach.
 
 8. AUTOPSY — session post-mortem
-   Run \`nysm session <id>\` and \`nysm outcome <id>\`, analyze what went wrong.
+   Run \`bestwork session <id>\` and \`bestwork outcome <id>\`, analyze what went wrong.
 
 9. LEARN — extract prompting patterns
-   Run \`nysm effectiveness\` and \`nysm sessions\`, derive concrete rules.
+   Run \`bestwork effectiveness\` and \`bestwork sessions\`, derive concrete rules.
 
 10. PREDICT — estimate task complexity
-    Based on \`nysm sessions\` history, estimate calls needed.
+    Based on \`bestwork sessions\` history, estimate calls needed.
 
 11. GUARD — session health check
-    Run \`nysm outcome\` on current session, assess trajectory.
+    Run \`bestwork outcome\` on current session, assess trajectory.
 
 12. COMPARE — compare two sessions
-    Run \`nysm session\` on both IDs, analyze differences.
+    Run \`bestwork session\` on both IDs, analyze differences.
 
 13. OBSERVABILITY — loops, heatmap, summary, weekly
-    Run the corresponding \`nysm\` CLI command and report output.
+    Run the corresponding \`bestwork\` CLI command and report output.
 
 14. HELP — list available commands.
 
 RULES:
 - Understand intent from ANY language. No keyword matching.
-- If the prompt is a normal coding request (not nysm-related), do nothing.
+- If the prompt is a normal coding request (not bestwork-related), do nothing.
 - For trio, ACTUALLY spawn Agent tools — do not just describe what to do.
 - Be concise. Execute, don't explain.`,
   },
@@ -157,10 +157,10 @@ RULES:
   // Stop — platform review on completion
   {
     event: "Stop",
-    id: "nysm-review-on-stop",
+    id: "bestwork-review-on-stop",
     type: "agent",
     timeout: 30,
-    prompt: `You are nysm's platform review agent. A coding session just completed.
+    prompt: `You are bestwork's platform review agent. A coding session just completed.
 Run \`git diff --stat\` to see what changed. If there are code changes:
 1. Run \`uname -s\` to get the OS
 2. Scan the diff (\`git diff\`) for platform-specific patterns that don't match this OS:
@@ -174,9 +174,9 @@ If no code changes or no mismatches, say nothing.`,
 ];
 
 const DEPRECATED_IDS = [
-  "nysm-gateway", "nysm-agents", "nysm-harness",
-  "nysm-smart-gateway", "nysm-validate", "nysm-ground",
-  "nysm-session-end",
+  "bestwork-gateway", "bestwork-agents", "bestwork-harness",
+  "bestwork-smart-gateway", "bestwork-validate", "bestwork-ground",
+  "bestwork-session-end",
 ];
 
 function hasHookById(hookArray: Array<Record<string, unknown>>, id: string): boolean {
@@ -185,7 +185,7 @@ function hasHookById(hookArray: Array<Record<string, unknown>>, id: string): boo
     return h.hooks.some((hh: Record<string, unknown>) => {
       if (typeof hh.command === "string" && hh.command.includes(id)) return true;
       if (typeof hh.prompt === "string" && hh.prompt.includes(id)) return true;
-      if (typeof hh._nysm_id === "string" && hh._nysm_id === id) return true;
+      if (typeof hh._bestwork_id === "string" && hh._bestwork_id === id) return true;
       return false;
     });
   });
@@ -197,7 +197,7 @@ function removeHookById(hookArray: Array<Record<string, unknown>>, id: string): 
     return !h.hooks.some((hh: Record<string, unknown>) => {
       if (typeof hh.command === "string" && hh.command.includes(id)) return true;
       if (typeof hh.prompt === "string" && hh.prompt.includes(id)) return true;
-      if (typeof hh._nysm_id === "string" && hh._nysm_id === id) return true;
+      if (typeof hh._bestwork_id === "string" && hh._bestwork_id === id) return true;
       return false;
     });
   });
@@ -239,7 +239,7 @@ export async function installCommand() {
     if (!hasHookById(arr, reg.id)) {
       const hookDef: Record<string, unknown> = {
         type: reg.type,
-        _nysm_id: reg.id,
+        _bestwork_id: reg.id,
         timeout: reg.timeout,
       };
 
@@ -260,7 +260,7 @@ export async function installCommand() {
   settings.hooks = hooks;
   await writeFile(settingsPath, JSON.stringify(settings, null, 2) + "\n");
 
-  console.log(`\n  nysm installed — ${added} added, ${removed} upgraded\n`);
+  console.log(`\n  bestwork installed — ${added} added, ${removed} upgraded\n`);
   console.log("  Agent hooks (full LLM with tools):");
   console.log("    Smart Gateway  — routes ./commands + natural language to agents");
   console.log("    Validation     — understands code context, checks imports exist");
@@ -268,7 +268,7 @@ export async function installCommand() {
   console.log("    Platform Review — scans diff for OS/runtime mismatches on stop");
   console.log("");
   console.log("  Command hooks (fast, no LLM):");
-  console.log("    Event capture  — records tool calls to ~/.nysm/data/");
+  console.log("    Event capture  — records tool calls to ~/.bestwork/data/");
   console.log("    Scope enforce  — blocks edits outside ./scope path");
   console.log("    Strict enforce — blocks rm -rf, git push --force");
   console.log("    Slash commands — ./discord, ./slack config");

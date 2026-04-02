@@ -2,14 +2,14 @@
 
 ## Data Privacy
 
-nysm is a **local-only** tool. No data ever leaves your machine.
+bestwork-agent is a **local-only** tool. No data ever leaves your machine.
 
 - All data is read from `~/.claude/` (Claude Code's local storage)
-- Hook-captured events are stored in `~/.nysm/data/` on your local filesystem
-- **Zero network requests** — nysm makes no HTTP calls, no telemetry, no analytics
+- Hook-captured events are stored in `~/.bestwork-agent/data/` on your local filesystem
+- **Zero network requests** — bestwork-agent makes no HTTP calls, no telemetry, no analytics
 - No data is sent to any server, API, or third party
 
-## What nysm reads
+## What bestwork-agent reads
 
 | Source | What | Why |
 |--------|------|-----|
@@ -18,7 +18,7 @@ nysm is a **local-only** tool. No data ever leaves your machine.
 | `~/.claude/sessions/*.json` | Session metadata | Active session detection |
 | `~/.claude/projects/*/subagents/*.meta.json` | Agent types | Agent tree visualization |
 
-nysm **never** reads:
+bestwork-agent **never** reads:
 - API keys or credentials
 - Environment variables
 - Authentication tokens
@@ -26,7 +26,7 @@ nysm **never** reads:
 
 ## Hooks Security
 
-When you run `nysm install`, hooks are added to `~/.claude/settings.json`:
+When you run `bestwork-agent install`, hooks are added to `~/.claude/settings.json`:
 - Hooks only capture tool names, file paths, and timestamps
 - File **contents** are never captured
 - A backup of your settings is created before modification
@@ -35,7 +35,7 @@ When you run `nysm install`, hooks are added to `~/.claude/settings.json`:
 
 ## Dependency Policy
 
-nysm uses minimal dependencies:
+bestwork-agent uses minimal dependencies:
 - `ink` + `react` — TUI rendering (well-audited, widely used)
 - `commander` — CLI parsing
 - `chokidar` — File watching
@@ -46,7 +46,7 @@ No dependencies that make network requests. No native modules.
 ## Reporting Vulnerabilities
 
 If you find a security issue, please report it privately:
-- Email: [create a GitHub security advisory](https://github.com/rlaope/nysm/security/advisories/new)
+- Email: [create a GitHub security advisory](https://github.com/rlaope/bestwork-agent/security/advisories/new)
 - Do **not** open a public issue for security vulnerabilities
 
 ## Supported Versions

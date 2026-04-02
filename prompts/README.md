@@ -1,6 +1,6 @@
 # Agent Prompts
 
-System prompts for nysm's 36 specialist agents.
+System prompts for bestwork's 36 specialist agents.
 Edit these files to customize agent behavior without rebuilding.
 
 ## Structure

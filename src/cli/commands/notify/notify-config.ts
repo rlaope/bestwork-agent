@@ -35,13 +35,13 @@ export async function notifyConfigCommand(options: NotifySetupOptions) {
     console.log("\n  Sending test notification...");
     await sendNotification(
       "Test",
-      "nysm notifications are working! 🎉"
+      "bestwork notifications are working! 🎉"
     );
     console.log("  Done. Check your channels.\n");
     return;
   }
 
-  console.log("\n  Config saved to ~/.nysm/config.json");
+  console.log("\n  Config saved to ~/.bestwork/config.json");
   console.log("  Run with --test to send a test notification.\n");
 }
 

@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 // Resolve prompts dir relative to package root (works for both dev and installed)
 function getPromptsDir(): string {
-  // When installed globally: npm root -g/nysm/prompts
+  // When installed globally: npm root -g/bestwork-agent/prompts
   // When running from source: project-root/prompts
   const thisFile = fileURLToPath(import.meta.url);
   // src/harness/prompt-loader.ts -> go up 2 levels to project root

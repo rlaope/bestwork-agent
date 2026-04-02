@@ -1,6 +1,6 @@
 ---
 name: Feature Request
-about: Suggest a new feature for nysm
+about: Suggest a new feature for bestwork
 labels: enhancement
 ---
 

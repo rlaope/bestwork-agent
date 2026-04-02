@@ -1,12 +1,12 @@
-# Contributing to nysm
+# Contributing to bestwork-agent
 
-Thanks for your interest in contributing to nysm! Here's how to get started.
+Thanks for your interest in contributing to bestwork-agent! Here's how to get started.
 
 ## Development Setup
 
 ```bash
-git clone https://github.com/rlaope/nysm.git
-cd nysm
+git clone https://github.com/rlaope/bestwork-agent.git
+cd bestwork-agent
 npm install
 npm run build
 ```
@@ -54,8 +54,8 @@ src/
 
 ## Reporting Issues
 
-Open an issue at https://github.com/rlaope/nysm/issues with:
+Open an issue at https://github.com/rlaope/bestwork-agent/issues with:
 - What you expected
 - What happened
 - Steps to reproduce
-- `nysm --version` output
+- `bestwork-agent --version` output

@@ -1,5 +1,5 @@
 #!/bin/bash
-# nysm validation hook — auto-typecheck after code changes
+# bestwork validation hook — auto-typecheck after code changes
 # PostToolUse on Edit/Write: runs typecheck if the file is .ts/.tsx/.js/.jsx
 
 INPUT=$(cat)
@@ -37,7 +37,7 @@ ERRORS=$(cd "$PROJECT_ROOT" && timeout 10 npx tsc --noEmit 2>&1 | grep "error TS
 
 if [ -n "$ERRORS" ]; then
   ESCAPED=$(echo "$ERRORS" | head -5 | tr '\n' ' ' | sed 's/"/\\"/g')
-  echo "{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"[nysm validate] TypeScript errors after ${TOOL}:\\n${ESCAPED}\"}}"
+  echo "{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"[bestwork validate] TypeScript errors after ${TOOL}:\\n${ESCAPED}\"}}"
 else
   echo '{}'
 fi

@@ -22,7 +22,7 @@ export async function summaryCommand(options: SummaryOptions) {
 function printDailySummary(sessions: import("../../../types/index.js").Session[]) {
   const summary = getDailySummary(sessions);
 
-  console.log(`\n  nysm — Daily Summary (${summary.date})\n`);
+  console.log(`\n  bestwork — Daily Summary (${summary.date})\n`);
   console.log(`  Sessions:    ${formatNumber(summary.totalSessions)}`);
   console.log(`  Tool calls:  ${formatNumber(summary.totalCalls)}`);
   console.log(`  Prompts:     ${formatNumber(summary.totalPrompts)}`);
@@ -47,7 +47,7 @@ function printDailySummary(sessions: import("../../../types/index.js").Session[]
 function printWeeklySummary(sessions: import("../../../types/index.js").Session[]) {
   const weekly = getWeeklySummary(sessions);
 
-  console.log(`\n  nysm — Weekly Summary\n`);
+  console.log(`\n  bestwork — Weekly Summary\n`);
   console.log(
     "  " +
       "Date".padEnd(14) +

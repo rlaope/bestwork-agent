@@ -1,12 +1,12 @@
 #!/bin/bash
-# nysm session end hook — sends notification with session summary
+# bestwork session end hook — sends notification with session summary
 # Triggered on Claude Code Stop event
 
 INPUT=$(cat)
 SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // "unknown"')
 
 # Get session stats
-STATS=$(nysm session "$SESSION_ID" 2>&1 | head -20)
+STATS=$(bestwork session "$SESSION_ID" 2>&1 | head -20)
 
 # Get git diff summary if in a git repo
 GIT_SUMMARY=""
@@ -23,7 +23,7 @@ BODY="Session \`${SESSION_ID:0:8}\` completed.
 ${STATS}
 ${GIT_SUMMARY}"
 
-# Send notification via nysm
-nysm notify --title "Session Complete" --body "$BODY" 2>/dev/null
+# Send notification via bestwork
+bestwork notify --title "Session Complete" --body "$BODY" 2>/dev/null
 
 echo '{}'

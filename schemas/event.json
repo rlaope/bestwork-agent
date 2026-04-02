@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "nysm tool event",
-  "description": "A single tool call event captured by nysm hooks",
+  "title": "bestwork tool event",
+  "description": "A single tool call event captured by bestwork hooks",
   "type": "object",
   "required": ["timestamp", "sessionId", "toolName", "event"],
   "properties": {

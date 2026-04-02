@@ -120,7 +120,7 @@ export function WatchSetup() {
     <Box flexDirection="column" padding={1}>
       <Box marginBottom={1}>
         <Text bold color="cyan">
-          nysm watch
+          bestwork watch
         </Text>
         <Text color="gray"> — session end notifications</Text>
       </Box>

@@ -1,24 +1,28 @@
-# nysm
+# bestwork-agent
 
 **now you see me** — best harness engineering for Claude Code. work like a corporation team, not just a club.
 
 <p align="center">
-  <img src="https://img.shields.io/npm/v/nysm?color=cyan" alt="npm version" />
-  <img src="https://img.shields.io/github/license/rlaope/nysm" alt="license" />
-  <img src="https://img.shields.io/github/stars/rlaope/nysm?style=social" alt="stars" />
+  <img src="https://img.shields.io/npm/v/bestwork-agent?color=cyan" alt="npm version" />
+  <img src="https://img.shields.io/github/license/rlaope/bestwork-agent" alt="license" />
+  <img src="https://img.shields.io/github/stars/rlaope/bestwork-agent?style=social" alt="stars" />
+</p>
+
+<p align="center">
+  <a href="README.md">English</a> · <a href="README.ko.md">한국어</a> · <a href="README.ja.md">日本語</a>
 </p>
 
 ---
 
 Your AI agent works alone. It hallucinates, loops, misses requirements, and you don't know until it's too late.
 
-**nysm** turns it into a team. Every task gets a **Tech** (engineer), **PM** (product manager), and **Critic** (quality reviewer) — specialist agents matched to the domain. 36 profiles. Auto-selected. Parallel execution. Feedback loops. Real notifications.
+**bestwork** turns it into a team. Every task gets a **Tech** (engineer), **PM** (product manager), and **Critic** (quality reviewer) — specialist agents matched to the domain. 36 profiles. Auto-selected. Parallel execution. Feedback loops. Real notifications.
 
 ## Install
 
 ```bash
-npm install -g nysm
-nysm install
+npm install -g bestwork-agent
+bestwork install
 ```
 
 Restart Claude Code. Type `./help` to see everything.
@@ -50,7 +54,7 @@ Each task gets a matched specialist trio:
 ### 36 Specialist Agents
 
 ```bash
-nysm agents    # full catalog
+bestwork agents    # full catalog
 ```
 
 **18 Tech**: backend, frontend, fullstack, infra, database, API, mobile, testing, security, performance, devops, data, ML, CLI, realtime, auth, migration, config
@@ -113,18 +117,18 @@ Rich notifications on every prompt completion:
 ## Observability
 
 ```bash
-nysm                  # TUI dashboard
-nysm sessions         # List with CWD, last prompt, usage %
-nysm session <id>     # Tool breakdown, agent tree
-nysm summary -w       # Weekly overview
-nysm live             # Real-time monitoring
-nysm heatmap          # 365-day activity grid
-nysm loops            # Agent loop detection
-nysm replay <id>      # Step-by-step playback
-nysm effectiveness    # Prompt efficiency trend
-nysm outcome <id>     # Productivity verdict
-nysm watch            # Watch → notify on completion
-nysm export -f csv    # Export data
+bestwork                  # TUI dashboard
+bestwork sessions         # List with CWD, last prompt, usage %
+bestwork session <id>     # Tool breakdown, agent tree
+bestwork summary -w       # Weekly overview
+bestwork live             # Real-time monitoring
+bestwork heatmap          # 365-day activity grid
+bestwork loops            # Agent loop detection
+bestwork replay <id>      # Step-by-step playback
+bestwork effectiveness    # Prompt efficiency trend
+bestwork outcome <id>     # Productivity verdict
+bestwork watch            # Watch → notify on completion
+bestwork export -f csv    # Export data
 ```
 
 ### Data-Driven Agents
@@ -142,7 +146,7 @@ nysm export -f csv    # Export data
 ## Architecture
 
 ```
-nysm/
+bestwork/
 ├── src/
 │   ├── cli/commands/
 │   │   ├── observe/         12 observability commands

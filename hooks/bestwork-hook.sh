@@ -1,9 +1,9 @@
 #!/bin/bash
-# nysm hook — captures tool call events to ~/.nysm/data/
-# Install: nysm install
+# bestwork hook — captures tool call events to ~/.bestwork/data/
+# Install: bestwork install
 
-NYSM_DIR="$HOME/.nysm/data"
-mkdir -p "$NYSM_DIR"
+BESTWORK_DIR="$HOME/.bestwork/data"
+mkdir -p "$BESTWORK_DIR"
 
 # Read stdin (hook input JSON)
 INPUT=$(cat)
@@ -14,7 +14,7 @@ TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // "unknown"')
 TIMESTAMP=$(date +%s%3N)
 
 # Determine event type from environment or default to "post"
-EVENT_TYPE="${NYSM_HOOK_EVENT:-post}"
+EVENT_TYPE="${BESTWORK_HOOK_EVENT:-post}"
 
 # Build event JSON
 EVENT=$(jq -n \
@@ -34,7 +34,7 @@ EVENT=$(jq -n \
   }')
 
 # Append to session file
-echo "$EVENT" >> "$NYSM_DIR/${SESSION_ID}.jsonl"
+echo "$EVENT" >> "$BESTWORK_DIR/${SESSION_ID}.jsonl"
 
 # Return empty JSON (don't interfere with Claude Code)
 echo '{}'

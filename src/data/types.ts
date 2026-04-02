@@ -25,7 +25,7 @@ export interface SessionEvent {
   cwd?: string;
 }
 
-export type NysmEvent = ToolEvent | SessionEvent;
+export type BestworkEvent = ToolEvent | SessionEvent;
 
 export interface LoopPattern {
   sessionId: string;

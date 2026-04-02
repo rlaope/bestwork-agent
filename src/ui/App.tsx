@@ -75,7 +75,7 @@ export function App({ watchMode = false }: AppProps) {
       <Box marginBottom={1} flexDirection="column">
         <Box>
           <Text bold color="cyan">
-            nysm
+            bestwork
           </Text>
           <Text color="gray"> — now you see me</Text>
           {watchMode && (

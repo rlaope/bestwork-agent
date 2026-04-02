@@ -1,10 +1,10 @@
 #!/bin/bash
-# nysm scope enforcement — blocks Edit/Write outside locked scope
+# bestwork scope enforcement — blocks Edit/Write outside locked scope
 # PreToolUse hook on Write|Edit
 
 INPUT=$(cat)
 TOOL=$(echo "$INPUT" | jq -r '.tool_name // ""')
-SCOPE_FILE="$HOME/.nysm/scope.lock"
+SCOPE_FILE="$HOME/.bestwork/scope.lock"
 
 # Only enforce on Edit/Write
 case "$TOOL" in
@@ -24,5 +24,5 @@ FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // ""')
 if echo "$FILE_PATH" | grep -q "$SCOPE"; then
   echo '{}'
 else
-  echo "{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"additionalContext\":\"[nysm scope] BLOCKED: ${FILE_PATH} is outside scope '${SCOPE}'. Use ./unlock to remove restriction.\"}}"
+  echo "{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"additionalContext\":\"[bestwork scope] BLOCKED: ${FILE_PATH} is outside scope '${SCOPE}'. Use ./unlock to remove restriction.\"}}"
 fi

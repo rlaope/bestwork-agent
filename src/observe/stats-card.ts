@@ -24,7 +24,7 @@ export function renderStatsCard(sessions: Session[]): string {
 
   const lines: string[] = [];
   lines.push("┌──────────────────────────────────────────────┐");
-  lines.push("│         \x1b[1m\x1b[36mnysm\x1b[0m — now you see me              │");
+  lines.push("│         \x1b[1m\x1b[36mbestwork\x1b[0m — now you see me              │");
   lines.push("│                                              │");
   lines.push(`│  ${today}                                │`);
   lines.push("│                                              │");
@@ -40,7 +40,7 @@ export function renderStatsCard(sessions: Session[]): string {
   lines.push("│                                              │");
   lines.push(`│  ${miniHeatmap}  │`);
   lines.push("│                                              │");
-  lines.push("│  github.com/rlaope/nysm                      │");
+  lines.push("│  github.com/rlaope/bestwork-agent                      │");
   lines.push("└──────────────────────────────────────────────┘");
 
   return "\n" + lines.join("\n") + "\n";

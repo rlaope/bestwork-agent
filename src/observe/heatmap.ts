@@ -79,7 +79,7 @@ export function renderHeatmap(data: HeatmapData): string {
   const lines: string[] = [];
 
   lines.push("");
-  lines.push("  nysm — Activity Heatmap");
+  lines.push("  bestwork — Activity Heatmap");
   lines.push("");
 
   // Build grid: 7 rows (Sun-Sat) x N weeks

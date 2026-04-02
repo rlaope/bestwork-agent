@@ -1,13 +1,13 @@
 import { readFile, appendFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { homedir } from "node:os";
-import type { NysmEvent, ToolEvent } from "./types.js";
+import type { BestworkEvent, ToolEvent } from "./types.js";
 
-const NYSM_DIR = join(homedir(), ".nysm");
-const DATA_DIR = join(NYSM_DIR, "data");
+const BESTWORK_DIR = join(homedir(), ".bestwork");
+const DATA_DIR = join(BESTWORK_DIR, "data");
 
-export function getNysmDir(): string {
-  return NYSM_DIR;
+export function getBestworkDir(): string {
+  return BESTWORK_DIR;
 }
 
 export function getDataDir(): string {
@@ -22,7 +22,7 @@ export async function ensureDataDir(): Promise<void> {
   await mkdir(DATA_DIR, { recursive: true });
 }
 
-export async function appendEvent(event: NysmEvent): Promise<void> {
+export async function appendEvent(event: BestworkEvent): Promise<void> {
   await ensureDataDir();
   const sessionId =
     "sessionId" in event ? event.sessionId : "unknown";

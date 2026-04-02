@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "nysm config",
-  "description": "Configuration for nysm — ~/.nysm/config.json",
+  "title": "bestwork config",
+  "description": "Configuration for bestwork — ~/.bestwork/config.json",
   "type": "object",
   "properties": {
     "notify": {

@@ -35,7 +35,7 @@ export async function loopsCommand() {
 
   if (suspicious.length === 0) {
     console.log("\n  No suspicious patterns found.\n");
-    console.log("  For precise loop detection, run `nysm install` to enable hooks.\n");
+    console.log("  For precise loop detection, run `bestwork install` to enable hooks.\n");
     return;
   }
 
@@ -52,7 +52,7 @@ export async function loopsCommand() {
     );
   }
 
-  console.log("\n  Run `nysm install` for real-time loop detection.\n");
+  console.log("\n  Run `bestwork install` for real-time loop detection.\n");
 }
 
 function shortPath(path: string): string {

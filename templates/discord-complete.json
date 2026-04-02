@@ -4,7 +4,7 @@
       "title": "{{icon}} {{project}} — {{status}}",
       "description": "**Prompt:** {{prompt}}\n**Stats:** {{calls}} calls | {{prompts}} prompts\n**Time:** {{timestamp}}\n\n{{git_summary}}\n\n**Platform Review:** {{review_result}}\n**Session Health:** {{health_note}}",
       "color": "{{color}}",
-      "footer": { "text": "nysm — now you see me" },
+      "footer": { "text": "bestwork — now you see me" },
       "timestamp": "{{iso_timestamp}}"
     }
   ]

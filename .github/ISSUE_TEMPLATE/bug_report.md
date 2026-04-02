@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-about: Report a bug in nysm
+about: Report a bug in bestwork
 labels: bug
 ---
 
@@ -10,7 +10,7 @@ A clear description of what the bug is.
 
 ## To reproduce
 
-1. Run `nysm ...`
+1. Run `bestwork ...`
 2. See error
 
 ## Expected behavior
@@ -21,5 +21,5 @@ What you expected to happen.
 
 - OS:
 - Node.js version:
-- nysm version:
+- bestwork version:
 - Claude Code version:

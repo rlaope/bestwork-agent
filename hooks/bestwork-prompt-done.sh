@@ -1,11 +1,11 @@
 #!/bin/bash
-# nysm prompt completion — rich notification + auto-review + feedback loop detection
+# bestwork prompt completion — rich notification + auto-review + feedback loop detection
 # Stop hook: fires when Claude Code finishes processing
 
 INPUT=$(cat)
 SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // "unknown"')
 
-CONFIG="$HOME/.nysm/config.json"
+CONFIG="$HOME/.bestwork/config.json"
 [ ! -f "$CONFIG" ] && echo '{}' && exit 0
 
 DISCORD_URL=$(jq -r '.notify.discord.webhookUrl // empty' "$CONFIG" 2>/dev/null)
@@ -22,15 +22,15 @@ SID_SHORT="${SESSION_ID:0:8}"
 
 # Last prompt (what the user asked)
 LAST_PROMPT=""
-if command -v nysm &>/dev/null; then
-  LAST_PROMPT=$(nysm sessions -n 1 2>&1 | grep '💬' | head -1 | sed 's/.*💬 //')
+if command -v bestwork &>/dev/null; then
+  LAST_PROMPT=$(bestwork sessions -n 1 2>&1 | grep '💬' | head -1 | sed 's/.*💬 //')
 fi
 
 # Session stats
 STATS=""
-if command -v nysm &>/dev/null; then
-  TOTAL_CALLS=$(nysm session "$SID_SHORT" 2>&1 | grep "Total calls" | sed 's/.*Total calls: //' | sed 's/ .*//')
-  PROMPTS=$(nysm session "$SID_SHORT" 2>&1 | grep "Prompts:" | sed 's/.*Prompts: //')
+if command -v bestwork &>/dev/null; then
+  TOTAL_CALLS=$(bestwork session "$SID_SHORT" 2>&1 | grep "Total calls" | sed 's/.*Total calls: //' | sed 's/ .*//')
+  PROMPTS=$(bestwork session "$SID_SHORT" 2>&1 | grep "Prompts:" | sed 's/.*Prompts: //')
   STATS="Calls: ${TOTAL_CALLS:-?} | Prompts: ${PROMPTS:-?}"
 fi
 
@@ -56,7 +56,7 @@ fi
 REVIEW_RESULT=""
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [ -n "$(git diff HEAD 2>/dev/null)" ] || [ -n "$(git diff 2>/dev/null)" ]; then
-  REVIEW_OUTPUT=$(echo '{}' | NYSM_REVIEW_TRIGGER=1 bash "$SCRIPT_DIR/nysm-review.sh" 2>/dev/null)
+  REVIEW_OUTPUT=$(echo '{}' | BESTWORK_REVIEW_TRIGGER=1 bash "$SCRIPT_DIR/bestwork-review.sh" 2>/dev/null)
   if echo "$REVIEW_OUTPUT" | grep -q "⚠️"; then
     REVIEW_RESULT=$(echo "$REVIEW_OUTPUT" | jq -r '.hookSpecificOutput.additionalContext // ""' 2>/dev/null | head -10)
   fi
@@ -64,11 +64,11 @@ fi
 
 # === Feedback loop detection ===
 FEEDBACK_NOTE=""
-NYSM_LOG="$HOME/.nysm/data/${SESSION_ID}.jsonl"
-if [ -f "$NYSM_LOG" ]; then
-  TOTAL_EVENTS=$(wc -l < "$NYSM_LOG" | tr -d ' ')
-  FAIL_EVENTS=$(grep -c '"event":"fail"' "$NYSM_LOG" 2>/dev/null || echo 0)
-  EDIT_COUNT=$(grep -c '"toolName":"Edit"' "$NYSM_LOG" 2>/dev/null || echo 0)
+BESTWORK_LOG="$HOME/.bestwork/data/${SESSION_ID}.jsonl"
+if [ -f "$BESTWORK_LOG" ]; then
+  TOTAL_EVENTS=$(wc -l < "$BESTWORK_LOG" | tr -d ' ')
+  FAIL_EVENTS=$(grep -c '"event":"fail"' "$BESTWORK_LOG" 2>/dev/null || echo 0)
+  EDIT_COUNT=$(grep -c '"toolName":"Edit"' "$BESTWORK_LOG" 2>/dev/null || echo 0)
 
   # Detect if session had too many issues
   if [ "$TOTAL_EVENTS" -gt 20 ] 2>/dev/null; then
@@ -120,7 +120,7 @@ if [ -n "$DISCORD_URL" ]; then
         "title": $title,
         "description": $body,
         "color": $color,
-        "footer": {"text": "nysm — now you see me"},
+        "footer": {"text": "bestwork — now you see me"},
         "timestamp": (now | todate)
       }]
     }')
@@ -134,7 +134,7 @@ if [ -n "$SLACK_URL" ]; then
     "blocks": [
       {"type": "header", "text": {"type": "plain_text", "text": $title}},
       {"type": "section", "text": {"type": "mrkdwn", "text": $body}},
-      {"type": "context", "elements": [{"type": "mrkdwn", "text": "nysm — now you see me"}]}
+      {"type": "context", "elements": [{"type": "mrkdwn", "text": "bestwork — now you see me"}]}
     ]
   }')
   curl -s -X POST "$SLACK_URL" -H "Content-Type: application/json" -d "$PAYLOAD" > /dev/null 2>&1

@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "nysm agent profile",
+  "title": "bestwork agent profile",
   "description": "Schema for agent prompt markdown files in prompts/",
   "type": "object",
   "required": ["id", "role", "name", "specialty"],
