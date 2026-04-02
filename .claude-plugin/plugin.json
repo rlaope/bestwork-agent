@@ -17,7 +17,6 @@
     "./agents/grounding.md",
     "./agents/platform-review.md"
   ],
-  "hooks": "./hooks/hooks.json",
   "commands": [
     "./commands/sessions.md",
     "./commands/agents.md",
