@@ -1,0 +1,97 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "BESTWORK_HOOK_EVENT=post bash \"${CLAUDE_PLUGIN_ROOT}/hooks/bestwork-hook.sh\"",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "agent",
+            "prompt": "You are bestwork's validation agent. A file was just modified via $ARGUMENTS.\nCheck for:\n1. TypeScript errors: run `npx tsc --noEmit` and report any errors in the changed file\n2. If the file imports modules, verify the imports actually exist (grep for them)\nDo NOT fix anything. Only report issues concisely (under 3 lines). If no issues, say nothing.",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "BESTWORK_HOOK_EVENT=pre bash \"${CLAUDE_PLUGIN_ROOT}/hooks/bestwork-hook.sh\"",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "agent",
+            "prompt": "You are bestwork's grounding agent. The AI is about to modify a file via $ARGUMENTS.\nCheck: has this file been Read in the current session? Look at the conversation history.\nIf NOT read yet, output a warning: \"bestwork grounding: Read this file before editing to avoid hallucinated content.\"\nIf already read, say nothing.",
+            "timeout": 15
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/bestwork-scope-enforce.sh\"",
+            "timeout": 3
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/bestwork-strict-enforce.sh\"",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/bestwork-slash.sh\"",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "agent",
+            "model": "claude-haiku-4-5-20251001",
+            "prompt": "You are bestwork's smart gateway. The user typed: $ARGUMENTS\n\nYou understand intent — not keywords. Decide what the user wants and execute it directly.\n\nIf the prompt starts with ./ it's a bestwork command. Otherwise, understand the intent from any language.\n\nCAPABILITIES: REVIEW (platform check), TRIO (parallel Tech+PM+Critic), SCOPE/UNLOCK, STRICT/RELAX, TDD, CONTEXT, RECOVER, AUTOPSY, LEARN, PREDICT, GUARD, COMPARE, OBSERVABILITY (loops/heatmap/summary/weekly), HELP.\n\nRULES:\n- Understand intent from ANY language. No keyword matching.\n- If the prompt is a normal coding request (not bestwork-related), do nothing.\n- For trio, ACTUALLY spawn Agent tools.\n- Be concise. Execute, don't explain.",
+            "timeout": 60
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/bestwork-prompt-done.sh\"",
+            "timeout": 20
+          },
+          {
+            "type": "agent",
+            "prompt": "You are bestwork's platform review agent. A coding session just completed.\nRun `git diff --stat` to see what changed. If there are code changes:\n1. Run `uname -s` to get the OS\n2. Scan the diff for platform-specific patterns that don't match this OS (Linux on macOS, macOS on Linux, Windows on Unix, wrong runtime)\n3. If mismatches found, report them concisely.\nIf no code changes or no mismatches, say nothing.",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

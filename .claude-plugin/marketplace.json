@@ -1,0 +1,18 @@
+{
+  "name": "bestwork-tools",
+  "owner": {
+    "name": "rlaope",
+    "url": "https://github.com/rlaope"
+  },
+  "plugins": [
+    {
+      "name": "bestwork-agent",
+      "source": {
+        "source": "github",
+        "repo": "rlaope/bestwork-agent"
+      },
+      "description": "Harness engineering for Claude Code. Work like a corporation team, not just a club.",
+      "version": "0.1.0"
+    }
+  ]
+}
