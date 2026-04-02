@@ -27,7 +27,7 @@ Steps:
    ```
    Then run:
    ```bash
-   claude plugin update bestwork-agent
+   claude plugin update bestwork-agent@bestwork-tools
    ```
    After done, print:
    ```

@@ -10,6 +10,5 @@
   "repository": "https://github.com/rlaope/bestwork-agent",
   "license": "MIT",
   "keywords": ["harness", "agents", "orchestration", "observability", "anti-hallucination"],
-  "skills": "./skills/",
-  "hooks": "./hooks/hooks.json"
+  "skills": "./skills/"
 }
