@@ -1,9 +1,11 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { execSync } from "child_process";
 import { writeFileSync, unlinkSync, mkdirSync } from "fs";
-import { join } from "path";
+import { join, resolve } from "path";
+import { fileURLToPath } from "url";
 
-const CWD = "/Users/rlaope/Desktop/khope/nysm";
+const __filename = fileURLToPath(import.meta.url);
+const CWD = resolve(join(__filename, "../../../../"));
 const HOOK_PATH = "hooks/bestwork-review.sh";
 
 /**

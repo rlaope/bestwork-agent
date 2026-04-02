@@ -1,6 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { classifyIntent, classifyWeight } from "../orchestrator.js";
 import { execSync } from "child_process";
+import { resolve, join } from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const PROJECT_DIR = resolve(join(__filename, "../../../../"));
 
 // Helper: run compiled gateway via child_process, returns raw stdout
 function runGateway(prompt: string): string {
@@ -10,7 +15,7 @@ function runGateway(prompt: string): string {
   try {
     return execSync(`echo '${escaped}' | node dist/smart-gateway.js`, {
       encoding: "utf-8",
-      cwd: "/Users/rlaope/Desktop/khope/nysm",
+      cwd: PROJECT_DIR,
       timeout: 5000,
     }).trim();
   } catch {

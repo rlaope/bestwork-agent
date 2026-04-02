@@ -8,10 +8,12 @@ import {
   readFileSync,
   rmSync,
 } from "fs";
-import { join } from "path";
+import { join, resolve } from "path";
 import { homedir } from "os";
+import { fileURLToPath } from "url";
 
-const PROJECT_DIR = "/Users/rlaope/Desktop/khope/nysm";
+const __filename = fileURLToPath(import.meta.url);
+const PROJECT_DIR = resolve(join(__filename, "../../../../"));
 const HUD_SCRIPT = join(PROJECT_DIR, "hooks/bestwork-hud.mjs");
 const home = homedir();
 const bwDir = join(home, ".bestwork");
