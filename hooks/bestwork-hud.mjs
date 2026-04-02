@@ -122,7 +122,11 @@ function fetchUsage(accessToken) {
       let body = "";
       res.on("data", (c) => body += c);
       res.on("end", () => {
-        if (res.statusCode === 429) { reject("rate_limited"); return; }
+        if (res.statusCode === 429) {
+          const retryAfter = parseInt(res.headers["retry-after"] || "0", 10);
+          reject({ type: "rate_limited", retryAfterMs: retryAfter > 0 ? retryAfter * 1000 : 0 });
+          return;
+        }
         if (res.statusCode === 401) { reject("auth_expired"); return; }
         try {
           const j = JSON.parse(body);
@@ -166,8 +170,11 @@ async function getUsage() {
   // Check if cache is still valid
   if (cache) {
     if (cache.rateLimited) {
+      // Use server's retry-after if available, otherwise exponential backoff
+      const retryAfterMs = cache.retryAfterMs || 0;
       const count = cache.rateLimitedCount || 1;
-      const backoff = Math.min(POLL_INTERVAL_MS * Math.pow(2, Math.max(0, count - 1)), MAX_BACKOFF_MS);
+      const calcBackoff = Math.min(POLL_INTERVAL_MS * Math.pow(2, Math.max(0, count - 1)), MAX_BACKOFF_MS);
+      const backoff = retryAfterMs > 0 ? Math.max(retryAfterMs, calcBackoff) : calcBackoff;
       if (Date.now() - cache.ts < backoff) {
         return staleDataOrNull(cache);
       }
@@ -210,11 +217,13 @@ async function getUsage() {
   } catch (e) {
     const freshCache = readUsageCache() || cache;
 
-    if (e === "rate_limited") {
+    if (e?.type === "rate_limited" || e === "rate_limited") {
       const count = (freshCache?.rateLimitedCount || 0) + 1;
+      const retryAfterMs = e?.retryAfterMs || 0;
       writeUsageCache({
         ts: Date.now(), data: freshCache?.data || null,
         rateLimited: true, rateLimitedCount: count,
+        retryAfterMs,
         lastSuccessAt: freshCache?.lastSuccessAt || null, error: null,
       });
     } else if (e === "network") {
