@@ -1,4 +1,4 @@
-import type { Session } from "./types.js";
+import type { Session } from "../types/index.js";
 import { getToolRanking } from "./aggregator.js";
 import { buildHeatmap } from "./heatmap.js";
 import { format } from "date-fns";

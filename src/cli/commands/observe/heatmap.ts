@@ -1,5 +1,5 @@
-import { aggregateSessions } from "../../core/aggregator.js";
-import { buildHeatmap, renderHeatmap } from "../../core/heatmap.js";
+import { aggregateSessions } from "../../../observe/aggregator.js";
+import { buildHeatmap, renderHeatmap } from "../../../observe/heatmap.js";
 
 export async function heatmapCommand() {
   const sessions = await aggregateSessions();

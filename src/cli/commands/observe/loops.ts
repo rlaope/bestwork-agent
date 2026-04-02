@@ -1,7 +1,7 @@
-import { readAllEvents } from "../../data/store.js";
-import { aggregateSessions } from "../../core/aggregator.js";
-import { detectLoops, detectLoopsFromStats } from "../../core/loop-detector.js";
-import { shortSessionId } from "../../utils/format.js";
+import { readAllEvents } from "../../../data/store.js";
+import { aggregateSessions } from "../../../observe/aggregator.js";
+import { detectLoops, detectLoopsFromStats } from "../../../observe/loop-detector.js";
+import { shortSessionId } from "../../../utils/format.js";
 
 export async function loopsCommand() {
   // Try hooks data for precise detection

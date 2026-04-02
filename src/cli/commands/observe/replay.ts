@@ -1,6 +1,6 @@
-import { readSessionEvents } from "../../data/store.js";
-import { buildReplay, renderReplay } from "../../core/replay.js";
-import { aggregateSessions } from "../../core/aggregator.js";
+import { readSessionEvents } from "../../../data/store.js";
+import { buildReplay, renderReplay } from "../../../observe/replay.js";
+import { aggregateSessions } from "../../../observe/aggregator.js";
 
 export async function replayCommand(id: string) {
   // Try hooks data first

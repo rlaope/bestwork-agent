@@ -1,6 +1,6 @@
 import React from "react";
 import { Box, Text } from "ink";
-import type { Session } from "../core/types.js";
+import type { Session } from "../types/index.js";
 import { relativeTime, shortSessionId, formatNumber, truncate } from "../utils/format.js";
 
 interface SessionListProps {

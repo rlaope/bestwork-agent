@@ -1,7 +1,7 @@
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { homedir } from "node:os";
-import type { Session } from "./types.js";
+import type { Session } from "../types/index.js";
 
 export interface SessionOutcome {
   sessionId: string;

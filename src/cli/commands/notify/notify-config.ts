@@ -1,4 +1,4 @@
-import { loadConfig, saveConfig, sendNotification } from "../../core/notify.js";
+import { loadConfig, saveConfig, sendNotification } from "../../../harness/notify.js";
 
 interface NotifySetupOptions {
   discord?: string;

@@ -1,8 +1,8 @@
-import { aggregateSessions } from "../../core/aggregator.js";
+import { aggregateSessions } from "../../../observe/aggregator.js";
 import {
   calculateEffectiveness,
   renderEffectiveness,
-} from "../../core/effectiveness.js";
+} from "../../../observe/effectiveness.js";
 
 export async function effectivenessCommand() {
   const sessions = await aggregateSessions();

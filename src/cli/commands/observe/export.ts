@@ -1,5 +1,5 @@
 import { writeFile } from "node:fs/promises";
-import { aggregateSessions, getToolRanking } from "../../core/aggregator.js";
+import { aggregateSessions, getToolRanking } from "../../../observe/aggregator.js";
 
 interface ExportOptions {
   format: string;

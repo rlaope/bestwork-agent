@@ -1,4 +1,4 @@
-import type { Session } from "./types.js";
+import type { Session } from "../types/index.js";
 import { format, startOfDay, subDays } from "date-fns";
 import { barChart } from "../utils/format.js";
 

@@ -1,11 +1,11 @@
-import { aggregateSessions } from "../../core/aggregator.js";
+import { aggregateSessions } from "../../../observe/aggregator.js";
 import {
   shortSessionId,
   shortDate,
   barChart,
   formatNumber,
   relativeTime,
-} from "../../utils/format.js";
+} from "../../../utils/format.js";
 
 export async function sessionCommand(id: string) {
   const sessions = await aggregateSessions();

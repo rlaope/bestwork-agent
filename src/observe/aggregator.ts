@@ -13,7 +13,7 @@ import type {
   HistoryEntry,
   SessionMeta,
   SubagentMeta,
-} from "./types.js";
+} from "../types/index.js";
 
 export async function aggregateSessions(): Promise<Session[]> {
   const [statsMap, history, metas, subagents] = await Promise.all([

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { getToolRanking, getDailySummary } from "../aggregator.js";
-import type { Session } from "../types.js";
+import type { Session } from "../../types/index.js";
 
 function makeSession(overrides: Partial<Session> = {}): Session {
   return {

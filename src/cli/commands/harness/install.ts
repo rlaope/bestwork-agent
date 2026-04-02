@@ -1,7 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { homedir } from "node:os";
-import { ensureDataDir } from "../../data/store.js";
+import { ensureDataDir } from "../../../data/store.js";
 
 const NPM_ROOT = `$(npm root -g)/nysm/hooks`;
 

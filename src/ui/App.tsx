@@ -2,9 +2,9 @@ import React, { useState, useEffect } from "react";
 import { Box, Text, useApp, useInput } from "ink";
 import { SessionList } from "./SessionList.js";
 import { SessionDetail } from "./SessionDetail.js";
-import { aggregateSessions } from "../core/aggregator.js";
+import { aggregateSessions } from "../observe/aggregator.js";
 import { format } from "date-fns";
-import type { Session } from "../core/types.js";
+import type { Session } from "../types/index.js";
 
 type View = "list" | "detail";
 

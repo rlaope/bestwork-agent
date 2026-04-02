@@ -1,5 +1,5 @@
 import { format, subDays, startOfDay, getDay } from "date-fns";
-import type { Session } from "./types.js";
+import type { Session } from "../types/index.js";
 
 export interface HeatmapDay {
   date: string;

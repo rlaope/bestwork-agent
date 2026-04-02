@@ -1,19 +1,19 @@
 import { Command } from "commander";
-import { sessionsCommand } from "./commands/sessions.js";
-import { sessionCommand } from "./commands/session.js";
-import { summaryCommand } from "./commands/summary.js";
-import { liveCommand } from "./commands/live.js";
-import { dashboardCommand } from "./commands/dashboard.js";
-import { heatmapCommand } from "./commands/heatmap.js";
-import { replayCommand } from "./commands/replay.js";
-import { loopsCommand } from "./commands/loops.js";
-import { installCommand } from "./commands/install.js";
-import { outcomeCommand } from "./commands/outcome.js";
-import { cardCommand } from "./commands/card.js";
-import { effectivenessCommand } from "./commands/effectiveness.js";
-import { exportCommand } from "./commands/export.js";
-import { notifyConfigCommand, notifySendCommand } from "./commands/notify-config.js";
-import { watchCommand } from "./commands/watch.js";
+import { sessionsCommand } from "./commands/observe/sessions.js";
+import { sessionCommand } from "./commands/observe/session.js";
+import { summaryCommand } from "./commands/observe/summary.js";
+import { liveCommand } from "./commands/observe/live.js";
+import { dashboardCommand } from "./commands/observe/dashboard.js";
+import { heatmapCommand } from "./commands/observe/heatmap.js";
+import { replayCommand } from "./commands/observe/replay.js";
+import { loopsCommand } from "./commands/observe/loops.js";
+import { installCommand } from "./commands/harness/install.js";
+import { outcomeCommand } from "./commands/observe/outcome.js";
+import { cardCommand } from "./commands/observe/card.js";
+import { effectivenessCommand } from "./commands/observe/effectiveness.js";
+import { exportCommand } from "./commands/observe/export.js";
+import { notifyConfigCommand, notifySendCommand } from "./commands/notify/notify-config.js";
+import { watchCommand } from "./commands/harness/watch.js";
 
 const program = new Command();
 

@@ -7,7 +7,7 @@ import type {
   HistoryEntry,
   SessionMeta,
   SubagentMeta,
-} from "../core/types.js";
+} from "../types/index.js";
 
 const CLAUDE_DIR = join(homedir(), ".claude");
 

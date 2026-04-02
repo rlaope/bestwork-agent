@@ -1,10 +1,10 @@
-import { aggregateSessions } from "../../core/aggregator.js";
+import { aggregateSessions } from "../../../observe/aggregator.js";
 import {
   shortSessionId,
   relativeTime,
   formatNumber,
   truncate,
-} from "../../utils/format.js";
+} from "../../../utils/format.js";
 
 interface SessionsOptions {
   limit: string;

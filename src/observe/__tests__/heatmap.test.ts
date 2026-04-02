@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { buildHeatmap } from "../heatmap.js";
-import type { Session } from "../types.js";
+import type { Session } from "../../types/index.js";
 
 function makeSession(daysAgo: number): Session {
   const date = new Date();

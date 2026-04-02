@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Box, Text, useApp, useInput } from "ink";
-import { aggregateSessions } from "../core/aggregator.js";
-import { saveConfig, loadConfig, sendNotification } from "../core/notify.js";
+import { aggregateSessions } from "../observe/aggregator.js";
+import { saveConfig, loadConfig, sendNotification } from "../harness/notify.js";
 import { shortSessionId, relativeTime, formatNumber } from "../utils/format.js";
-import type { Session } from "../core/types.js";
+import type { Session } from "../types/index.js";
 
 type Step = "select" | "webhook" | "watching";
 

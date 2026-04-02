@@ -2,8 +2,8 @@ import {
   aggregateSessions,
   getDailySummary,
   getWeeklySummary,
-} from "../../core/aggregator.js";
-import { barChart, formatNumber } from "../../utils/format.js";
+} from "../../../observe/aggregator.js";
+import { barChart, formatNumber } from "../../../utils/format.js";
 
 interface SummaryOptions {
   weekly?: boolean;
@@ -19,7 +19,7 @@ export async function summaryCommand(options: SummaryOptions) {
   }
 }
 
-function printDailySummary(sessions: import("../../core/types.js").Session[]) {
+function printDailySummary(sessions: import("../../../types/index.js").Session[]) {
   const summary = getDailySummary(sessions);
 
   console.log(`\n  nysm — Daily Summary (${summary.date})\n`);
@@ -44,7 +44,7 @@ function printDailySummary(sessions: import("../../core/types.js").Session[]) {
   console.log();
 }
 
-function printWeeklySummary(sessions: import("../../core/types.js").Session[]) {
+function printWeeklySummary(sessions: import("../../../types/index.js").Session[]) {
   const weekly = getWeeklySummary(sessions);
 
   console.log(`\n  nysm — Weekly Summary\n`);

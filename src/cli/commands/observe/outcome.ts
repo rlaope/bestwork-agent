@@ -1,5 +1,5 @@
-import { aggregateSessions } from "../../core/aggregator.js";
-import { analyzeOutcome, renderOutcome } from "../../core/outcomes.js";
+import { aggregateSessions } from "../../../observe/aggregator.js";
+import { analyzeOutcome, renderOutcome } from "../../../observe/outcomes.js";
 
 export async function outcomeCommand(id: string) {
   const sessions = await aggregateSessions();
