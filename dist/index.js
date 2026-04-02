@@ -1045,7 +1045,7 @@ function bwErr(msg) {
 }
 
 // src/cli/commands/harness/install.ts
-var BW_HOOKS_RESOLVE = `BW_HOOKS="$(npm root -g 2>/dev/null)/bestwork-agent/hooks"; [ ! -d "$BW_HOOKS" ] && BW_HOOKS="$(ls -d ~/.claude/plugins/cache/bestwork-tools/bestwork-agent/*/hooks 2>/dev/null | tail -1)"; [ ! -d "$BW_HOOKS" ] && exit 0;`;
+var BW_HOOKS_RESOLVE = `BW_HOOKS="$(npm root -g 2>/dev/null)/bestwork-agent/hooks"; [ ! -d "$BW_HOOKS" ] && BW_HOOKS="$(ls -d ~/.claude/plugins/cache/bestwork-tools/bestwork-agent/*/hooks 2>/dev/null | sort -V | tail -1)"; [ ! -d "$BW_HOOKS" ] && exit 0;`;
 function bwCmd(script, extraEnv = "") {
   return `${BW_HOOKS_RESOLVE} ${extraEnv}bash "$BW_HOOKS/${script}"`;
 }

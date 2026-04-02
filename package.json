@@ -6,6 +6,13 @@
   "bin": {
     "bestwork": "./dist/index.js"
   },
+  "files": [
+    "dist/",
+    "hooks/",
+    "skills/",
+    "prompts/",
+    ".claude-plugin/"
+  ],
   "scripts": {
     "build": "tsup && node scripts/sync-plugin.mjs",
     "dev": "tsup --watch",

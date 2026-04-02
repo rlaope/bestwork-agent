@@ -5,7 +5,7 @@ import { ensureDataDir } from "../../../data/store.js";
 import { bwOk, bwLog } from "../../../utils/brand.js";
 
 // Resolve hooks dir at runtime: npm global → plugin cache fallback
-const BW_HOOKS_RESOLVE = `BW_HOOKS="$(npm root -g 2>/dev/null)/bestwork-agent/hooks"; [ ! -d "$BW_HOOKS" ] && BW_HOOKS="$(ls -d ~/.claude/plugins/cache/bestwork-tools/bestwork-agent/*/hooks 2>/dev/null | tail -1)"; [ ! -d "$BW_HOOKS" ] && exit 0;`;
+const BW_HOOKS_RESOLVE = `BW_HOOKS="$(npm root -g 2>/dev/null)/bestwork-agent/hooks"; [ ! -d "$BW_HOOKS" ] && BW_HOOKS="$(ls -d ~/.claude/plugins/cache/bestwork-tools/bestwork-agent/*/hooks 2>/dev/null | sort -V | tail -1)"; [ ! -d "$BW_HOOKS" ] && exit 0;`;
 
 function bwCmd(script: string, extraEnv = ""): string {
   return `${BW_HOOKS_RESOLVE} ${extraEnv}bash "$BW_HOOKS/${script}"`;

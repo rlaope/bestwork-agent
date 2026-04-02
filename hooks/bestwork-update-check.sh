@@ -2,7 +2,9 @@
 # bestwork update checker — runs on SessionStart
 # Checks npm registry for newer version, notifies via hookSpecificOutput
 
-CURRENT_VERSION="0.8.0"
+# Dynamically resolve current version from package.json
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CURRENT_VERSION=$(jq -r '.version' "$SCRIPT_DIR/../package.json" 2>/dev/null || echo "0.0.0")
 
 # Only check once per day (cache result)
 CACHE="$HOME/.bestwork/update-check.json"
@@ -15,7 +17,7 @@ if [ -f "$CACHE" ]; then
     LATEST=$(jq -r '.latest // empty' "$CACHE" 2>/dev/null)
     if [ -n "$LATEST" ] && [ "$LATEST" != "$CURRENT_VERSION" ]; then
       jq -n --arg current "$CURRENT_VERSION" --arg latest "$LATEST" \
-        '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":("[BW] Update available: " + $current + " → " + $latest + "\nRun: npm install -g bestwork-agent@latest && bestwork install")}}'
+        '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":("[BW] Update available: " + $current + " → " + $latest + "\nRun /bestwork-agent:update or: claude plugin update bestwork-agent")}}'
     else
       echo '{}'
     fi
@@ -37,7 +39,7 @@ jq -n --arg latest "$LATEST" --arg checked "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
 
 if [ "$LATEST" != "$CURRENT_VERSION" ]; then
   jq -n --arg current "$CURRENT_VERSION" --arg latest "$LATEST" \
-    '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":("[BW] Update available: " + $current + " → " + $latest + "\nRun: npm install -g bestwork-agent@latest && bestwork install")}}'
+    '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":("[BW] Update available: " + $current + " → " + $latest + "\nRun /bestwork-agent:update or: claude plugin update bestwork-agent")}}'
 else
   echo '{}'
 fi
