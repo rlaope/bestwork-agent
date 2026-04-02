@@ -1,6 +1,6 @@
 # bestwork-agent
 
-**now you see me** — best harness engineering for Claude Code. work like a corporation team, not just a club.
+best harness engineering for Claude Code. work like a corporation team, not just a club.
 
 <p align="center">
   <img src="https://img.shields.io/npm/v/bestwork-agent?color=cyan" alt="npm version" />

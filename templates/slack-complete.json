@@ -13,7 +13,7 @@
     },
     {
       "type": "context",
-      "elements": [{ "type": "mrkdwn", "text": "bestwork — now you see me" }]
+      "elements": [{ "type": "mrkdwn", "text": "bestwork" }]
     }
   ]
 }

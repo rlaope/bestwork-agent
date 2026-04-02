@@ -77,7 +77,7 @@ export function App({ watchMode = false }: AppProps) {
           <Text bold color="cyan">
             bestwork
           </Text>
-          <Text color="gray"> — now you see me</Text>
+          <Text color="gray"></Text>
           {watchMode && (
             <Text color="green"> [LIVE]</Text>
           )}

@@ -20,7 +20,7 @@ const program = new Command();
 
 program
   .name("bestwork")
-  .description("now you see me — Claude Code Agent Observability & Session Analytics")
+  .description("bestwork-agent — harness engineering for Claude Code")
   .version("0.1.0");
 
 program

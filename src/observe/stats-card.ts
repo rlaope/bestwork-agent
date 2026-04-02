@@ -24,7 +24,7 @@ export function renderStatsCard(sessions: Session[]): string {
 
   const lines: string[] = [];
   lines.push("┌──────────────────────────────────────────────┐");
-  lines.push("│         \x1b[1m\x1b[36mbestwork\x1b[0m — now you see me              │");
+  lines.push("│         \x1b[1m\x1b[36mbestwork\x1b[0m              │");
   lines.push("│                                              │");
   lines.push(`│  ${today}                                │`);
   lines.push("│                                              │");

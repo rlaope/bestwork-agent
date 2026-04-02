@@ -121,7 +121,7 @@ async function sendDiscord(
           title: `🔍 bestwork-agent — ${title}`,
           description: body,
           color: 0x00d4aa,
-          footer: { text: "bestwork-agent — now you see me" },
+          footer: { text: "bestwork-agent" },
           timestamp: new Date().toISOString(),
         },
       ],
@@ -151,7 +151,7 @@ async function sendSlack(
         {
           type: "context",
           elements: [
-            { type: "mrkdwn", text: "bestwork-agent — now you see me" },
+            { type: "mrkdwn", text: "bestwork-agent" },
           ],
         },
       ],

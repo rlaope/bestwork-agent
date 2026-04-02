@@ -120,7 +120,7 @@ if [ -n "$DISCORD_URL" ]; then
         "title": $title,
         "description": $body,
         "color": $color,
-        "footer": {"text": "bestwork — now you see me"},
+        "footer": {"text": "bestwork"},
         "timestamp": (now | todate)
       }]
     }')
@@ -134,7 +134,7 @@ if [ -n "$SLACK_URL" ]; then
     "blocks": [
       {"type": "header", "text": {"type": "plain_text", "text": $title}},
       {"type": "section", "text": {"type": "mrkdwn", "text": $body}},
-      {"type": "context", "elements": [{"type": "mrkdwn", "text": "bestwork — now you see me"}]}
+      {"type": "context", "elements": [{"type": "mrkdwn", "text": "bestwork"}]}
     ]
   }')
   curl -s -X POST "$SLACK_URL" -H "Content-Type: application/json" -d "$PAYLOAD" > /dev/null 2>&1

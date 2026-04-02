@@ -11,9 +11,10 @@ LOWER=$(echo "$PROMPT" | tr '[:upper:]' '[:lower:]')
 # === TIER 1: Slash command prefix (exact match, highest priority) ===
 
 # Setup commands
-echo "$PROMPT" | grep -qE '^\./discord'  && echo "$INPUT" | bash "$SCRIPT_DIR/bestwork-slash.sh" && exit 0
-echo "$PROMPT" | grep -qE '^\./slack'    && echo "$INPUT" | bash "$SCRIPT_DIR/bestwork-slash.sh" && exit 0
-echo "$PROMPT" | grep -qE '^\./bestwork'  && echo "$INPUT" | bash "$SCRIPT_DIR/bestwork-slash.sh" && exit 0
+echo "$PROMPT" | grep -qE '^\./bw-install' && echo "$INPUT" | bash "$SCRIPT_DIR/bestwork-slash.sh" && exit 0
+echo "$PROMPT" | grep -qE '^\./discord'    && echo "$INPUT" | bash "$SCRIPT_DIR/bestwork-slash.sh" && exit 0
+echo "$PROMPT" | grep -qE '^\./slack'      && echo "$INPUT" | bash "$SCRIPT_DIR/bestwork-slash.sh" && exit 0
+echo "$PROMPT" | grep -qE '^\./bestwork'   && echo "$INPUT" | bash "$SCRIPT_DIR/bestwork-slash.sh" && exit 0
 
 # Harness commands
 echo "$PROMPT" | grep -qE '^\./scope'    && echo "$INPUT" | bash "$SCRIPT_DIR/bestwork-harness.sh" && exit 0
