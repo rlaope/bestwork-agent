@@ -24,9 +24,9 @@ if echo "$PROMPT" | grep -qE '^\./discord'; then
       -H "Content-Type: application/json" \
       -d "{\"embeds\":[{\"title\":\"bestwork connected\",\"description\":\"Discord notifications enabled (lang: ${LANG}).\",\"color\":55467}]}" > /dev/null 2>&1
     jq -n --arg lang "$LANG" \
-      '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":("[bestwork] Discord configured (lang: " + $lang + "). Notifications active.")}}'
+      '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":("[BW] Discord configured (lang: " + $lang + "). Notifications active.")}}'
   else
-    jq -n '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":"[bestwork] Usage: ./discord <webhook_url> [--lang ko|en|ja]"}}'
+    jq -n '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":"[BW] Usage: ./discord <webhook_url> [--lang ko|en|ja]"}}'
   fi
   exit 0
 fi
@@ -48,9 +48,9 @@ if echo "$PROMPT" | grep -qE '^\./slack'; then
       -H "Content-Type: application/json" \
       -d "{\"blocks\":[{\"type\":\"header\",\"text\":{\"type\":\"plain_text\",\"text\":\"bestwork connected\"}},{\"type\":\"section\",\"text\":{\"type\":\"mrkdwn\",\"text\":\"Slack notifications enabled (lang: ${LANG}).\"}}]}" > /dev/null 2>&1
     jq -n --arg lang "$LANG" \
-      '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":("[bestwork] Slack configured (lang: " + $lang + "). Notifications active.")}}'
+      '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":("[BW] Slack configured (lang: " + $lang + "). Notifications active.")}}'
   else
-    echo "{\"hookSpecificOutput\":{\"hookEventName\":\"UserPromptSubmit\",\"additionalContext\":\"[bestwork] Usage: ./slack <webhook_url>\"}}"
+    echo "{\"hookSpecificOutput\":{\"hookEventName\":\"UserPromptSubmit\",\"additionalContext\":\"[BW] Usage: ./slack <webhook_url>\"}}"
   fi
   exit 0
 fi
@@ -95,7 +95,7 @@ if echo "$PROMPT" | grep -qE '^\./bw-install'; then
   fi
 
   jq -n --arg result "${INSTALL_RESULT}${EXTRA}" \
-    '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":("[bestwork install]\n" + $result)}}'
+    '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":("[BW install]\n" + $result)}}'
   exit 0
 fi
 
@@ -107,7 +107,7 @@ if echo "$PROMPT" | grep -qE '^\./bestwork'; then
   STATUS="bestwork status:\\n"
   [ -n "$HAS_DISCORD" ] && STATUS="${STATUS}  Discord: connected\\n" || STATUS="${STATUS}  Discord: not configured\\n"
   [ -n "$HAS_SLACK" ] && STATUS="${STATUS}  Slack: connected\\n" || STATUS="${STATUS}  Slack: not configured\\n"
-  echo "{\"hookSpecificOutput\":{\"hookEventName\":\"UserPromptSubmit\",\"additionalContext\":\"[bestwork] ${STATUS}\"}}"
+  echo "{\"hookSpecificOutput\":{\"hookEventName\":\"UserPromptSubmit\",\"additionalContext\":\"[BW] ${STATUS}\"}}"
   exit 0
 fi
 

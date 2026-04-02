@@ -22,7 +22,7 @@ BESTWORK_LOG="$HOME/.bestwork/data/${SESSION_ID}.jsonl"
 if [ -f "$BESTWORK_LOG" ]; then
   WAS_READ=$(grep -c "\"toolName\":\"Read\".*$(echo "$FILE_PATH" | sed 's/[\/&]/\\&/g')" "$BESTWORK_LOG" 2>/dev/null)
   if [ "$WAS_READ" = "0" ] || [ -z "$WAS_READ" ]; then
-    echo "{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"additionalContext\":\"[bestwork grounding] Warning: Attempting to ${TOOL} ${FILE_PATH} without reading it first in this session. Read the file first to avoid hallucinated content.\"}}"
+    echo "{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"additionalContext\":\"[BW grounding] Warning: Attempting to ${TOOL} ${FILE_PATH} without reading it first in this session. Read the file first to avoid hallucinated content.\"}}"
     exit 0
   fi
 fi

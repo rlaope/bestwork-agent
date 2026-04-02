@@ -15,7 +15,7 @@ if [ -f "$CACHE" ]; then
     LATEST=$(jq -r '.latest // empty' "$CACHE" 2>/dev/null)
     if [ -n "$LATEST" ] && [ "$LATEST" != "$CURRENT_VERSION" ]; then
       jq -n --arg current "$CURRENT_VERSION" --arg latest "$LATEST" \
-        '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":("[bestwork] Update available: " + $current + " → " + $latest + "\nRun: npm install -g bestwork-agent@latest && bestwork install")}}'
+        '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":("[BW] Update available: " + $current + " → " + $latest + "\nRun: npm install -g bestwork-agent@latest && bestwork install")}}'
     else
       echo '{}'
     fi
@@ -37,7 +37,7 @@ jq -n --arg latest "$LATEST" --arg checked "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
 
 if [ "$LATEST" != "$CURRENT_VERSION" ]; then
   jq -n --arg current "$CURRENT_VERSION" --arg latest "$LATEST" \
-    '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":("[bestwork] Update available: " + $current + " → " + $latest + "\nRun: npm install -g bestwork-agent@latest && bestwork install")}}'
+    '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":("[BW] Update available: " + $current + " → " + $latest + "\nRun: npm install -g bestwork-agent@latest && bestwork install")}}'
 else
   echo '{}'
 fi

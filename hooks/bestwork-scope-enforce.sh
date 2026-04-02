@@ -27,5 +27,5 @@ if [[ "$RESOLVED_FILE" == "$RESOLVED_SCOPE"* ]]; then
   echo '{}'
 else
   jq -n --arg file "$FILE_PATH" --arg scope "$SCOPE" \
-    '{"hookSpecificOutput":{"hookEventName":"PreToolUse","additionalContext":("[bestwork scope] BLOCKED: " + $file + " is outside scope " + $scope + ". Use ./unlock to remove restriction.")}}'
+    '{"hookSpecificOutput":{"hookEventName":"PreToolUse","additionalContext":("[BW scope] BLOCKED: " + $file + " is outside scope " + $scope + ". Use ./unlock to remove restriction.")}}'
 fi

@@ -39,7 +39,7 @@ DIFF=$(git diff HEAD 2>/dev/null)
 [ -z "$DIFF" ] && DIFF=$(git diff 2>/dev/null)
 [ -z "$DIFF" ] && DIFF=$(git diff HEAD~1 2>/dev/null)
 [ -z "$DIFF" ] && {
-  jq -n '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":"[bestwork review] No code changes to review."}}'
+  jq -n '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":"[BW review] No code changes to review."}}'
   exit 0
 }
 
@@ -122,4 +122,4 @@ else
 fi
 
 jq -n --arg result "$RESULT" \
-  '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":("[bestwork review]\n" + $result)}}'
+  '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":("[BW review]\n" + $result)}}'

@@ -37,7 +37,7 @@ ERRORS=$(cd "$PROJECT_ROOT" && timeout 10 npx tsc --noEmit 2>&1 | grep "error TS
 
 if [ -n "$ERRORS" ]; then
   ESCAPED=$(echo "$ERRORS" | head -5 | tr '\n' ' ' | sed 's/"/\\"/g')
-  echo "{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"[bestwork validate] TypeScript errors after ${TOOL}:\\n${ESCAPED}\"}}"
+  echo "{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"[BW validate] TypeScript errors after ${TOOL}:\\n${ESCAPED}\"}}"
 else
   echo '{}'
 fi

@@ -46,7 +46,7 @@ const HOOKS_REGISTRY: HookEntry[] = [
 Check for:
 1. TypeScript errors: run \`npx tsc --noEmit\` and report any errors in the changed file
 2. If the file imports modules, verify the imports actually exist (grep for them)
-Do NOT fix anything. Only report issues concisely (under 3 lines). If no issues, say nothing.`,
+Do NOT fix anything. Only report issues concisely (under 3 lines). Prefix all output with [BW]. If no issues, say nothing.`,
   },
 
   // PreToolUse — grounding check
@@ -58,7 +58,7 @@ Do NOT fix anything. Only report issues concisely (under 3 lines). If no issues,
     timeout: 15,
     prompt: `You are bestwork's grounding agent. The AI is about to modify a file via $ARGUMENTS.
 Check: has this file been Read in the current session? Look at the conversation history.
-If NOT read yet, output a warning: "bestwork grounding: Read this file before editing to avoid hallucinated content."
+If NOT read yet, output a warning: "[BW] Grounding: Read this file before editing to avoid hallucinated content."
 If already read, say nothing.`,
   },
 
@@ -81,16 +81,16 @@ PASSTHROUGH (0 agents, instant): git commands, shell commands, npm/yarn, simple 
 → Do NOT announce anything. Just execute directly. No meeting log. Maximum speed.
 
 SOLO (1 agent): fix a typo, rename variable, update version, format code, add a comment, small single-file edit.
-→ Announce: "[bestwork: solo]" then execute directly. No meeting log.
+→ Announce: "[BW] solo" then execute directly. No meeting log.
 
 PAIR (2 agents): fullstack feature (API + UI), backend + infra change.
-→ Announce: "[bestwork: pair — Agent1, Agent2]"
+→ Announce: "[BW] pair — Agent1, Agent2"
 
 TRIO (3 agents): Tech + PM + Critic. Standard quality-gated execution.
-→ Announce: "[bestwork: trio — Tech, PM, Critic]"
+→ Announce: "[BW] trio — Tech, PM, Critic"
 
 SQUAD/TEAM (4+ agents): large scope, architecture, security-critical.
-→ Announce: "[bestwork: {MODE} → {TEAM}]"
+→ Announce: "[BW] {MODE} → {TEAM}"
 
 STEP 1.5: If not passthrough/solo, CLASSIFY THE DOMAIN:
 - FEATURE → Squad

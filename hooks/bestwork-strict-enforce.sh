@@ -14,7 +14,7 @@ if [ "$TOOL" = "Bash" ]; then
 
   # Block destructive operations
   if echo "$CMD" | grep -qE '(rm\s+-rf|git\s+push\s+--force|git\s+reset\s+--hard|git\s+clean\s+-f|DROP\s+TABLE|DELETE\s+FROM)'; then
-    echo "{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"additionalContext\":\"[bestwork strict] BLOCKED: Dangerous command detected: ${CMD}. Use ./relax to disable strict mode.\"}}"
+    echo "{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"additionalContext\":\"[BW strict] BLOCKED: Dangerous command detected: ${CMD}. Use ./relax to disable strict mode.\"}}"
     exit 0
   fi
 fi
