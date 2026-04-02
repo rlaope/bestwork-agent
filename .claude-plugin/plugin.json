@@ -9,12 +9,5 @@
   "homepage": "https://github.com/rlaope/bestwork-agent",
   "repository": "https://github.com/rlaope/bestwork-agent",
   "license": "MIT",
-  "keywords": ["harness", "agents", "orchestration", "observability", "anti-hallucination"],
-
-  "agents": [
-    "./agents/smart-gateway.md",
-    "./agents/validation.md",
-    "./agents/grounding.md",
-    "./agents/platform-review.md"
-  ]
+  "keywords": ["harness", "agents", "orchestration", "observability", "anti-hallucination"]
 }
