@@ -198,94 +198,6 @@ You may not have deep experience, but your questions often reveal blind spots.`
 Your job is to find bugs before users do.`
   }
 ];
-var TEAM_PRESETS = [
-  {
-    mode: "hierarchy",
-    name: "Full Team",
-    description: "CTO \u2192 Tech Lead \u2192 Senior \u2192 Junior. Top-down authority with bottom-up input.",
-    roles: ["cto", "tech-lead", "sr-fullstack", "jr-engineer"],
-    decisionFlow: `Execution order:
-1. Junior implements first draft + flags concerns
-2. Senior reviews, improves, handles complex parts
-3. Tech Lead reviews architecture and patterns
-4. CTO makes final call on trade-offs
-Each level can send work back down with feedback.`
-  },
-  {
-    mode: "hierarchy",
-    name: "Backend Team",
-    description: "CTO \u2192 Tech Lead \u2192 Sr. Backend \u2192 Junior. For API/database work.",
-    roles: ["cto", "tech-lead", "sr-backend", "jr-engineer"],
-    decisionFlow: `Execution order:
-1. Junior implements basic structure + writes tests
-2. Sr. Backend optimizes queries, handles edge cases
-3. Tech Lead reviews API design and patterns
-4. CTO approves architecture decisions`
-  },
-  {
-    mode: "hierarchy",
-    name: "Frontend Team",
-    description: "CPO \u2192 Product Lead \u2192 Sr. Frontend \u2192 Junior. For UI/UX work.",
-    roles: ["cpo", "product-lead", "sr-frontend", "jr-engineer"],
-    decisionFlow: `Execution order:
-1. Junior builds initial components
-2. Sr. Frontend refines architecture, accessibility, performance
-3. Product Lead verifies UX requirements
-4. CPO approves product direction`
-  },
-  {
-    mode: "hierarchy",
-    name: "Security Team",
-    description: "CISO \u2192 Tech Lead \u2192 Sr. Security \u2192 Jr. QA. For security-sensitive work.",
-    roles: ["ciso", "tech-lead", "sr-security", "jr-qa"],
-    decisionFlow: `Execution order:
-1. Jr. QA tries to break things, finds attack vectors
-2. Sr. Security implements fixes, hardens code
-3. Tech Lead reviews implementation quality
-4. CISO approves security posture`
-  },
-  {
-    mode: "squad",
-    name: "Feature Squad",
-    description: "Flat team: Sr. Backend + Sr. Frontend + Product Lead + QA Lead. Equal voice.",
-    roles: ["sr-backend", "sr-frontend", "product-lead", "qa-lead"],
-    decisionFlow: `All members discuss in parallel:
-- Backend designs API, Frontend designs UI, Product verifies requirements, QA defines test plan
-- Disagreements resolved by majority vote
-- No single authority \u2014 consensus-driven`
-  },
-  {
-    mode: "squad",
-    name: "Infra Squad",
-    description: "Flat team: Sr. Infra + Sr. Security + Tech Lead. For DevOps/platform work.",
-    roles: ["sr-infra", "sr-security", "tech-lead"],
-    decisionFlow: `All members contribute in parallel:
-- Infra handles deployment/CI, Security reviews posture, Tech Lead ensures patterns
-- Consensus required for changes that affect production`
-  },
-  {
-    mode: "review",
-    name: "Code Review Board",
-    description: "Tech Lead + Sr. Security + QA Lead. Review-only, no implementation.",
-    roles: ["tech-lead", "sr-security", "qa-lead"],
-    decisionFlow: `Review flow:
-1. All three review the code independently
-2. Each provides verdict: APPROVE, REQUEST_CHANGES, or COMMENT
-3. Must have 2/3 approvals to pass
-4. Security concerns are blocking regardless of vote count`
-  },
-  {
-    mode: "advisory",
-    name: "Architecture Review",
-    description: "CTO + Tech Lead + Engineering Manager. Strategic advisory only.",
-    roles: ["cto", "tech-lead", "engineering-manager"],
-    decisionFlow: `Advisory flow:
-1. Engineering Manager assesses scope and delivery risk
-2. Tech Lead evaluates technical approach
-3. CTO makes final architectural decision
-No code is written \u2014 only direction is set.`
-  }
-];
 var ALL_ORG_ROLES = [
   ...C_LEVEL,
   ...LEADS,
@@ -1414,80 +1326,6 @@ var ALL_AGENTS = [
 ];
 
 // src/harness/orchestrator.ts
-function buildExecutionPlan(teamName, task) {
-  const preset = TEAM_PRESETS.find(
-    (t) => t.name.toLowerCase() === teamName.toLowerCase()
-  );
-  if (!preset) return null;
-  const roles = preset.roles.map((id) => ALL_ORG_ROLES.find((r) => r.id === id)).filter((r) => r !== void 0);
-  if (roles.length === 0) return null;
-  const steps = [];
-  if (preset.mode === "hierarchy") {
-    const ordered = [...roles].sort((a, b) => levelOrder(a.level) - levelOrder(b.level));
-    for (let i = 0; i < ordered.length; i++) {
-      const role = ordered[i];
-      const domainAgent = findMatchingDomainAgent(role);
-      const combinedPrompt = combinePrompts(role, domainAgent, task);
-      steps.push({
-        agentId: role.id,
-        role: role.title,
-        title: role.title,
-        systemPrompt: combinedPrompt,
-        phase: i === 0 ? "implement" : i < ordered.length - 1 ? "review" : "approve",
-        parallel: false,
-        dependsOn: i > 0 ? [ordered[i - 1].id] : []
-      });
-    }
-  } else if (preset.mode === "squad") {
-    for (const role of roles) {
-      const domainAgent = findMatchingDomainAgent(role);
-      const combinedPrompt = combinePrompts(role, domainAgent, task);
-      steps.push({
-        agentId: role.id,
-        role: role.title,
-        title: role.title,
-        systemPrompt: combinedPrompt,
-        phase: "implement",
-        parallel: true,
-        dependsOn: []
-      });
-    }
-  } else if (preset.mode === "review") {
-    for (const role of roles) {
-      const combinedPrompt = combinePrompts(role, null, task);
-      steps.push({
-        agentId: role.id,
-        role: role.title,
-        title: role.title,
-        systemPrompt: combinedPrompt,
-        phase: "review",
-        parallel: true,
-        dependsOn: []
-      });
-    }
-  } else if (preset.mode === "advisory") {
-    for (let i = 0; i < roles.length; i++) {
-      const role = roles[i];
-      steps.push({
-        agentId: role.id,
-        role: role.title,
-        title: role.title,
-        systemPrompt: combinePrompts(role, null, task),
-        phase: "review",
-        parallel: false,
-        dependsOn: i > 0 ? [roles[i - 1].id] : []
-      });
-    }
-  }
-  return {
-    mode: preset.mode,
-    teamName: preset.name,
-    task,
-    steps,
-    maxRetries: 3,
-    feedbackLoop: preset.mode === "hierarchy" || preset.mode === "squad"
-  };
-}
 var PASSTHROUGH_PATTERNS = [
   /^(git |commit|push|pull|merge|rebase|checkout|branch|stash|tag|log|diff|status)/i,
   /^(ls|cd|pwd|cat|head|tail|mv|cp|rm |mkdir|touch|chmod|find|grep|sed|awk)/i,
@@ -1684,68 +1522,6 @@ function classifyIntent(task) {
     suggestedAgents
   };
 }
-function formatPlan(plan) {
-  const lines = [];
-  lines.push(`
-  [bestwork: ${plan.mode} \u2192 ${plan.teamName}]`);
-  lines.push(`  Task: ${plan.task}
-`);
-  for (const step of plan.steps) {
-    const marker = step.parallel ? "\u2551" : step.dependsOn.length === 0 ? "\u2554" : step.phase === "approve" ? "\u255A" : "\u2560";
-    const phaseTag = step.phase === "implement" ? "\u{1F528}" : step.phase === "review" ? "\u{1F50D}" : "\u2705";
-    lines.push(`  ${marker} ${phaseTag} ${step.title} (${step.agentId})`);
-  }
-  if (plan.feedbackLoop) {
-    lines.push(`
-  Feedback loop: max ${plan.maxRetries} retries`);
-  }
-  lines.push("");
-  return lines.join("\n");
-}
-function levelOrder(level) {
-  switch (level) {
-    case "junior":
-      return 0;
-    case "senior":
-      return 1;
-    case "lead":
-      return 2;
-    case "c-level":
-      return 3;
-    default:
-      return 1;
-  }
-}
-var ROLE_TO_AGENT_ID = {
-  "sr-backend": "tech-backend",
-  "sr-frontend": "tech-frontend",
-  "sr-fullstack": "tech-fullstack",
-  "sr-infra": "tech-infra",
-  "sr-security": "tech-security",
-  "jr-engineer": "tech-fullstack",
-  "jr-qa": "tech-testing",
-  "qa-lead": "tech-testing",
-  "tech-lead": "tech-fullstack",
-  "product-lead": "pm-product"
-};
-function findMatchingDomainAgent(role) {
-  const agentId = ROLE_TO_AGENT_ID[role.id];
-  if (!agentId) return null;
-  return ALL_AGENTS.find((a) => a.id === agentId) ?? null;
-}
-function combinePrompts(role, domainAgent, task) {
-  let prompt = role.systemPrompt;
-  if (domainAgent) {
-    prompt += `
-
-Domain expertise (${domainAgent.name}):
-${domainAgent.systemPrompt}`;
-  }
-  prompt += `
-
-Task: ${task}`;
-  return prompt;
-}
 
 // src/harness/smart-gateway.ts
 import { appendFileSync, mkdirSync } from "fs";
@@ -1886,21 +1662,6 @@ var SKILL_ROUTES = [
     reason: "parallel execution with quality gates"
   }
 ];
-function modeToTeam(mode) {
-  switch (mode) {
-    case "trio":
-    case "squad":
-      return "feature-squad";
-    case "hierarchy":
-      return "full-team";
-    case "pair":
-      return "feature-squad";
-    case "solo":
-      return "feature-squad";
-    default:
-      return null;
-  }
-}
 async function readStdin() {
   return new Promise((resolve) => {
     let data = "";
@@ -1985,84 +1746,44 @@ IMPORTANT: Do NOT skip this. Invoke the Skill tool with skill="bestwork-agent:${
     }
   }
   const intent = classifyIntent(prompt);
+  const agentList = intent.suggestedAgents.join(", ");
   if (intent.mode === "passthrough") {
-    output(`[BW] passthrough
-
-You MUST print this EXACTLY as the first line of your response before doing anything else:
-\`\`\`
-[BW] direct execution
-\`\`\``);
+    output(`[BW] direct execution`);
     return;
   }
-  if ((intent.mode === "trio" || intent.mode === "pair") && intent.tasks.length > 1 && PLUGIN_ROOT) {
-    const tasksStr = intent.tasks.join(" | ");
-    try {
-      const hookInput = JSON.stringify({ prompt: `./trio ${tasksStr}`, session_id: input.session_id ?? "" });
-      const result = execSync(
-        `echo '${hookInput.replace(/'/g, "'\\''")}' | BESTWORK_TRIO_TRIGGER=1 bash "${PLUGIN_ROOT}/hooks/bestwork-trio.sh"`,
-        { encoding: "utf-8", timeout: 5e3 }
-      ).trim();
-      if (result && result !== "{}") {
-        log(`[BW gateway \u2192 trio] ${intent.tasks.length} tasks: ${tasksStr}`);
-        process.stdout.write(result + "\n");
-        return;
-      }
-    } catch {
-    }
-  }
-  const MODE_LABELS = {
-    solo: "solo mode",
-    pair: "pair mode",
-    trio: "trio mode",
-    squad: "squad mode",
-    hierarchy: "hierarchy mode"
-  };
-  const agentList = intent.suggestedAgents.join(", ");
-  const lines = [];
-  lines.push(`[BW gateway: ${MODE_LABELS[intent.mode] || intent.mode} \u2014 ${intent.tasks.length} tasks, agents: ${agentList}]`);
-  lines.push(`
-Classification: ${intent.reasoning}`);
-  const teamName = modeToTeam(intent.mode);
-  if (teamName) {
-    const plan = buildExecutionPlan(teamName, prompt);
-    if (plan) {
-      lines.push(formatPlan(plan));
-    }
-  }
-  if (intent.mode !== "solo") {
-    lines.push(`
-You MUST present these team structure options to the user BEFORE executing. Do NOT auto-execute.`);
-    lines.push(`
-Print this EXACTLY:
-\`\`\``);
-    lines.push(`[BW] this looks like a ${intent.mode}-scale task (${intent.tasks.length} sub-tasks, ${agentList})
-`);
-    lines.push(`Available structures:`);
-    lines.push(`  1. trio   \u2014 Tech + PM + Critic per task, quality gates, max 3 rounds`);
-    lines.push(`  2. squad  \u2014 all agents parallel, flat, majority vote`);
-    lines.push(`  3. hierarchy \u2014 Junior\u2192Senior\u2192Lead\u2192CTO chain, bottom-up implementation`);
-    lines.push(`  4. pair   \u2014 2 specialists, fast, cross-review at end`);
-    lines.push(`  5. solo   \u2014 single specialist, no overhead
-`);
-    lines.push(`\u2192 recommended: ${intent.mode} (${intent.reasoning})`);
-    lines.push(`\`\`\``);
-    lines.push(`
-Then WAIT for user to pick a number or type a mode name. Do NOT proceed until the user responds.`);
-    lines.push(`When user picks, execute the chosen mode with these tasks:`);
-    intent.tasks.forEach((t, i) => {
-      const agent = intent.suggestedAgents[i] || intent.suggestedAgents[0] || "tech-fullstack";
-      lines.push(`  ${i + 1}. ${t} \u2014 assigned to ${agent}`);
-    });
-  } else {
+  if (intent.mode === "solo") {
     const agent = intent.suggestedAgents[0] || "tech-fullstack";
-    lines.push(`
-Proceed with the task directly. Agent: ${agent}.`);
-    lines.push(`
-IMPORTANT: You MUST print this EXACTLY as the first line of your response before doing anything else:
-\`\`\`
-[BW] solo \u2014 ${agent}
-\`\`\``);
+    output(`[BW] solo \u2014 ${agent}
+
+Classification: ${intent.reasoning}
+Proceed directly.`);
+    return;
   }
-  output(lines.join("\n"));
+  const tasks = intent.tasks.map((t, i) => {
+    const agent = intent.suggestedAgents[i] || intent.suggestedAgents[0] || "tech-fullstack";
+    return `  ${i + 1}. ${t} \u2192 ${agent}`;
+  }).join("\n");
+  output(
+    `[BW] ${intent.tasks.length} sub-tasks detected (${intent.reasoning})
+
+Tasks:
+${tasks}
+
+You MUST print this EXACTLY, then STOP and WAIT for user response:
+
+[BW] ${intent.tasks.length} sub-tasks detected \u2014 which team structure?
+
+  1. trio      \u2014 Tech + PM + Critic quality gates. Best for: features needing review.
+  2. squad     \u2014 All agents parallel, flat, majority vote. Best for: speed on multi-domain.
+  3. hierarchy \u2014 Junior\u2192Senior\u2192Lead\u2192CTO chain. Best for: architecture, security-critical.
+  4. pair      \u2014 2 specialists, cross-review. Best for: focused fullstack work.
+  5. solo      \u2014 Single specialist, no overhead. Best for: when you know exactly what to do.
+
+  \u2192 recommended: ${intent.mode}
+
+Pick a number (1-5):
+
+After printing the above, do NOT execute anything. WAIT for user to respond with a number or mode name. Only then execute.`
+  );
 }
 main().catch(() => process.stdout.write("{}\n"));

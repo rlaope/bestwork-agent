@@ -234,78 +234,47 @@ async function main() {
   // Tier 2: Task classification — analyze prompt and determine execution mode
   const intent = classifyIntent(prompt);
 
+  const agentList = intent.suggestedAgents.join(", ");
+
   if (intent.mode === "passthrough") {
-    output(`[BW] passthrough\n\nYou MUST print this EXACTLY as the first line of your response before doing anything else:\n\`\`\`\n[BW] direct execution\n\`\`\``);
+    output(`[BW] direct execution`);
     return;
   }
 
-  // Tier 2a: trio/pair → delegate to trio hook (same as ./trio)
-  if ((intent.mode === "trio" || intent.mode === "pair") && intent.tasks.length > 1 && PLUGIN_ROOT) {
-    const tasksStr = intent.tasks.join(" | ");
-    try {
-      const hookInput = JSON.stringify({ prompt: `./trio ${tasksStr}`, session_id: input.session_id ?? "" });
-      const result = execSync(
-        `echo '${hookInput.replace(/'/g, "'\\''")}' | BESTWORK_TRIO_TRIGGER=1 bash "${PLUGIN_ROOT}/hooks/bestwork-trio.sh"`,
-        { encoding: "utf-8", timeout: 5000 }
-      ).trim();
-      if (result && result !== "{}") {
-        log(`[BW gateway → trio] ${intent.tasks.length} tasks: ${tasksStr}`);
-        process.stdout.write(result + "\n");
-        return;
-      }
-    } catch {}
-  }
-
-  // Mode labels for user-friendly output
-  const MODE_LABELS: Record<string, string> = {
-    solo: "solo mode",
-    pair: "pair mode",
-    trio: "trio mode",
-    squad: "squad mode",
-    hierarchy: "hierarchy mode",
-  };
-
-  // Build structured dispatch context with mandatory execution language
-  const agentList = intent.suggestedAgents.join(", ");
-  const lines: string[] = [];
-  lines.push(`[BW gateway: ${MODE_LABELS[intent.mode] || intent.mode} — ${intent.tasks.length} tasks, agents: ${agentList}]`);
-  lines.push(`\nClassification: ${intent.reasoning}`);
-
-  // Build execution plan
-  const teamName = modeToTeam(intent.mode);
-  if (teamName) {
-    const plan = buildExecutionPlan(teamName, prompt);
-    if (plan) {
-      lines.push(formatPlan(plan));
-    }
-  }
-
-  // For non-solo modes: present options to user, don't auto-execute
-  if (intent.mode !== "solo") {
-    lines.push(`\nYou MUST present these team structure options to the user BEFORE executing. Do NOT auto-execute.`);
-    lines.push(`\nPrint this EXACTLY:\n\`\`\``);
-    lines.push(`[BW] this looks like a ${intent.mode}-scale task (${intent.tasks.length} sub-tasks, ${agentList})\n`);
-    lines.push(`Available structures:`);
-    lines.push(`  1. trio   — Tech + PM + Critic per task, quality gates, max 3 rounds`);
-    lines.push(`  2. squad  — all agents parallel, flat, majority vote`);
-    lines.push(`  3. hierarchy — Junior→Senior→Lead→CTO chain, bottom-up implementation`);
-    lines.push(`  4. pair   — 2 specialists, fast, cross-review at end`);
-    lines.push(`  5. solo   — single specialist, no overhead\n`);
-    lines.push(`→ recommended: ${intent.mode} (${intent.reasoning})`);
-    lines.push(`\`\`\``);
-    lines.push(`\nThen WAIT for user to pick a number or type a mode name. Do NOT proceed until the user responds.`);
-    lines.push(`When user picks, execute the chosen mode with these tasks:`);
-    intent.tasks.forEach((t: string, i: number) => {
-      const agent = intent.suggestedAgents[i] || intent.suggestedAgents[0] || "tech-fullstack";
-      lines.push(`  ${i + 1}. ${t} — assigned to ${agent}`);
-    });
-  } else {
+  if (intent.mode === "solo") {
     const agent = intent.suggestedAgents[0] || "tech-fullstack";
-    lines.push(`\nProceed with the task directly. Agent: ${agent}.`);
-    lines.push(`\nIMPORTANT: You MUST print this EXACTLY as the first line of your response before doing anything else:\n\`\`\`\n[BW] solo — ${agent}\n\`\`\``);
+    output(`[BW] solo — ${agent}\n\nClassification: ${intent.reasoning}\nProceed directly.`);
+    return;
   }
 
-  output(lines.join("\n"));
+  // Non-solo: present team structure options with pros/cons, let user pick
+  const tasks = intent.tasks.map((t: string, i: number) => {
+    const agent = intent.suggestedAgents[i] || intent.suggestedAgents[0] || "tech-fullstack";
+    return `  ${i + 1}. ${t} → ${agent}`;
+  }).join("\n");
+
+  output(
+`[BW] ${intent.tasks.length} sub-tasks detected (${intent.reasoning})
+
+Tasks:
+${tasks}
+
+You MUST print this EXACTLY, then STOP and WAIT for user response:
+
+[BW] ${intent.tasks.length} sub-tasks detected — which team structure?
+
+  1. trio      — Tech + PM + Critic quality gates. Best for: features needing review.
+  2. squad     — All agents parallel, flat, majority vote. Best for: speed on multi-domain.
+  3. hierarchy — Junior→Senior→Lead→CTO chain. Best for: architecture, security-critical.
+  4. pair      — 2 specialists, cross-review. Best for: focused fullstack work.
+  5. solo      — Single specialist, no overhead. Best for: when you know exactly what to do.
+
+  → recommended: ${intent.mode}
+
+Pick a number (1-5):
+
+After printing the above, do NOT execute anything. WAIT for user to respond with a number or mode name. Only then execute.`
+  );
 }
 
 main().catch(() => process.stdout.write("{}\n"));

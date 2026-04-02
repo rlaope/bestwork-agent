@@ -511,10 +511,10 @@ describe("Edge cases", () => {
     expect(() => JSON.parse(raw)).not.toThrow();
   });
 
-  it("gateway returns [BW] passthrough for passthrough prompts", () => {
+  it("gateway returns [BW] for passthrough prompts", () => {
     const raw = runGateway("git status");
     const parsed = JSON.parse(raw);
-    expect(parsed.hookSpecificOutput.additionalContext).toContain("[BW] passthrough");
+    expect(parsed.hookSpecificOutput.additionalContext).toContain("[BW]");
   });
 });
 
