@@ -13,6 +13,7 @@ import { cardCommand } from "./commands/card.js";
 import { effectivenessCommand } from "./commands/effectiveness.js";
 import { exportCommand } from "./commands/export.js";
 import { notifyConfigCommand, notifySendCommand } from "./commands/notify-config.js";
+import { watchCommand } from "./commands/watch.js";
 
 const program = new Command();
 
@@ -89,6 +90,11 @@ program
   .option("-f, --format <format>", "Output format (json|csv)", "json")
   .option("-o, --output <file>", "Output file path")
   .action(exportCommand);
+
+program
+  .command("watch")
+  .description("Watch sessions and notify on completion (Discord/Slack)")
+  .action(watchCommand);
 
 const notifyCmd = program
   .command("notify")
