@@ -77,14 +77,14 @@ if git rev-parse --is-inside-work-tree &>/dev/null; then
   fi
 fi
 
-# Platform review
+# Hallucination review — run full review, extract all warnings
 REVIEW_LINE="✅ No issues"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if [ -n "$(git diff HEAD 2>/dev/null)" ] || [ -n "$(git diff 2>/dev/null)" ]; then
-  REVIEW_OUTPUT=$(echo '{}' | BESTWORK_REVIEW_TRIGGER=1 bash "$SCRIPT_DIR/bestwork-review.sh" 2>/dev/null)
-  if echo "$REVIEW_OUTPUT" | grep -q "⚠️"; then
-    REVIEW_LINE="⚠️ Platform mismatches found"
-  fi
+REVIEW_OUTPUT=$(echo '{}' | BESTWORK_REVIEW_TRIGGER=1 bash "$SCRIPT_DIR/bestwork-review.sh" 2>/dev/null)
+REVIEW_CONTENT=$(echo "$REVIEW_OUTPUT" | jq -r '.hookSpecificOutput.additionalContext // ""' 2>/dev/null)
+if echo "$REVIEW_CONTENT" | grep -q "⚠️"; then
+  # Extract all warning lines, strip the [bestwork review] header
+  REVIEW_LINE=$(echo "$REVIEW_CONTENT" | grep "⚠️" | head -5 | sed 's/^ *//')
 fi
 
 # === Send Discord ===
