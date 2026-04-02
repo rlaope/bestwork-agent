@@ -9,7 +9,7 @@
       "name": "bestwork-agent",
       "source": "./",
       "description": "Harness engineering for Claude Code. Work like a corporation team, not just a club.",
-      "version": "0.8.0"
+      "version": "0.10.0"
     }
   ]
 }

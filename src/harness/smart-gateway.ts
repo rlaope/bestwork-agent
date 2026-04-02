@@ -165,8 +165,15 @@ async function main() {
           }
         } catch {}
       }
-      // Fallback: tell Claude to invoke the skill
-      output(`[BW gateway] matched skill: bestwork-agent:${route.skill} — ${route.reason}. Use the Skill tool to invoke bestwork-agent:${route.skill} now.`);
+      // Fallback: force Claude to invoke the skill via MAGIC KEYWORD pattern
+      const skillUpper = route.skill.toUpperCase().replace(/-/g, "_");
+      output(
+        `[MAGIC KEYWORD: BESTWORK_${skillUpper}]\n\n` +
+        `You MUST invoke the skill using the Skill tool:\n` +
+        `- Skill name: bestwork-agent:${route.skill}\n` +
+        `- Reason: ${route.reason}\n\n` +
+        `IMPORTANT: Do NOT skip this. Invoke the Skill tool with skill="bestwork-agent:${route.skill}" before doing anything else.`
+      );
       return;
     }
   }
@@ -196,20 +203,11 @@ async function main() {
     } catch {}
   }
 
-  // Build structured dispatch context
+  // Build structured dispatch context with mandatory execution language
+  const agentList = intent.suggestedAgents.join(", ");
   const lines: string[] = [];
-  lines.push(`[BW gateway: ${intent.mode} mode]`);
-  lines.push(`Classification: ${intent.reasoning}`);
-  lines.push(`Confidence: ${intent.confidence}`);
-
-  if (intent.tasks.length > 1) {
-    lines.push(`\nSub-tasks (${intent.tasks.length}):`);
-    intent.tasks.forEach((t: string, i: number) => lines.push(`  ${i + 1}. ${t}`));
-  }
-
-  if (intent.suggestedAgents.length > 0) {
-    lines.push(`\nAssigned agents: ${intent.suggestedAgents.join(", ")}`);
-  }
+  lines.push(`[BW gateway: ${intent.mode} mode — ${intent.tasks.length} tasks, agents: ${agentList}]`);
+  lines.push(`\nClassification: ${intent.reasoning}`);
 
   // Build execution plan
   const teamName = modeToTeam(intent.mode);
@@ -220,11 +218,23 @@ async function main() {
     }
   }
 
-  // Execution instructions based on mode
-  if (intent.mode === "hierarchy") {
-    lines.push("\nExecution: Sequential chain. Junior implements → Senior reviews → Lead approves.");
+  // Mandatory execution instructions based on mode
+  if (intent.mode === "trio" || intent.mode === "pair" || intent.mode === "squad") {
+    lines.push(`\nYou MUST launch ${intent.tasks.length} parallel Agent tool calls, one per sub-task:`);
+    intent.tasks.forEach((t: string, i: number) => {
+      const agent = intent.suggestedAgents[i] || intent.suggestedAgents[0] || "tech-fullstack";
+      lines.push(`  ${i + 1}. ${t} — assigned to ${agent}`);
+    });
+    lines.push(`\nIMPORTANT: Do NOT execute these sequentially. Use the Agent tool to launch all ${intent.tasks.length} sub-tasks in parallel.`);
+  } else if (intent.mode === "hierarchy") {
+    lines.push(`\nYou MUST execute sequentially: Junior implements → Senior reviews → Lead approves.`);
+    if (intent.tasks.length > 0) {
+      intent.tasks.forEach((t: string, i: number) => lines.push(`  ${i + 1}. ${t}`));
+    }
+    lines.push(`\nIMPORTANT: Do NOT skip the review chain. Each stage must complete before the next begins.`);
   } else if (intent.mode === "solo") {
-    lines.push("\nExecution: Single agent. Proceed directly.");
+    const agent = intent.suggestedAgents[0] || "tech-fullstack";
+    lines.push(`\nProceed with the task directly. Agent: ${agent}.`);
   }
 
   output(lines.join("\n"));

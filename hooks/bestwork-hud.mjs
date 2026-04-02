@@ -51,10 +51,10 @@ async function readStdin() {
   });
 }
 
-// === OAuth token management (OMC pattern) ===
-const OAUTH_CLIENT_ID = process.env.CLAUDE_CODE_OAUTH_CLIENT_ID || "9d1c250a-e61b-44d9-88ed-5944d1962f5e";
+// === OAuth token management ===
 const CACHE_TTL_MS = 600000; // 10min normal cache
 const MAX_STALE_MS = 1800000; // 30min stale data OK
+
 const API_TIMEOUT = 5000;
 
 function getCredentials() {
@@ -86,41 +86,6 @@ function getCredentials() {
 function isTokenExpired(creds) {
   if (!creds.expiresAt) return false; // no expiry info, assume OK
   return Date.now() > creds.expiresAt;
-}
-
-function refreshAccessToken(refreshToken) {
-  return new Promise((resolve) => {
-    const body = new URLSearchParams({
-      grant_type: "refresh_token",
-      refresh_token: refreshToken,
-      client_id: OAUTH_CLIENT_ID,
-    }).toString();
-    const req = https.request({
-      hostname: "platform.claude.com",
-      path: "/v1/oauth/token",
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded", "Content-Length": Buffer.byteLength(body) },
-      timeout: API_TIMEOUT,
-    }, (res) => {
-      let data = "";
-      res.on("data", (c) => data += c);
-      res.on("end", () => {
-        if (res.statusCode === 200) {
-          try {
-            const p = JSON.parse(data);
-            if (p.access_token) {
-              resolve({ accessToken: p.access_token, refreshToken: p.refresh_token || refreshToken, expiresAt: p.expires_in ? Date.now() + p.expires_in * 1000 : p.expires_at });
-              return;
-            }
-          } catch {}
-        }
-        resolve(null);
-      });
-    });
-    req.on("error", () => resolve(null));
-    req.on("timeout", () => { req.destroy(); resolve(null); });
-    req.end(body);
-  });
 }
 
 function fetchUsage(accessToken) {
@@ -168,16 +133,14 @@ function writeUsageCache(data, rateLimited = false) {
   } catch {}
 }
 
-// === Anthropic Usage API (with token refresh + backoff) ===
+// === Anthropic Usage API (READ-ONLY — never refresh tokens) ===
+// IMPORTANT: Do NOT call refreshAccessToken() here. The HUD runs as a
+// statusline hook on every render. Refreshing the OAuth token invalidates
+// the token Claude Code holds, causing 401 auth errors for the user.
 async function getUsage() {
   try {
-    let creds = getCredentials();
-    if (!creds) return null;
-
-    // Check cache first
     const cache = readUsageCache();
     if (cache) {
-      // Rate limited → exponential backoff
       if (cache.rateLimited) {
         const count = cache.rateLimitedCount || 1;
         const backoff = Math.min(CACHE_TTL_MS * Math.pow(2, count - 1), MAX_STALE_MS);
@@ -189,19 +152,12 @@ async function getUsage() {
       }
     }
 
-    // Token expired? Refresh it
-    if (isTokenExpired(creds) && creds.refreshToken) {
-      const refreshed = await refreshAccessToken(creds.refreshToken);
-      if (refreshed) {
-        creds = { ...creds, ...refreshed };
-        // Write back to keychain not practical from HUD, but token is fresh for this call
-      } else {
-        // Refresh failed — use stale data if available
-        if (cache?.data && cache.lastSuccessAt && Date.now() - cache.lastSuccessAt < MAX_STALE_MS) {
-          return cache.data;
-        }
-        return null;
-      }
+    const creds = getCredentials();
+    if (!creds) return cache?.data || null;
+
+    // If token is expired, just use cache — do NOT refresh
+    if (isTokenExpired(creds)) {
+      return cache?.data || null;
     }
 
     const data = await fetchUsage(creds.accessToken);
@@ -212,42 +168,24 @@ async function getUsage() {
       weeklyReset: data.seven_day?.resets_at ? new Date(data.seven_day.resets_at) : null,
     };
 
-    await writeUsageCache(result, false);
+    writeUsageCache(result, false);
     return result;
   } catch (e) {
     const cache = readUsageCache();
 
     if (e === "auth_expired") {
-      // Try refresh on 401
-      const creds = getCredentials();
-      if (creds?.refreshToken) {
-        const refreshed = await refreshAccessToken(creds.refreshToken);
-        if (refreshed) {
-          try {
-            const data = await fetchUsage(refreshed.accessToken);
-            const result = {
-              fiveHour: Math.round((data.five_hour?.utilization ?? 0) * 100),
-              fiveHourReset: data.five_hour?.resets_at ? new Date(data.five_hour.resets_at) : null,
-              weekly: Math.round((data.seven_day?.utilization ?? 0) * 100),
-              weeklyReset: data.seven_day?.resets_at ? new Date(data.seven_day.resets_at) : null,
-            };
-            await writeUsageCache(result, false);
-            return result;
-          } catch {}
-        }
-      }
+      // Token expired mid-flight — return cached data, don't refresh
+      return cache?.data || null;
     }
 
     if (e === "rate_limited") {
-      // Save rate limited state with stale data preserved
-      await writeUsageCache(cache?.data || null, true);
+      writeUsageCache(cache?.data || null, true);
       if (cache?.data && cache.lastSuccessAt && Date.now() - cache.lastSuccessAt < MAX_STALE_MS) {
-        return cache.data; // show stale data instead of "wait"
+        return cache.data;
       }
       return "rate_limited";
     }
 
-    // Other errors — use stale cache
     if (cache?.data && cache.lastSuccessAt && Date.now() - cache.lastSuccessAt < MAX_STALE_MS) {
       return cache.data;
     }
@@ -312,6 +250,43 @@ function getContextPercent(stdinData) {
   return null;
 }
 
+// === Gateway mode indicator ===
+function getLastGatewayAction() {
+  const logPath = join(bwDir, "gateway.log");
+  if (!existsSync(logPath)) return "idle";
+  try {
+    const content = readFileSync(logPath, "utf-8").trimEnd();
+    const lastNewline = content.lastIndexOf("\n");
+    const lastLine = lastNewline === -1 ? content : content.slice(lastNewline + 1);
+    if (!lastLine) return "idle";
+
+    const parsed = JSON.parse(lastLine);
+    const ts = parsed.timestamp || parsed.ts;
+    if (!ts) return "idle";
+
+    const age = Date.now() - new Date(ts).getTime();
+    if (age > 60000) return "idle";
+
+    // Extract mode from the log entry
+    const mode = parsed.mode || parsed.route || parsed.action;
+    if (!mode) {
+      if (parsed.skill) return parsed.skill;
+      return "idle";
+    }
+    return mode;
+  } catch {
+    return "idle";
+  }
+}
+
+const MODE_LABELS = {
+  trio: "\u25b6trio",
+  solo: "solo",
+  pair: "pair",
+  hierarchy: "hier",
+  review: "review",
+};
+
 // === Render ===
 async function main() {
   const [stdinData, usage, session] = await Promise.all([
@@ -354,6 +329,13 @@ async function main() {
       const ec = eff <= 10 ? CG : eff <= 20 ? CY : CR;
       out += ` ${ec}⚡${eff}${R}${D}c/p${R}`;
     }
+  }
+
+  // Gateway mode
+  const gwMode = getLastGatewayAction();
+  if (gwMode !== "idle") {
+    const label = MODE_LABELS[gwMode] || gwMode;
+    out += ` ${CC}${label}${R}`;
   }
 
   // Guards
