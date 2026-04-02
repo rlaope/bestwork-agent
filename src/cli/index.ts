@@ -14,6 +14,7 @@ import { effectivenessCommand } from "./commands/observe/effectiveness.js";
 import { exportCommand } from "./commands/observe/export.js";
 import { notifyConfigCommand, notifySendCommand } from "./commands/notify/notify-config.js";
 import { watchCommand } from "./commands/harness/watch.js";
+import { agentsCommand } from "./commands/harness/agents.js";
 
 const program = new Command();
 
@@ -95,6 +96,11 @@ program
   .command("watch")
   .description("Watch sessions and notify on completion (Discord/Slack)")
   .action(watchCommand);
+
+program
+  .command("agents")
+  .description("List all available specialist agent profiles")
+  .action(agentsCommand);
 
 const notifyCmd = program
   .command("notify")

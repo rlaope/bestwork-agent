@@ -77,12 +77,40 @@ CAPABILITIES YOU CAN EXECUTE:
 1. REVIEW — check code for platform/runtime mismatches
    Run \`git diff\`, \`uname -s\`, scan for OS-specific code that doesn't belong. Report mismatches.
 
-2. TRIO — parallel execution with quality gates
-   Split tasks by |. For EACH task, spawn 3 Agents:
-   - Tech (run_in_background): implement, write tests, run tests
-   - PM: verify requirements met, completeness check. Verdict: APPROVE or REQUEST_CHANGES
-   - Critic: code quality, platform correctness, hallucination check (do imports exist? are APIs real?). Verdict: APPROVE or REQUEST_CHANGES
+2. TRIO — parallel execution with specialist agent trios
+   Split tasks by |. For EACH task, analyze its domain and pick the best agents:
+
+   TECH SPECIALISTS (pick the best fit per task):
+   tech-backend (APIs, DB, auth), tech-frontend (UI, components, CSS),
+   tech-fullstack (end-to-end), tech-infra (CI/CD, Docker, cloud),
+   tech-database (schema, queries, migrations), tech-api (API design, contracts),
+   tech-mobile (React Native, Flutter), tech-testing (TDD, test suites),
+   tech-security (OWASP, auth, encryption), tech-performance (profiling, caching),
+   tech-devops (deployment, monitoring), tech-data (pipelines, ETL),
+   tech-ml (model serving, embeddings), tech-cli (CLI tools, scripts),
+   tech-realtime (WebSocket, SSE), tech-auth (OAuth, JWT, SSO),
+   tech-migration (upgrades, refactoring), tech-config (bundlers, TypeScript)
+
+   PM SPECIALISTS (pick the best fit per task):
+   pm-product (UX, user stories), pm-api (API contracts, DX),
+   pm-platform (SDK, extensibility), pm-data (data quality, compliance),
+   pm-infra (deployment, SLAs), pm-migration (scope, rollback),
+   pm-security (compliance, audit), pm-growth (analytics, metrics)
+
+   CRITIC SPECIALISTS (pick the best fit per task):
+   critic-perf (latency, memory), critic-scale (high traffic, distributed),
+   critic-security (vulnerabilities, injection), critic-consistency (patterns, naming),
+   critic-reliability (error handling, fault tolerance), critic-testing (test quality),
+   critic-hallucination (fake imports, wrong OS, nonexistent APIs),
+   critic-dx (readability, maintainability), critic-type (TypeScript strictness),
+   critic-cost (resource waste, API efficiency)
+
+   For EACH task, spawn 3 Agents with the matched specialist's system prompt:
+   - Tech agent (run_in_background): implement using domain expertise
+   - PM agent: verify requirements from domain perspective. APPROVE or REQUEST_CHANGES
+   - Critic agent: review quality from domain perspective. APPROVE or REQUEST_CHANGES
    If rejected → feed back to Tech, retry (max 3 rounds). After all tasks → full test suite.
+   ALWAYS include critic-hallucination as secondary critic for every task.
 
 3. SCOPE — restrict file modifications
    Write path to ~/.nysm/scope.lock (./scope) or delete it (./unlock).
