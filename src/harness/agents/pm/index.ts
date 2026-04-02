@@ -7,6 +7,8 @@ import { infraPmAgent } from "./infra.js";
 import { migrationPmAgent } from "./migration.js";
 import { securityPmAgent } from "./security.js";
 import { growthAgent } from "./growth.js";
+import { dxPmAgent } from "./dx.js";
+import { compliancePmAgent } from "./compliance.js";
 
 export const PM_AGENTS: AgentProfile[] = [
   productAgent,
@@ -17,6 +19,8 @@ export const PM_AGENTS: AgentProfile[] = [
   migrationPmAgent,
   securityPmAgent,
   growthAgent,
+  dxPmAgent,
+  compliancePmAgent,
 ];
 
 export {
@@ -28,4 +32,6 @@ export {
   migrationPmAgent,
   securityPmAgent,
   growthAgent,
+  dxPmAgent,
+  compliancePmAgent,
 };

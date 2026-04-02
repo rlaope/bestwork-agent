@@ -1,0 +1,31 @@
+export async function welcomeCommand() {
+  const lines = [
+    "",
+    "  \x1b[36m\x1b[1m██████╗ ██╗    ██╗\x1b[0m",
+    "  \x1b[36m\x1b[1m██╔══██╗██║    ██║\x1b[0m",
+    "  \x1b[36m\x1b[1m██████╔╝██║ █╗ ██║\x1b[0m",
+    "  \x1b[36m\x1b[1m██╔══██╗██║███╗██║\x1b[0m",
+    "  \x1b[36m\x1b[1m██████╔╝╚███╔███╔╝\x1b[0m",
+    "  \x1b[36m\x1b[1m╚═════╝  ╚══╝╚══╝\x1b[0m  \x1b[90mbestwork-agent v0.8.0\x1b[0m",
+    "",
+    "  Harness engineering for Claude Code.",
+    "  Work like a corporation team, not just a club.",
+    "",
+    "  \x1b[1mQuick Start:\x1b[0m",
+    "    bestwork setup          Interactive setup wizard",
+    "    bestwork sessions       View session history",
+    "    bestwork agents         List 38+ specialist agents",
+    "    bestwork org            Organization chart",
+    "    bestwork doctor         Health check",
+    "",
+    "  \x1b[1mIn Claude Code:\x1b[0m",
+    "    ./trio t1 | t2 | t3    Parallel with Tech+PM+Critic",
+    "    ./team Full Team <task> Hierarchy execution",
+    "    ./squad Feature <task>  Squad execution",
+    "    ./review               Hallucination check",
+    "    ./discord <url>        Enable notifications",
+    "    ./help                 All commands",
+    "",
+  ];
+  for (const line of lines) console.log(line);
+}

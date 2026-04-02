@@ -2,10 +2,11 @@ import { readFile, access } from "node:fs/promises";
 import { join } from "node:path";
 import { homedir } from "node:os";
 import { execSync } from "node:child_process";
+import { BW_OK, BW_WARN, BW_ERR } from "../../../utils/brand.js";
 
-const OK = "\x1b[32m✓\x1b[0m";
-const WARN = "\x1b[33m!\x1b[0m";
-const FAIL = "\x1b[31m✗\x1b[0m";
+const OK = BW_OK;
+const WARN = BW_WARN;
+const FAIL = BW_ERR;
 
 export async function doctorCommand() {
   console.log("\n  bestwork doctor\n");

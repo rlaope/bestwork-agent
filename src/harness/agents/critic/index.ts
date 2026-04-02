@@ -10,6 +10,8 @@ import { dxCriticAgent } from "./dx.js";
 import { typeCriticAgent } from "./type.js";
 import { costCriticAgent } from "./cost.js";
 import { devsecopsAgent } from "./devsecops.js";
+import { accessibilityCriticAgent } from "./accessibility.js";
+import { i18nCriticAgent } from "./i18n.js";
 
 export const CRITIC_AGENTS: AgentProfile[] = [
   perfCriticAgent,
@@ -23,6 +25,8 @@ export const CRITIC_AGENTS: AgentProfile[] = [
   typeCriticAgent,
   costCriticAgent,
   devsecopsAgent,
+  accessibilityCriticAgent,
+  i18nCriticAgent,
 ];
 
 export {
@@ -37,4 +41,6 @@ export {
   typeCriticAgent,
   costCriticAgent,
   devsecopsAgent,
+  accessibilityCriticAgent,
+  i18nCriticAgent,
 };

@@ -2,6 +2,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { homedir } from "node:os";
 import { ensureDataDir } from "../../../data/store.js";
+import { bwOk, bwLog } from "../../../utils/brand.js";
 
 const NPM_ROOT = `$(npm root -g)/bestwork-agent/hooks`;
 
@@ -347,28 +348,29 @@ export async function installCommand() {
 
   await writeFile(settingsPath, JSON.stringify(settings, null, 2) + "\n");
 
-  console.log(`\n  bestwork installed — ${added} added, ${removed} upgraded\n`);
-  console.log("  Agent hooks (full LLM with tools):");
-  console.log("    Smart Gateway  — routes ./commands + natural language to agents");
-  console.log("    Validation     — understands code context, checks imports exist");
-  console.log("    Grounding      — verifies file was read before edit");
-  console.log("    Platform Review — scans diff for OS/runtime mismatches on stop");
+  bwOk(`bestwork installed — ${added} added, ${removed} upgraded`);
   console.log("");
-  console.log("  Command hooks (fast, no LLM):");
-  console.log("    Event capture  — records tool calls to ~/.bestwork/data/");
-  console.log("    Scope enforce  — blocks edits outside ./scope path");
-  console.log("    Strict enforce — blocks rm -rf, git push --force");
-  console.log("    Slash commands — ./discord, ./slack config");
-  console.log("    Notifications  — rich Discord/Slack on prompt complete");
+  bwLog("Agent hooks (full LLM with tools):");
+  bwLog("  Smart Gateway  — routes ./commands + natural language to agents");
+  bwLog("  Validation     — understands code context, checks imports exist");
+  bwLog("  Grounding      — verifies file was read before edit");
+  bwLog("  Platform Review — scans diff for OS/runtime mismatches on stop");
   console.log("");
-  console.log("  Commands:");
-  console.log("    ./trio t1 | t2 | t3   — parallel with Tech+PM+Critic per task");
-  console.log("    ./review              — platform/hallucination check");
-  console.log("    ./scope ./strict ./tdd ./recover ./context");
-  console.log("    ./autopsy ./learn ./predict ./guard ./compare");
-  console.log("    ./discord ./slack     — webhook setup");
-  console.log("    ./help                — list all");
-  console.log("    Or just type naturally — smart gateway routes it");
+  bwLog("Command hooks (fast, no LLM):");
+  bwLog("  Event capture  — records tool calls to ~/.bestwork/data/");
+  bwLog("  Scope enforce  — blocks edits outside ./scope path");
+  bwLog("  Strict enforce — blocks rm -rf, git push --force");
+  bwLog("  Slash commands — ./discord, ./slack config");
+  bwLog("  Notifications  — rich Discord/Slack on prompt complete");
   console.log("");
-  console.log("  Restart Claude Code to activate.\n");
+  bwLog("Commands:");
+  bwLog("  ./trio t1 | t2 | t3   — parallel with Tech+PM+Critic per task");
+  bwLog("  ./review              — platform/hallucination check");
+  bwLog("  ./scope ./strict ./tdd ./recover ./context");
+  bwLog("  ./autopsy ./learn ./predict ./guard ./compare");
+  bwLog("  ./discord ./slack     — webhook setup");
+  bwLog("  ./help                — list all");
+  bwLog("  Or just type naturally — smart gateway routes it");
+  console.log("");
+  bwOk("Restart Claude Code to activate.");
 }

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Box, Text, useApp, useInput } from "ink";
 import { SessionList } from "./SessionList.js";
 import { SessionDetail } from "./SessionDetail.js";
+import { Banner } from "./Banner.js";
 import { aggregateSessions } from "../observe/aggregator.js";
 import { format } from "date-fns";
 import type { Session } from "../types/index.js";
@@ -72,20 +73,15 @@ export function App({ watchMode = false }: AppProps) {
 
   return (
     <Box flexDirection="column" padding={1}>
+      <Banner subtitle={watchMode ? "LIVE" : undefined} />
       <Box marginBottom={1} flexDirection="column">
-        <Box>
-          <Text bold color="cyan">
-            bestwork
-          </Text>
-          <Text color="gray"></Text>
-          {watchMode && (
-            <Text color="green"> [LIVE]</Text>
-          )}
-        </Box>
         <Box>
           <Text color="gray">
             {format(new Date(), "yyyy-MM-dd HH:mm")}
           </Text>
+          {watchMode && (
+            <Text color="green"> [LIVE]</Text>
+          )}
           <Text color="yellow">
             {"  "}Total: {sessions.reduce((s, sess) => s + sess.totalCalls, 0).toLocaleString()} calls
           </Text>

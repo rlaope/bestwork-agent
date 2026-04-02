@@ -24,8 +24,9 @@ export function SessionDetail({ session }: SessionDetailProps) {
       {/* Header */}
       <Box marginBottom={1} flexDirection="column">
         <Box>
+          <Text color="cyan" bold>[BW]</Text>
           <Text bold color="cyan">
-            Session {shortSessionId(session.id)}
+            {" "}Session {shortSessionId(session.id)}
           </Text>
           {session.isActive && (
             <Text color="green" bold>
