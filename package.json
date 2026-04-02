@@ -1,6 +1,6 @@
 {
   "name": "bestwork-agent",
-  "version": "0.10.0",
+  "version": "1.0.0",
   "description": "Best harness engineering for Claude Code. Work like a corporation team, not just a club.",
   "type": "module",
   "bin": {

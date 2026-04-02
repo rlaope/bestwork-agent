@@ -13,7 +13,7 @@ import { join } from "node:path";
 import { homedir } from "node:os";
 import https from "node:https";
 
-const VERSION = "0.10.0";
+const VERSION = "1.0.0";
 const home = homedir();
 const claudeDir = join(home, ".claude");
 const bwDir = join(home, ".bestwork");
