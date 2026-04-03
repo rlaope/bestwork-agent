@@ -31,6 +31,8 @@ const SLASH_PREFIXES = [
   "./agents", "./changelog", "./doctor", "./health", "./install",
   "./onboard", "./plan", "./review", "./sessions", "./status",
   "./trio", "./update",
+  // New execution mode skills
+  "./autopilot", "./pipeline", "./ralph", "./ultrawork",
 ];
 
 // Skill keyword map — natural language to skill name
@@ -140,6 +142,54 @@ const SKILL_ROUTES: Array<{ patterns: RegExp[]; skill: string; reason: string; h
     ],
     skill: "docs",
     reason: "documentation sync with codebase",
+  },
+  {
+    patterns: [
+      /(?:run|start|go|do)\s+autopilot/i,
+      /autopilot\s+(?:mode|this|the|on)/i,
+      /자동.*실행|자율.*실행|오토파일럿/i,
+      /(?:just|auto)\s+(?:do|fix|build|implement)\s+(?:it|this|everything)/i,
+      /확인\s*없이.*(해|실행|돌려)/i,
+      /オートパイロット/i,
+    ],
+    skill: "autopilot",
+    reason: "autonomous execution without confirmation",
+  },
+  {
+    patterns: [
+      /(?:run|start|do)\s+pipeline/i,
+      /pipeline\s+(?:mode|this|the|for)/i,
+      /파이프라인.*(돌려|해줘|해|하자|실행|시작)/i,
+      /단계별.*(실행|처리|진행)/i,
+      /(?:staged|sequential)\s+(?:execution|processing|build)/i,
+      /パイプライン/i,
+    ],
+    skill: "pipeline",
+    reason: "sequential staged processing with gates",
+  },
+  {
+    patterns: [
+      /(?:run|start|do)\s+ralph/i,
+      /ralph\s+(?:mode|this|the|on)/i,
+      /랄프.*(모드|돌려|해줘|해|하자|실행)/i,
+      /끝까지.*(해|완료|마무리)/i,
+      /(?:must|needs?\s+to)\s+(?:complete|finish)\s+(?:fully|completely|everything)/i,
+      /완전히.*(끝내|완료|마무리)/i,
+    ],
+    skill: "ralph",
+    reason: "persistent completion with verify/fix loops",
+  },
+  {
+    patterns: [
+      /(?:run|start|do)\s+ultrawork/i,
+      /ultrawork\s+(?:mode|this|the|on)/i,
+      /울트라워크.*(돌려|해줘|해|하자|실행)/i,
+      /(?:maximum|max)\s+parallel/i,
+      /(?:burst|blast)\s+(?:fix|refactor|update|change)/i,
+      /一斉に|全部同時/i,
+    ],
+    skill: "ultrawork",
+    reason: "maximum parallelism burst execution",
   },
 ];
 
