@@ -52,9 +52,27 @@ Print classification:
 [BW] #18 → solo (tech-plugin)
 ```
 
+## Step 2.5: Scheduling — parallel vs sequential
+
+**Scheduling rules** (CRITICAL — prevents context explosion):
+1. **solo issues** (1 agent): CAN run in parallel with other solos
+2. **trio/squad issues** (3+ agents): run ONE AT A TIME, sequentially
+3. **blitz issues** (many parallel agents): run ONE AT A TIME, sequentially
+4. Priority: finish ALL solo issues first (fast, clears the queue), THEN process heavy issues one by one
+
+Example with 4 issues:
+```
+[BW] schedule:
+  parallel: #18 (solo) + #20 (solo)     ← fast, run together
+  then:     #16 (blitz, 34 files)       ← heavy, run alone
+  then:     #17 (trio, blocked by #16)  ← heavy + dependency
+```
+
+NEVER spawn more than 5 agents at once. If a trio (3 agents) is running, do NOT start another trio in parallel.
+
 ## Step 3: Process each issue
 
-For EACH issue (independent ones in parallel via Agent run_in_background):
+Process according to the schedule from Step 2.5:
 
 ### 3a. Branch
 ```bash
