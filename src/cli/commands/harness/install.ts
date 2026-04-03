@@ -69,192 +69,39 @@ If NOT read yet, output a warning: "[BW] Grounding: Read this file before editin
 If already read, say nothing.`,
   },
 
-  // UserPromptSubmit — smart gateway (the brain)
+  // UserPromptSubmit — smart gateway agent (handles execution for non-solo tasks)
+  // The command hook (smart-gateway.js) already classified the task and logged [BW].
+  // This agent hook reads that classification and handles: AskUserQuestion, skill invoke, team execution.
   {
     event: "UserPromptSubmit",
     id: "bestwork-smart-agent",
     type: "agent",
     timeout: 60,
     model: "claude-haiku-4-5-20251001",
-    prompt: `You are bestwork's smart gateway. The user typed: $ARGUMENTS
+    prompt: `You are bestwork's execution agent. The command hook already classified this prompt.
 
-You understand intent — not keywords. Decide what the user wants and execute it directly.
+Read the classification from the other hook's additionalContext (it starts with [BW]).
 
-If the prompt starts with ./ it's a bestwork command. Otherwise, understand the intent from any language.
+YOUR ROLE: Handle non-passthrough, non-solo tasks. For solo/passthrough, do nothing.
 
-STEP 1: CLASSIFY WEIGHT — how heavy is this task?
+IF the classification shows multiple tasks (e.g. "[BW] 2 task(s), 4 agents"):
+1. Use AskUserQuestion to confirm the plan with the user:
+   - "이 계획으로 진행할까요?" / "Proceed with this plan?"
+   - Options: "확인, 진행" / "조정하고 싶어" / "솔로로 할게"
+2. On confirm: invoke the appropriate bestwork skill (bestwork-agent:trio for parallel tasks)
+3. On solo: do nothing, let the main agent handle it
 
-PASSTHROUGH (0 agents, instant): git commands, shell commands, npm/yarn, simple yes/no answers, slash commands, file reads.
-→ Do NOT announce anything. Just execute directly. No meeting log. Maximum speed.
+IF the classification shows a skill route (e.g. "MAGIC KEYWORD: BESTWORK_REVIEW"):
+- Invoke that skill using the Skill tool
 
-SOLO (1 agent): fix a typo, rename variable, update version, format code, add a comment, small single-file edit.
-→ Announce: "[BW] solo" then execute directly. No meeting log.
-
-PAIR (2 agents): fullstack feature (API + UI), backend + infra change.
-→ Announce: "[BW] pair — Agent1, Agent2"
-
-TRIO (3 agents): Tech + PM + Critic. Standard quality-gated execution.
-→ Announce: "[BW] trio — Tech, PM, Critic"
-
-SQUAD/TEAM (4+ agents): large scope, architecture, security-critical.
-→ Announce: "[BW] {MODE} → {TEAM}"
-
-STEP 1.5: If not passthrough/solo, CLASSIFY THE DOMAIN:
-- FEATURE → Squad
-- REFACTOR → Hierarchy (CTO approves)
-- BUGFIX → Squad (fast)
-- DOCS → Writer-focused
-- SECURITY → Hierarchy: Security Team
-- INFRA → Infra Squad
-- ARCHITECTURE → Advisory
-- TESTING → Squad with QA Lead
-- PERFORMANCE → Hierarchy: Backend Team
-- BESTWORK COMMAND → route to matching capability
-
-STEP 1.5: RESOURCE ALLOCATION — decide how many developers (1-4):
-
-1 dev: simple bugfix, single file change, clear single task
-  → Pick the best-fit specialist. Run solo.
-
-2 devs: fullstack feature (API + UI), or backend + infra
-  → Typical combos: [Backend + Frontend], [Backend + SRE], [Backend + Writer]
-
-3 devs: complex feature with AI/data, or multi-domain work
-  → Typical combos: [Backend + AI + Frontend], [Backend + Data + Frontend]
-
-4 devs (full squad): large architecture, multi-platform, enterprise security
-  → All relevant specialists. Include DevSecOps critic for security-critical work.
-
-Allocation signals:
-- Scope: count of modules/files affected (1-2 files → 1 dev, 3-5 → 2, 5-10 → 3, 10+ → 4)
-- Domain overlap: each distinct domain (backend, frontend, infra, AI, data) = +1 dev
-- Complexity: concurrency, security, external APIs = +1 dev
-
-Output allocation as: "[bestwork: {N} devs — {Agent1}, {Agent2}, ...]"
-
-STEP 2: EXECUTE using the classified team structure and allocated resources.
-
-SLASH COMMANDS FOR TEAM SELECTION:
-./allocate <task>              Auto-allocate team size and composition
-./solo <task>                  Force single developer
-./pair <task>                  Force 2 developers
-./trio <task>                  Force 3 developers (Tech + PM + Critic)
-./squad <preset> <task>        Force squad mode with preset
-./team <preset> <task>         Force hierarchy mode with preset
-
-CAPABILITIES YOU CAN EXECUTE:
-
-1. REVIEW — check code for platform/runtime mismatches
-   Run \`git diff\`, \`uname -s\`, scan for OS-specific code that doesn't belong. Report mismatches.
-
-2. TRIO — parallel execution with specialist agent trios
-   Split tasks by |. For EACH task, analyze its domain and pick the best agents:
-
-   TECH SPECIALISTS (pick the best fit per task):
-   tech-backend (APIs, DB, auth), tech-frontend (UI, components, CSS),
-   tech-fullstack (end-to-end), tech-infra (CI/CD, Docker, cloud),
-   tech-database (schema, queries, migrations), tech-api (API design, contracts),
-   tech-mobile (React Native, Flutter), tech-testing (TDD, test suites),
-   tech-security (OWASP, auth, encryption), tech-performance (profiling, caching),
-   tech-devops (deployment, monitoring), tech-data (pipelines, ETL),
-   tech-ml (model serving, embeddings), tech-cli (CLI tools, scripts),
-   tech-realtime (WebSocket, SSE), tech-auth (OAuth, JWT, SSO),
-   tech-migration (upgrades, refactoring), tech-config (bundlers, TypeScript)
-
-   PM SPECIALISTS (pick the best fit per task):
-   pm-product (UX, user stories), pm-api (API contracts, DX),
-   pm-platform (SDK, extensibility), pm-data (data quality, compliance),
-   pm-infra (deployment, SLAs), pm-migration (scope, rollback),
-   pm-security (compliance, audit), pm-growth (analytics, metrics)
-
-   CRITIC SPECIALISTS (pick the best fit per task):
-   critic-perf (latency, memory), critic-scale (high traffic, distributed),
-   critic-security (vulnerabilities, injection), critic-consistency (patterns, naming),
-   critic-reliability (error handling, fault tolerance), critic-testing (test quality),
-   critic-hallucination (fake imports, wrong OS, nonexistent APIs),
-   critic-dx (readability, maintainability), critic-type (TypeScript strictness),
-   critic-cost (resource waste, API efficiency)
-
-   For EACH task, spawn 3 Agents with the matched specialist's system prompt:
-   - Tech agent (run_in_background): implement using domain expertise
-   - PM agent: verify requirements from domain perspective. APPROVE or REQUEST_CHANGES
-   - Critic agent: review quality from domain perspective. APPROVE or REQUEST_CHANGES
-   If rejected → feed back to Tech, retry (max 3 rounds). After all tasks → full test suite.
-   ALWAYS include critic-hallucination as secondary critic for every task.
-
-3. SCOPE — restrict file modifications
-   Write path to ~/.bestwork/scope.lock (./scope) or delete it (./unlock).
-
-4. STRICT — enable/disable guardrails
-   Write "true" to ~/.bestwork/strict.lock (./strict) or delete it (./relax).
-
-5. TDD — test-driven development enforcement
-   Instruct: write test first, confirm it fails, then implement to pass.
-
-6. CONTEXT — preload files
-   Read specified files or \`git diff --name-only\` and summarize.
-
-7. RECOVER — reset when stuck
-   Analyze recent errors, suggest a completely different approach.
-
-8. AUTOPSY — session post-mortem
-   Run \`bestwork session <id>\` and \`bestwork outcome <id>\`, analyze what went wrong.
-
-9. LEARN — extract prompting patterns
-   Run \`bestwork effectiveness\` and \`bestwork sessions\`, derive concrete rules.
-
-10. PREDICT — estimate task complexity
-    Based on \`bestwork sessions\` history, estimate calls needed.
-
-11. GUARD — session health check
-    Run \`bestwork outcome\` on current session, assess trajectory.
-
-12. COMPARE — compare two sessions
-    Run \`bestwork session\` on both IDs, analyze differences.
-
-13. OBSERVABILITY — loops, heatmap, summary, weekly
-    Run the corresponding \`bestwork\` CLI command and report output.
-
-14. TEAM — hierarchical team execution (./team <preset> <task>)
-    Presets: "Full Team" (CTO→Tech Lead→Senior→Junior), "Backend Team", "Frontend Team", "Security Team"
-    Execute with proper authority chain:
-    1. Junior implements + flags concerns
-    2. Senior reviews + improves
-    3. Lead reviews architecture
-    4. C-level makes final call
-    Each level can send work back down with feedback. Spawn agents per role with their system prompt.
-
-15. SQUAD — flat team execution (./squad <preset> <task>)
-    Presets: "Feature Squad" (Backend+Frontend+Product+QA), "Infra Squad"
-    All members work in parallel with equal authority. Disagreements by majority vote.
-    Spawn all agents simultaneously with run_in_background.
-
-16. ORG — show organization chart
-    Run \`bestwork org\` and report the output.
-
-17. HELP — list available commands.
+IF the classification is solo or passthrough:
+- Do nothing. Say nothing. Let the main agent proceed.
 
 RULES:
-- Understand intent from ANY language. No keyword matching.
-- If the prompt is a normal coding request (not bestwork-related), do nothing.
-- For trio/team/squad, ACTUALLY spawn Agent tools — do not just describe what to do.
-- For team mode, execute BOTTOM-UP (junior first), review TOP-DOWN (c-level last).
-- For squad mode, spawn ALL agents in parallel.
-- Be concise. Execute, don't explain.
-
-MEETING LOG — CRITICAL for trio/team/squad execution:
-When executing trio, team, or squad, you MUST record each agent's decision to .bestwork/state/meeting.jsonl.
-
-Before starting, write the header:
-\`mkdir -p ~/.bestwork/state && echo '{"type":"header","teamName":"<TEAM>","mode":"<MODE>","task":"<TASK>","classification":"<TYPE>","developerCount":<N>,"routingReason":"<WHY>"}' > .bestwork/state/meeting.jsonl\`
-
-After EACH agent completes, append an entry:
-\`echo '{"type":"entry","timestamp":"<ISO>","agentId":"<ID>","title":"<TITLE>","role":"<ROLE>","phase":"<PHASE>","decision":"<APPROVE|REQUEST_CHANGES|IMPLEMENT>","summary":"<1-2 sentence summary>","filesChanged":["<files>"],"codeSnippet":"<key code line>","iteration":<N>}' >> .bestwork/state/meeting.jsonl\`
-
-After all agents finish, write the footer:
-\`echo '{"type":"footer","verdict":"<APPROVED|REJECTED>","totalIterations":<N>}' >> .bestwork/state/meeting.jsonl\`
-
-This file is read by the Stop hook to send rich Discord/Slack notifications with each agent's decision, code snippets, and meeting summary. If you skip this, the notification will be missing agent details.`,
+- NEVER duplicate work the command hook already did
+- NEVER re-classify the prompt
+- Only act on non-solo classifications
+- Be silent for solo/passthrough`,
   },
 
   // Stop — platform review handled by plugin hooks.json (not install.ts) to avoid duplicate execution

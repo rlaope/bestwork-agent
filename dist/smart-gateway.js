@@ -1877,8 +1877,7 @@ IMPORTANT: Do NOT skip this. Invoke the Skill tool with skill="bestwork-agent:${
     const agent = intent.suggestedAgents[0] || "tech-fullstack";
     output(`[BW] solo \u2014 bestwork:${agent}
 
-Classification: ${intent.reasoning}
-Proceed directly. You are operating as a bestwork agent (bestwork:${agent}).`);
+Classification: ${intent.reasoning}`);
     return;
   }
   const allocations = intent.taskAllocations;
@@ -1887,12 +1886,6 @@ Proceed directly. You are operating as a bestwork agent (bestwork:${agent}).`);
   const taskLines = allocations.map((a, i) => {
     return `  ${i + 1}. "${a.description}" \u2192 [${a.agents.join(", ")}]${a.parallel ? " (parallel)" : ""}`;
   }).join("\n");
-  const isKo = /[가-힣]/.test(prompt);
-  const isJa = /[\u3040-\u309F\u30A0-\u30FF]/.test(prompt);
-  const qLabel = isKo ? "\uC774 \uACC4\uD68D\uC73C\uB85C \uC9C4\uD589\uD560\uAE4C\uC694?" : isJa ? "\u3053\u306E\u30D7\u30E9\u30F3\u3067\u9032\u3081\u307E\u3059\u304B\uFF1F" : "Proceed with this plan?";
-  const confirmLabel = isKo ? "\uD655\uC778, \uC9C4\uD589" : isJa ? "\u78BA\u8A8D\u3001\u9032\u884C" : "Confirm plan";
-  const adjustLabel = isKo ? "\uC870\uC815\uD558\uACE0 \uC2F6\uC5B4" : isJa ? "\u8ABF\u6574\u3057\u305F\u3044" : "Adjust";
-  const soloLabel = isKo ? "\uC194\uB85C\uB85C \uD560\uAC8C" : isJa ? "\u30BD\u30ED\u3067\u3084\u308B" : "Solo instead";
   output(
     `[BW] ${taskCount} task(s), ${totalAgents} agents (bestwork:${agentList})
 
@@ -1900,25 +1893,7 @@ Plan:
 ${taskLines}
 
   Total: ${taskCount} parallel task(s), ${totalAgents} agent(s)
-  Reasoning: ${intent.reasoning}
-
-You MUST use AskUserQuestion tool to let the user confirm:
-- question: "${qLabel}"
-- header: "BW Plan"
-- options:
-  1. label: "${confirmLabel}", description: "Execute ${taskCount} task(s) with ${totalAgents} agent(s) as shown above"
-  2. label: "${adjustLabel}", description: "Modify tasks or agent assignments before executing"
-  3. label: "${soloLabel}", description: "Skip team allocation, execute as single agent"
-
-After user picks:
-- "Confirm plan" \u2192 For EACH agent spawn, print a [BW] line BEFORE the Agent tool call:
-  [BW] \u25B6 launching bestwork:{agent} (task {N})
-  Then spawn the agent. Print each launch line individually, not batched.
-  After all agents complete, print results:
-  [BW] \u2713 bestwork:{agent} done (task {N}) \u2014 {summary}
-  Finally: [BW] complete: {N} tasks, {M} agents
-- "Adjust" \u2192 ask what to change, re-present the plan.
-- "Solo instead" \u2192 proceed with single agent (bestwork:${intent.suggestedAgents[0] || "sr-fullstack"}).`
+  Reasoning: ${intent.reasoning}`
   );
 }
 main().catch(() => process.stdout.write("{}\n"));

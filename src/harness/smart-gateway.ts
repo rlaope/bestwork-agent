@@ -244,6 +244,7 @@ async function main() {
 
   const agentList = intent.suggestedAgents.join(", ");
 
+  // Command hook: LOG ONLY. Agent hook (bestwork-smart-agent) handles execution.
   if (intent.mode === "passthrough") {
     output(`[BW] direct execution`);
     return;
@@ -251,11 +252,11 @@ async function main() {
 
   if (intent.mode === "solo") {
     const agent = intent.suggestedAgents[0] || "tech-fullstack";
-    output(`[BW] solo — bestwork:${agent}\n\nClassification: ${intent.reasoning}\nProceed directly. You are operating as a bestwork agent (bestwork:${agent}).`);
+    output(`[BW] solo — bestwork:${agent}\n\nClassification: ${intent.reasoning}`);
     return;
   }
 
-  // Non-solo: show dynamic task+agent breakdown, ask user to confirm
+  // Non-solo: log the plan. Agent hook will handle AskUserQuestion + execution.
   const allocations = intent.taskAllocations;
   const totalAgents = intent.totalAgents;
   const taskCount = allocations.length;
@@ -264,15 +265,6 @@ async function main() {
     return `  ${i + 1}. "${a.description}" → [${a.agents.join(", ")}]${a.parallel ? " (parallel)" : ""}`;
   }).join("\n");
 
-  // Detect language from prompt for localized question
-  const isKo = /[가-힣]/.test(prompt);
-  const isJa = /[\u3040-\u309F\u30A0-\u30FF]/.test(prompt);
-
-  const qLabel = isKo ? "이 계획으로 진행할까요?" : isJa ? "このプランで進めますか？" : "Proceed with this plan?";
-  const confirmLabel = isKo ? "확인, 진행" : isJa ? "確認、進行" : "Confirm plan";
-  const adjustLabel = isKo ? "조정하고 싶어" : isJa ? "調整したい" : "Adjust";
-  const soloLabel = isKo ? "솔로로 할게" : isJa ? "ソロでやる" : "Solo instead";
-
   output(
 `[BW] ${taskCount} task(s), ${totalAgents} agents (bestwork:${agentList})
 
@@ -280,25 +272,7 @@ Plan:
 ${taskLines}
 
   Total: ${taskCount} parallel task(s), ${totalAgents} agent(s)
-  Reasoning: ${intent.reasoning}
-
-You MUST use AskUserQuestion tool to let the user confirm:
-- question: "${qLabel}"
-- header: "BW Plan"
-- options:
-  1. label: "${confirmLabel}", description: "Execute ${taskCount} task(s) with ${totalAgents} agent(s) as shown above"
-  2. label: "${adjustLabel}", description: "Modify tasks or agent assignments before executing"
-  3. label: "${soloLabel}", description: "Skip team allocation, execute as single agent"
-
-After user picks:
-- "Confirm plan" → For EACH agent spawn, print a [BW] line BEFORE the Agent tool call:
-  [BW] ▶ launching bestwork:{agent} (task {N})
-  Then spawn the agent. Print each launch line individually, not batched.
-  After all agents complete, print results:
-  [BW] ✓ bestwork:{agent} done (task {N}) — {summary}
-  Finally: [BW] complete: {N} tasks, {M} agents
-- "Adjust" → ask what to change, re-present the plan.
-- "Solo instead" → proceed with single agent (bestwork:${intent.suggestedAgents[0] || "sr-fullstack"}).`
+  Reasoning: ${intent.reasoning}`
   );
 }
 
