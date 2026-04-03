@@ -10,5 +10,11 @@
   "repository": "https://github.com/rlaope/bestwork-agent",
   "license": "MIT",
   "keywords": ["harness", "agents", "orchestration", "observability", "anti-hallucination"],
-  "skills": "./skills/"
+  "skills": "./skills/",
+  "mcpServers": {
+    "bestwork": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/mcp/bestwork-mcp.mjs"]
+    }
+  }
 }
