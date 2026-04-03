@@ -44,7 +44,7 @@ Based on the analysis, recommend ONE team mode:
 Conditions: 1-2 files, single domain, complexity 1-2.
 
 Pick the best-fit specialist from:
-- tech-backend, tech-frontend, tech-fullstack, tech-infra, tech-database, tech-api, tech-mobile, tech-testing, tech-security, tech-performance, tech-devops, tech-data, tech-ml, tech-cli, tech-realtime, tech-auth, tech-migration, tech-config, tech-writer, tech-graphql, tech-monorepo, tech-accessibility, tech-i18n
+- tech-backend, tech-frontend, tech-fullstack, tech-infra, tech-database, tech-api, tech-mobile, tech-testing, tech-security, tech-performance, tech-devops, tech-data, tech-ml, tech-cli, tech-realtime, tech-auth, tech-migration, tech-config, tech-writer, tech-graphql, tech-monorepo, tech-accessibility, tech-i18n, tech-agent-engineer, tech-plugin
 
 Print:
 ```
@@ -87,10 +87,10 @@ Print:
 ### TRIO (Tech + PM + Critic) — large scope
 Conditions: 5-10 files, 3+ domains, complexity 3-4, or any task benefiting from quality gates.
 
-Pick the best-fit trio from all 46 specialists:
-- **Tech**: one of the 23 tech-* specialists
+Pick the best-fit trio from all 49 specialists:
+- **Tech**: one of the 25 tech-* specialists
 - **PM**: one of pm-product, pm-api, pm-platform, pm-data, pm-infra, pm-migration, pm-security, pm-growth, pm-compliance, pm-dx
-- **Critic**: one of critic-perf, critic-scale, critic-security, critic-consistency, critic-reliability, critic-testing, critic-hallucination, critic-dx, critic-type, critic-cost, critic-accessibility, critic-devsecops, critic-i18n
+- **Critic**: one of critic-perf, critic-scale, critic-security, critic-consistency, critic-reliability, critic-testing, critic-hallucination, critic-dx, critic-type, critic-cost, critic-accessibility, critic-devsecops, critic-i18n, critic-agent
 
 Print:
 ```
