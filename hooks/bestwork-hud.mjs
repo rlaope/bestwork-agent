@@ -56,7 +56,7 @@ const POLL_INTERVAL_MS = 90_000;       // 90s between successful API calls
 const CACHE_TTL_FAILURE_MS = 15_000;   // 15s for non-transient errors
 const CACHE_TTL_NETWORK_MS = 120_000;  // 2min for network errors
 const MAX_BACKOFF_MS = 300_000;        // 5min cap for 429 backoff
-const NO_DATA_BACKOFF_MS = 60_000;     // 1min backoff when we have zero data (recovery mode)
+const NO_DATA_BACKOFF_MS = 300_000;    // 5min backoff when we have zero data (match MAX_BACKOFF)
 const MAX_STALE_MS = 900_000;          // 15min stale data cutoff
 const API_TIMEOUT_MS = 5_000;          // 5s API timeout
 const LOCK_TIMEOUT_MS = 15_000;        // 15s lock staleness
@@ -65,18 +65,22 @@ const CACHE_PATH = join(bwDir, ".usage-cache.json");
 const LOCK_PATH = join(bwDir, ".usage-cache.lock");
 
 // === File locking — prevent concurrent API calls ===
+// Uses O_EXCL (wx flag) for atomic lock creation — no race condition
 function acquireLock() {
   try {
     mkdirSync(bwDir, { recursive: true });
+    // Check for stale lock first
     if (existsSync(LOCK_PATH)) {
-      const lock = JSON.parse(readFileSync(LOCK_PATH, "utf-8"));
-      if (Date.now() - lock.ts < LOCK_TIMEOUT_MS) return false; // lock is fresh
-      // Stale lock — remove it
-      try { unlinkSync(LOCK_PATH); } catch {}
+      try {
+        const lock = JSON.parse(readFileSync(LOCK_PATH, "utf-8"));
+        if (Date.now() - lock.ts < LOCK_TIMEOUT_MS) return false; // lock is fresh, someone else has it
+        unlinkSync(LOCK_PATH); // stale lock, remove
+      } catch { try { unlinkSync(LOCK_PATH); } catch {} }
     }
-    writeFileSync(LOCK_PATH, JSON.stringify({ ts: Date.now(), pid: process.pid }));
+    // Atomic create — fails if another process created it between our check and write
+    writeFileSync(LOCK_PATH, JSON.stringify({ ts: Date.now(), pid: process.pid }), { flag: "wx" });
     return true;
-  } catch { return false; }
+  } catch { return false; } // wx fails if file exists = another process won the race
 }
 
 function releaseLock() {
@@ -369,7 +373,7 @@ async function main() {
 
   let out = `${B}${CC}BW${R}${D}#${VERSION}${R}`;
 
-  // Usage: 5-hour + weekly
+  // Usage: show data or -- placeholder
   if (!usage || typeof usage !== "object") {
     out += ` ${D}|${R} ${D}5h${R} ${D}--%${R} ${D}week${R} ${D}--%${R}`;
   } else {
