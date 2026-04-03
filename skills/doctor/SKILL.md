@@ -106,7 +106,78 @@ done
 - If `lint-staged` in package.json: do glob patterns match existing files?
 - If `commitlint`: is config present?
 
-## 8. Platform Mismatches
+## 8. Bestwork Internal Health
+
+These checks validate bestwork-agent's own integrity (only run when the current project IS bestwork-agent, or always as a secondary section).
+
+### 8a. Prompt File Validation
+
+For each agent category (tech, pm, critic), verify every agent defined in `src/harness/agents/{category}/index.ts` has a corresponding `prompts/{category}/{name}.md` file, and that file contains YAML frontmatter with required fields: `id`, `role`, `name`, `specialty`.
+
+```bash
+# Check tech agents
+for agent_file in prompts/tech/*.md; do
+  name=$(basename "$agent_file" .md)
+  # Verify frontmatter has id, role, name, specialty
+  head -20 "$agent_file" | grep -q '^id:' || echo "MISSING: prompts/tech/$name.md lacks 'id' in frontmatter"
+  head -20 "$agent_file" | grep -q '^role:' || echo "MISSING: prompts/tech/$name.md lacks 'role' in frontmatter"
+  head -20 "$agent_file" | grep -q '^name:' || echo "MISSING: prompts/tech/$name.md lacks 'name' in frontmatter"
+  head -20 "$agent_file" | grep -q '^specialty:' || echo "MISSING: prompts/tech/$name.md lacks 'specialty' in frontmatter"
+done
+# Repeat for pm/ and critic/
+```
+
+Also verify that every agent imported in the index.ts files maps to an existing prompt file:
+```bash
+grep -oP 'from "\./(\w[\w-]*)' src/harness/agents/tech/index.ts | sed 's/from ".\///' | while read name; do
+  [ ! -f "prompts/tech/$name.md" ] && echo "MISSING: agent 'tech/$name' has no prompt file"
+done
+```
+
+### 8b. HUD Cache Health
+
+Check that `~/.bestwork/.usage-cache.json` exists and is valid JSON. If present, verify the structure is reasonable (e.g., `rateLimitedCount` is not excessively high, which would indicate a stuck backoff).
+
+```bash
+CACHE="$HOME/.bestwork/.usage-cache.json"
+if [ -f "$CACHE" ]; then
+  jq empty "$CACHE" 2>/dev/null || echo "CORRUPT: ~/.bestwork/.usage-cache.json is not valid JSON"
+  rl=$(jq -r '.rateLimitedCount // 0' "$CACHE" 2>/dev/null)
+  [ "$rl" -gt 20 ] && echo "WARN: HUD cache rateLimitedCount=$rl (unusually high, may indicate stuck backoff)"
+else
+  echo "INFO: ~/.bestwork/.usage-cache.json not found (HUD cache not yet created)"
+fi
+```
+
+### 8c. Webhook Validation
+
+If `~/.bestwork/config.json` exists and has webhook URLs, verify they look like valid URLs.
+
+```bash
+CONFIG="$HOME/.bestwork/config.json"
+if [ -f "$CONFIG" ]; then
+  jq -r '.. | strings' "$CONFIG" 2>/dev/null | grep -iE 'http' | while read url; do
+    echo "$url" | grep -qE '^https?://' || echo "INVALID: webhook URL does not start with http(s)://: $url"
+  done
+fi
+```
+
+### 8d. hooks.json Integrity
+
+Verify all shell scripts referenced in `hooks/hooks.json` actually exist on disk.
+
+```bash
+if [ -f hooks/hooks.json ]; then
+  jq -r '.. | .command? // empty' hooks/hooks.json 2>/dev/null | grep -oP 'bash "\$\{CLAUDE_PLUGIN_ROOT\}/hooks/\K[^"]+' | while read script; do
+    [ ! -f "hooks/$script" ] && echo "MISSING: hooks.json references hooks/$script but file not found"
+  done
+  jq -r '.. | .command? // empty' hooks/hooks.json 2>/dev/null | grep -oP 'node "\$\{CLAUDE_PLUGIN_ROOT\}/\K[^"]+' | while read script; do
+    [ ! -f "$script" ] && echo "MISSING: hooks.json references $script but file not found"
+  done
+fi
+```
+
+## 9. Platform Mismatches
 
 - Check for OS-specific code on wrong platform:
   - Linux patterns (`/proc/`, `systemd`, `apt-get`) on macOS
@@ -129,6 +200,10 @@ Print results as:
   env vars:      {PASS|WARN} ({N} undocumented)
   deploy config: {PASS|FAIL} ({details})
   git hooks:     {PASS|WARN}
+  bw prompts:    {PASS|WARN} ({N} missing files, {N} bad frontmatter)
+  bw hud cache:  {PASS|WARN} ({details})
+  bw webhooks:   {PASS|WARN} ({details})
+  bw hooks.json: {PASS|WARN} ({N} missing scripts)
   platform:      {PASS|WARN} ({details})
 
   {total issues found}

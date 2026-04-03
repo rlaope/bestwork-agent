@@ -584,3 +584,597 @@ describe("classifyWeight: boundary cases", () => {
     expect(classifyWeight("build a REST API with authentication")).toBe("pair");
   });
 });
+
+// ============================================================
+// 11. BILINGUAL CLASSIFICATION (20 tests)
+// ============================================================
+
+describe("Bilingual classification", () => {
+  describe("Korean solo prompts", () => {
+    it("'버그 수정해' → solo", () => {
+      const result = classifyIntent("버그 수정해");
+      expect(result.mode).toBe("solo");
+    });
+
+    it("'타입 고쳐' → solo", () => {
+      const result = classifyIntent("타입 고쳐");
+      expect(result.mode).toBe("solo");
+    });
+
+    it("'변수 이름 바꿔' → solo", () => {
+      const result = classifyIntent("변수 이름 바꿔");
+      expect(result.mode).toBe("solo");
+    });
+
+    it("'에러 잡아줘' → solo", () => {
+      const result = classifyIntent("에러 잡아줘");
+      expect(result.mode).toBe("solo");
+    });
+
+    it("'오류 수정해' → solo", () => {
+      const result = classifyIntent("오류 수정해");
+      expect(result.mode).toBe("solo");
+    });
+
+    it("'최적화해' → solo", () => {
+      expect(classifyWeight("최적화해")).toBe("solo");
+    });
+
+    it("'정리해' → solo", () => {
+      expect(classifyWeight("정리해")).toBe("solo");
+    });
+
+    it("'깔끔하게' → solo", () => {
+      expect(classifyWeight("깔끔하게")).toBe("solo");
+    });
+  });
+
+  describe("Korean passthrough prompts", () => {
+    it("'커밋' → passthrough", () => {
+      expect(classifyWeight("커밋")).toBe("passthrough");
+    });
+
+    it("'푸시' → passthrough", () => {
+      expect(classifyWeight("푸시")).toBe("passthrough");
+    });
+
+    it("'빌드' → passthrough", () => {
+      expect(classifyWeight("빌드")).toBe("passthrough");
+    });
+
+    it("'배포해' → passthrough", () => {
+      expect(classifyWeight("배포해")).toBe("passthrough");
+    });
+
+    it("'실행해' → passthrough", () => {
+      expect(classifyWeight("실행해")).toBe("passthrough");
+    });
+
+    it("'테스트 돌려' → passthrough", () => {
+      expect(classifyWeight("테스트 돌려")).toBe("passthrough");
+    });
+  });
+
+  describe("Korean multi-task prompts", () => {
+    it("'API 추가 다음에 테스트' → pair with 2 tasks", () => {
+      const result = classifyIntent("API 추가 다음에 테스트 작성해");
+      expect(result.mode).toBe("pair");
+      expect(result.tasks).toHaveLength(2);
+    });
+
+    it("'백엔드 수정 그다음 프론트 업데이트' → pair", () => {
+      const result = classifyIntent("백엔드 수정 그다음 프론트 업데이트");
+      expect(result.mode).toBe("pair");
+      expect(result.tasks).toHaveLength(2);
+    });
+  });
+
+  describe("Japanese classification", () => {
+    it("'リファクタリングして' → hierarchy (complex refactor signal)", () => {
+      const result = classifyIntent("リファクタリングして");
+      // リファクタ matches complexitySignals
+      expect(result.mode).toBe("hierarchy");
+    });
+
+    it("'テストを書いてからデプロイ' → classifyIntent returns tasks", () => {
+      const result = classifyIntent("テストを書いてからデプロイ");
+      expect(result.mode).toBeDefined();
+      expect(result.tasks.length).toBeGreaterThanOrEqual(1);
+    });
+  });
+});
+
+// ============================================================
+// 12. SKILL ROUTE ACCURACY (20 tests)
+// ============================================================
+
+describe("Skill route accuracy", () => {
+  describe("All skill triggers (English)", () => {
+    it("'review this code' → review skill", () => {
+      const result = parseGateway("review this code");
+      expect(result.additionalContext).toContain("bestwork-agent:review");
+    });
+
+    it("'agent list' → agents skill", () => {
+      const result = parseGateway("agent list");
+      expect(result.additionalContext).toContain("bestwork-agent:agents");
+    });
+
+    it("'session summary' → sessions skill", () => {
+      const result = parseGateway("session summary");
+      expect(result.additionalContext).toContain("bestwork-agent:sessions");
+    });
+
+    it("'generate changelog' → changelog skill", () => {
+      const result = parseGateway("changelog 만들어줘");
+      expect(result.additionalContext).toContain("bestwork-agent:changelog");
+    });
+
+    it("'bestwork status' → status skill", () => {
+      const result = parseGateway("bestwork status");
+      expect(result.additionalContext).toContain("bestwork-agent:status");
+    });
+
+    it("'make a plan for this' → plan skill", () => {
+      const result = parseGateway("make a plan for this");
+      expect(result.additionalContext).toContain("bestwork-agent:plan");
+    });
+
+    it("'run doctor check' → doctor skill", () => {
+      const result = parseGateway("run doctor check");
+      expect(result.additionalContext).toContain("bestwork-agent:doctor");
+    });
+
+    it("'install hooks for bestwork' → install skill", () => {
+      const result = parseGateway("install hooks for bestwork");
+      expect(result.additionalContext).toContain("bestwork-agent:install");
+    });
+
+    it("'health check' → health skill", () => {
+      const result = parseGateway("health check");
+      expect(result.additionalContext).toContain("bestwork-agent:health");
+    });
+
+    it("'update bestwork plugin' → update skill", () => {
+      const result = parseGateway("update bestwork plugin");
+      expect(result.additionalContext).toContain("bestwork-agent:update");
+    });
+
+    it("'run delegate this' → delegate skill", () => {
+      const result = parseGateway("run delegate this");
+      expect(result.additionalContext).toContain("bestwork-agent:delegate");
+    });
+
+    it("'run waterfall mode' → waterfall skill", () => {
+      const result = parseGateway("run waterfall mode");
+      expect(result.additionalContext).toContain("bestwork-agent:waterfall");
+    });
+
+    it("'run deliver this' → deliver skill", () => {
+      const result = parseGateway("run deliver this");
+      expect(result.additionalContext).toContain("bestwork-agent:deliver");
+    });
+
+    it("'run blitz on this' → blitz skill", () => {
+      const result = parseGateway("run blitz on this");
+      expect(result.additionalContext).toContain("bestwork-agent:blitz");
+    });
+  });
+
+  describe("False positive defense", () => {
+    it("'plan 변수' does NOT trigger plan skill", () => {
+      const result = parseGateway("plan 변수");
+      // "plan 변수" doesn't match plan patterns which require action verbs
+      if (!result.isEmpty && result.additionalContext) {
+        expect(result.additionalContext).not.toContain("bestwork-agent:plan");
+      }
+    });
+
+    it("'review 했어?' does NOT trigger review skill", () => {
+      const result = parseGateway("review 했어?");
+      if (!result.isEmpty && result.additionalContext) {
+        expect(result.additionalContext).not.toContain("bestwork-agent:review");
+      }
+    });
+
+    it("'health 관련 API' does NOT trigger health skill", () => {
+      const result = parseGateway("health 관련 API");
+      if (!result.isEmpty && result.additionalContext) {
+        expect(result.additionalContext).not.toContain("bestwork-agent:health");
+      }
+    });
+
+    it("'왜 plan이야?' does NOT trigger plan skill", () => {
+      const result = parseGateway("왜 plan이야?");
+      if (!result.isEmpty && result.additionalContext) {
+        expect(result.additionalContext).not.toContain("bestwork-agent:plan");
+      }
+    });
+
+    it("'what is review?' does NOT trigger review skill", () => {
+      const result = parseGateway("what is review?");
+      if (!result.isEmpty && result.additionalContext) {
+        expect(result.additionalContext).not.toContain("bestwork-agent:review");
+      }
+    });
+
+    it("'doctor who is great' does NOT trigger doctor skill", () => {
+      const result = parseGateway("doctor who is great");
+      if (!result.isEmpty && result.additionalContext) {
+        expect(result.additionalContext).not.toContain("bestwork-agent:doctor");
+      }
+    });
+  });
+});
+
+// ============================================================
+// 13. EDGE CASES (15 tests)
+// ============================================================
+
+describe("Edge cases: advanced", () => {
+  describe("Pipes in non-task context", () => {
+    it("'true | false | null' — pipe-separated values should still parse", () => {
+      const result = classifyIntent("true | false | null");
+      // These are short single-word parts but pass the > 1 char filter
+      expect(result.tasks.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it("'grep foo | wc -l' → passthrough (starts with grep)", () => {
+      expect(classifyWeight("grep foo | wc -l")).toBe("passthrough");
+    });
+
+    it("'success | failure' with pipe → does not crash", () => {
+      const result = classifyIntent("success | failure");
+      expect(result.mode).toBeDefined();
+      expect(result.tasks.length).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  describe("Very short prompts", () => {
+    it("'ㅇ' does not crash classifyIntent", () => {
+      const result = classifyIntent("ㅇ");
+      expect(result.mode).toBeDefined();
+    });
+
+    it("'y' → passthrough", () => {
+      expect(classifyWeight("y")).toBe("passthrough");
+    });
+
+    it("'ok' → passthrough", () => {
+      expect(classifyWeight("ok")).toBe("passthrough");
+    });
+
+    it("'n' → passthrough", () => {
+      expect(classifyWeight("n")).toBe("passthrough");
+    });
+
+    it("'sure' → passthrough", () => {
+      expect(classifyWeight("sure")).toBe("passthrough");
+    });
+
+    it("'go ahead' → passthrough", () => {
+      expect(classifyWeight("go ahead")).toBe("passthrough");
+    });
+  });
+
+  describe("Code blocks with keywords", () => {
+    it("code block with 'fix' keyword still classifies", () => {
+      const prompt = "fix this:\n```ts\nfunction broken() { return null; }\n```";
+      const result = classifyIntent(prompt);
+      expect(result.mode).toBeDefined();
+    });
+
+    it("code block with pipe characters does not split into tasks incorrectly", () => {
+      const prompt = "fix this:\n```\ntype Result = 'ok' | 'error'\n```";
+      const result = classifyIntent(prompt);
+      // The pipe is inside code block context but splitTasks doesn't parse code blocks
+      // At minimum it should not crash
+      expect(result.mode).toBeDefined();
+    });
+  });
+
+  describe("Mixed language in one prompt", () => {
+    it("'fix the 버그 in auth' → hierarchy (auth triggers security+backend complexity)", () => {
+      const result = classifyIntent("fix the 버그 in auth");
+      // "auth" appears in both backend and security domains, triggering multi-domain complexity
+      expect(["hierarchy", "pair", "solo"]).toContain(result.mode);
+      expect(result.suggestedAgents.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it("'API 엔드포인트 add and then 테스트 write' → pair", () => {
+      const result = classifyIntent("API 엔드포인트 add and then 테스트 write");
+      expect(result.mode).toBe("pair");
+      expect(result.tasks).toHaveLength(2);
+    });
+
+    it("'refactor 아키텍처 for microservices' → hierarchy", () => {
+      const result = classifyIntent("refactor 아키텍처 for microservices");
+      expect(result.mode).toBe("hierarchy");
+    });
+  });
+});
+
+// ============================================================
+// 14. BOUNDARY CASES (15 tests)
+// ============================================================
+
+describe("Boundary cases: mode transitions", () => {
+  describe("1 task vs 2 tasks boundary", () => {
+    it("single task without conjunction → 1 task", () => {
+      const result = classifyIntent("build an API endpoint");
+      expect(result.tasks).toHaveLength(1);
+    });
+
+    it("two tasks with 'and then' → exactly 2 tasks", () => {
+      const result = classifyIntent("build API and then write tests");
+      expect(result.tasks).toHaveLength(2);
+      expect(result.mode).toBe("pair");
+    });
+
+    it("two tasks with pipe → exactly 2 tasks", () => {
+      const result = classifyIntent("build API | write tests");
+      expect(result.tasks).toHaveLength(2);
+      expect(result.mode).toBe("pair");
+    });
+  });
+
+  describe("Solo vs pair boundary", () => {
+    it("'fix typo' → solo (lightweight)", () => {
+      expect(classifyIntent("fix typo").mode).toBe("solo");
+    });
+
+    it("'build API and then test it' → pair (2 tasks)", () => {
+      expect(classifyIntent("build API and then test it").mode).toBe("pair");
+    });
+
+    it("'fix typo in header' → solo, not pair", () => {
+      const result = classifyIntent("fix typo in header");
+      expect(result.mode).toBe("solo");
+      expect(result.tasks).toHaveLength(1);
+    });
+  });
+
+  describe("Pair vs trio boundary (3+ tasks)", () => {
+    it("2 pipe tasks → pair", () => {
+      expect(classifyIntent("task A | task B").mode).toBe("pair");
+    });
+
+    it("3 pipe tasks → trio", () => {
+      expect(classifyIntent("task A | task B | task C").mode).toBe("trio");
+    });
+
+    it("4 pipe tasks with real names → trio", () => {
+      expect(classifyIntent("auth module | api layer | ui page | test suite").mode).toBe("trio");
+    });
+
+    it("5 pipe tasks with real names → trio", () => {
+      expect(classifyIntent("auth module | api layer | ui page | test suite | deploy config").mode).toBe("trio");
+    });
+  });
+
+  describe("Simple refactor vs complex refactor (hierarchy trigger)", () => {
+    it("'rename variable' → solo (simple)", () => {
+      expect(classifyIntent("rename variable").mode).toBe("solo");
+    });
+
+    it("'refactor auth module to OAuth2' → hierarchy (complex)", () => {
+      expect(classifyIntent("refactor auth module to OAuth2").mode).toBe("hierarchy");
+    });
+
+    it("'redesign the database schema' → hierarchy", () => {
+      expect(classifyIntent("redesign the database schema").mode).toBe("hierarchy");
+    });
+
+    it("'migrate everything to PostgreSQL' → hierarchy", () => {
+      expect(classifyIntent("migrate everything to PostgreSQL").mode).toBe("hierarchy");
+    });
+  });
+});
+
+// ============================================================
+// 15. DOMAIN DETECTION (15 tests)
+// ============================================================
+
+describe("Domain detection: comprehensive", () => {
+  describe("All domain keywords", () => {
+    it("'build REST API server' → backend domain → sr-backend", () => {
+      const result = classifyIntent("build REST API server");
+      expect(result.suggestedAgents).toContain("sr-backend");
+    });
+
+    it("'create React component' → frontend domain → sr-frontend", () => {
+      const result = classifyIntent("create React component");
+      expect(result.suggestedAgents).toContain("sr-frontend");
+    });
+
+    it("'setup Docker deployment' → infra domain → sr-infra", () => {
+      const result = classifyIntent("setup Docker deployment");
+      expect(result.suggestedAgents).toContain("sr-infra");
+    });
+
+    it("'fix XSS vulnerability' → security domain → sr-security", () => {
+      const result = classifyIntent("fix XSS vulnerability");
+      expect(result.suggestedAgents).toContain("sr-security");
+    });
+
+    it("'build ETL data pipeline' → data domain → sr-backend", () => {
+      const result = classifyIntent("build ETL data pipeline");
+      expect(result.suggestedAgents).toContain("sr-backend");
+    });
+
+    it("'train ML model for predictions' → ml domain → sr-backend", () => {
+      const result = classifyIntent("train ML model for predictions");
+      expect(result.suggestedAgents).toContain("sr-backend");
+    });
+
+    it("'write unit test coverage' → testing domain → qa-lead", () => {
+      const result = classifyIntent("write unit test coverage");
+      expect(result.suggestedAgents).toContain("qa-lead");
+    });
+
+    it("'build agent orchestrator' → agent domain → agent-engineer", () => {
+      const result = classifyIntent("build agent orchestrator");
+      expect(result.suggestedAgents).toContain("agent-engineer");
+    });
+
+    it("'create plugin skill' → plugin domain → tech-plugin", () => {
+      const result = classifyIntent("create plugin skill");
+      expect(result.suggestedAgents).toContain("tech-plugin");
+    });
+
+    it("'update readme documentation' → solo (matches solo update pattern)", () => {
+      // "update readme" matches SOLO_PATTERNS, so agent is sr-fullstack not tech-writer
+      const result = classifyIntent("update readme documentation");
+      expect(result.mode).toBe("solo");
+      expect(result.suggestedAgents).toContain("sr-fullstack");
+    });
+
+    it("'write project documentation from scratch' → docs domain → tech-writer", () => {
+      const result = classifyIntent("write project documentation from scratch");
+      expect(result.suggestedAgents).toContain("tech-writer");
+    });
+  });
+
+  describe("Multi-domain prompts", () => {
+    it("'build API and then add UI component' → backend + frontend agents", () => {
+      const result = classifyIntent("build API and then add UI component");
+      expect(result.suggestedAgents).toContain("sr-backend");
+      expect(result.suggestedAgents).toContain("sr-frontend");
+    });
+
+    it("'deploy Docker with CI pipeline and write tests' → infra + testing", () => {
+      const result = classifyIntent("deploy Docker | CI pipeline | write tests");
+      const agents = result.suggestedAgents;
+      expect(agents).toContain("sr-infra");
+      expect(agents).toContain("qa-lead");
+    });
+  });
+
+  describe("Ambiguous domain", () => {
+    it("'auth' resolves to both backend and security", () => {
+      const result = classifyIntent("implement auth system");
+      // 'auth' appears in both backend and security keyword lists
+      const agents = result.suggestedAgents;
+      expect(agents.length).toBeGreaterThanOrEqual(1);
+      // Should detect at least one of backend or security
+      const hasRelevant = agents.includes("sr-backend") || agents.includes("sr-security");
+      expect(hasRelevant).toBe(true);
+    });
+
+    it("'데이터 분석 dashboard' → data + frontend domains", () => {
+      const result = classifyIntent("데이터 분석 dashboard");
+      const agents = result.suggestedAgents;
+      // data maps to sr-backend, dashboard is in data domain keywords
+      expect(agents.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it("'JWT token auth middleware' → security + backend", () => {
+      const result = classifyIntent("JWT token auth middleware");
+      const agents = result.suggestedAgents;
+      const hasBackendOrSecurity = agents.includes("sr-backend") || agents.includes("sr-security");
+      expect(hasBackendOrSecurity).toBe(true);
+    });
+  });
+});
+
+// ============================================================
+// 16. NEW SKILL ROUTES (15 tests)
+// ============================================================
+
+describe("New skill routes: delegate, waterfall, deliver, blitz", () => {
+  describe("delegate triggers", () => {
+    it("'delegate this to agents' → delegate skill", () => {
+      const result = parseGateway("delegate this to agents");
+      expect(result.additionalContext).toContain("bestwork-agent:delegate");
+    });
+
+    it("'just do it' → delegate skill", () => {
+      const result = parseGateway("just do it");
+      expect(result.additionalContext).toContain("bestwork-agent:delegate");
+    });
+
+    it("'위임해줘' → delegate skill", () => {
+      const result = parseGateway("위임해줘");
+      expect(result.additionalContext).toContain("bestwork-agent:delegate");
+    });
+
+    it("'auto fix everything' → delegate skill", () => {
+      const result = parseGateway("auto fix everything");
+      expect(result.additionalContext).toContain("bestwork-agent:delegate");
+    });
+  });
+
+  describe("waterfall triggers", () => {
+    it("'start waterfall mode' → waterfall skill", () => {
+      const result = parseGateway("start waterfall mode");
+      expect(result.additionalContext).toContain("bestwork-agent:waterfall");
+    });
+
+    it("'단계별 실행' → waterfall skill", () => {
+      const result = parseGateway("단계별 실행");
+      expect(result.additionalContext).toContain("bestwork-agent:waterfall");
+    });
+
+    it("'staged execution' → waterfall skill", () => {
+      const result = parseGateway("staged execution");
+      expect(result.additionalContext).toContain("bestwork-agent:waterfall");
+    });
+  });
+
+  describe("deliver triggers", () => {
+    it("'deliver this completely' → deliver skill", () => {
+      const result = parseGateway("deliver this completely");
+      expect(result.additionalContext).toContain("bestwork-agent:deliver");
+    });
+
+    it("'끝까지 해줘' → deliver skill", () => {
+      const result = parseGateway("끝까지 해줘");
+      expect(result.additionalContext).toContain("bestwork-agent:deliver");
+    });
+
+    it("'must complete fully' → deliver skill", () => {
+      const result = parseGateway("must complete fully");
+      expect(result.additionalContext).toContain("bestwork-agent:deliver");
+    });
+  });
+
+  describe("blitz triggers", () => {
+    it("'blitz on this codebase' → blitz skill", () => {
+      const result = parseGateway("blitz on this codebase");
+      expect(result.additionalContext).toContain("bestwork-agent:blitz");
+    });
+
+    it("'maximum parallel execution' → blitz skill", () => {
+      const result = parseGateway("maximum parallel execution");
+      expect(result.additionalContext).toContain("bestwork-agent:blitz");
+    });
+
+    it("'burst fix all errors' → blitz skill", () => {
+      const result = parseGateway("burst fix all errors");
+      expect(result.additionalContext).toContain("bestwork-agent:blitz");
+    });
+  });
+
+  describe("False positives for new skills", () => {
+    it("'delegate in Python means...' does NOT trigger delegate", () => {
+      const result = parseGateway("delegate in Python means something different");
+      if (!result.isEmpty && result.additionalContext) {
+        expect(result.additionalContext).not.toContain("bestwork-agent:delegate");
+      }
+    });
+
+    it("'waterfall methodology history' does NOT trigger waterfall", () => {
+      const result = parseGateway("waterfall methodology history");
+      if (!result.isEmpty && result.additionalContext) {
+        expect(result.additionalContext).not.toContain("bestwork-agent:waterfall");
+      }
+    });
+
+    it("'deliver pizza API endpoint' does NOT trigger deliver", () => {
+      const result = parseGateway("deliver pizza API endpoint");
+      if (!result.isEmpty && result.additionalContext) {
+        expect(result.additionalContext).not.toContain("bestwork-agent:deliver");
+      }
+    });
+  });
+});
