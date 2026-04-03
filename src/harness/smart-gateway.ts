@@ -14,7 +14,7 @@ import { classifyIntent, buildExecutionPlan, formatPlan, type ExecutionMode, typ
 import { TEAM_PRESETS } from "./org.js";
 import { loadProjectConfig, loadMergedConfig, type ProjectConfig } from "./notify.js";
 import { validateConfig, formatConfigErrors } from "./config-validator.js";
-import { appendFileSync, mkdirSync, readFileSync, existsSync } from "node:fs";
+import { appendFileSync, mkdirSync, readFileSync, existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
 import { execSync } from "node:child_process";
@@ -230,6 +230,34 @@ function levenshtein(a: string, b: string): number {
   return dp[m][n];
 }
 
+// === User-extensible skills (.bestwork/skills/ and ~/.bestwork/skills/) ===
+function discoverUserSkills(): Array<{ name: string; description: string; path: string }> {
+  const skills: Array<{ name: string; description: string; path: string }> = [];
+  const dirs = [
+    join(process.cwd(), ".bestwork", "skills"),
+    join(homedir(), ".bestwork", "skills"),
+  ];
+  for (const dir of dirs) {
+    if (!existsSync(dir)) continue;
+    try {
+      for (const entry of readdirSync(dir)) {
+        const skillMd = join(dir, entry, "SKILL.md");
+        if (!existsSync(skillMd)) continue;
+        try {
+          const content = readFileSync(skillMd, "utf-8");
+          const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
+          if (fmMatch) {
+            const name = fmMatch[1].match(/name:\s*(.+)/)?.[1]?.trim() || entry;
+            const desc = fmMatch[1].match(/description:\s*(.+)/)?.[1]?.trim() || "";
+            skills.push({ name, description: desc, path: skillMd });
+          }
+        } catch {}
+      }
+    } catch {}
+  }
+  return skills;
+}
+
 function modeToTeam(mode: ExecutionMode): string | null {
   switch (mode) {
     case "trio":
@@ -351,6 +379,19 @@ async function main() {
     projectConfig = merged.project;
   } catch {
     // No config available — proceed without
+  }
+
+  // Tier 1.5: User-extensible skill routing
+  const userSkills = discoverUserSkills();
+  for (const skill of userSkills) {
+    if (lower.includes(skill.name.toLowerCase())) {
+      output(
+        `[BW] user skill: ${skill.name}\n\n` +
+        `Read the SKILL.md at ${skill.path} and follow its instructions.\n` +
+        `Description: ${skill.description}`
+      );
+      return;
+    }
   }
 
   // Tier 2: Task classification — analyze prompt and determine execution mode

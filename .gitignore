@@ -3,3 +3,4 @@ node_modules/
 .omc/
 .bestwork/
 coverage/
+.claude/worktrees/

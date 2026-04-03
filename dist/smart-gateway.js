@@ -1960,7 +1960,7 @@ function formatConfigErrors(errors) {
 }
 
 // src/harness/smart-gateway.ts
-import { appendFileSync, mkdirSync, readFileSync, existsSync } from "fs";
+import { appendFileSync, mkdirSync, readFileSync, existsSync, readdirSync } from "fs";
 import { join as join3 } from "path";
 import { homedir as homedir2 } from "os";
 import { execSync } from "child_process";
@@ -2192,6 +2192,34 @@ function levenshtein(a, b) {
       dp[i][j] = a[i - 1] === b[j - 1] ? dp[i - 1][j - 1] : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
   return dp[m][n];
 }
+function discoverUserSkills() {
+  const skills = [];
+  const dirs = [
+    join3(process.cwd(), ".bestwork", "skills"),
+    join3(homedir2(), ".bestwork", "skills")
+  ];
+  for (const dir of dirs) {
+    if (!existsSync(dir)) continue;
+    try {
+      for (const entry of readdirSync(dir)) {
+        const skillMd = join3(dir, entry, "SKILL.md");
+        if (!existsSync(skillMd)) continue;
+        try {
+          const content = readFileSync(skillMd, "utf-8");
+          const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
+          if (fmMatch) {
+            const name = fmMatch[1].match(/name:\s*(.+)/)?.[1]?.trim() || entry;
+            const desc = fmMatch[1].match(/description:\s*(.+)/)?.[1]?.trim() || "";
+            skills.push({ name, description: desc, path: skillMd });
+          }
+        } catch {
+        }
+      }
+    } catch {
+    }
+  }
+  return skills;
+}
 async function readStdin() {
   return new Promise((resolve) => {
     let data = "";
@@ -2297,6 +2325,18 @@ ${formatConfigErrors(configErrors)}`);
     }
     projectConfig = merged.project;
   } catch {
+  }
+  const userSkills = discoverUserSkills();
+  for (const skill of userSkills) {
+    if (lower.includes(skill.name.toLowerCase())) {
+      output(
+        `[BW] user skill: ${skill.name}
+
+Read the SKILL.md at ${skill.path} and follow its instructions.
+Description: ${skill.description}`
+      );
+      return;
+    }
   }
   const intent = classifyIntent(prompt, projectConfig);
   const agentList = intent.suggestedAgents.join(", ");
