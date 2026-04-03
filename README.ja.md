@@ -95,6 +95,8 @@ bestwork agents    # フルカタログ
 - **グラウンディング** — 未読ファイルの編集時に警告
 - **バリデーション** — コード変更ごとに自動タイプチェック
 - **プラットフォームレビュー** — セッション終了時にOS/ランタイム不一致を検出
+- **スコープ強制** — ロックされたパス外の編集をブロック
+- **ストリクト強制** — `rm -rf`、`git push --force` をブロック
 
 ---
 
@@ -108,6 +110,19 @@ bestwork summary -w       # 週間概要
 bestwork heatmap          # 365日アクティビティグリッド
 bestwork loops            # エージェントループ検出
 bestwork replay <id>      # セッションリプレイ
+bestwork effectiveness    # プロンプト効率トレンド
+bestwork outcome <id>     # 生産性判定
+bestwork export -f csv    # データエクスポート
+```
+
+### データ駆動エージェント
+
+```
+./autopsy [id]         セッション事後分析 — なぜ苦戦したか？
+./learn                プロンプティングルール抽出
+./predict <task>       過去セッションから複雑度を推定
+./guard                現在のセッション健全性チェック
+./compare <id1> <id2>  セッション比較
 ```
 
 ---

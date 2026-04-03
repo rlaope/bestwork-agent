@@ -318,6 +318,50 @@ First-time user guide.
 
 ---
 
+## /bestwork-agent:doctor
+
+Diagnose project deploy config vs actual code.
+
+```
+./doctor
+    |
+    v
+[BW] running project diagnostics...
+    |
+    +-> package.json scripts vs actual files
+    +-> tsconfig paths vs directory structure
+    +-> imports vs installed dependencies
+    +-> environment variables vs .env templates
+    +-> CI/CD config vs project reality
+    |
+    v
+  Report: N mismatches found
+  (with fix suggestions per issue)
+```
+
+---
+
+## /bestwork-agent:changelog
+
+Auto-generate changelog from git history.
+
+```
+./changelog
+    |
+    v
+[BW] generating changelog...
+    |
+    +-> Read git log since last tag/release
+    +-> Categorize commits (feat, fix, refactor, docs, etc.)
+    +-> Group by category
+    +-> Generate markdown changelog
+    |
+    v
+  CHANGELOG.md updated (or created)
+```
+
+---
+
 ## StatusLine (HUD)
 
 Real-time status bar at bottom of Claude Code.
@@ -344,28 +388,32 @@ User types anything
          │ no
          ▼
   ┌──────────────┐
-  │ Is it pass-  │──yes──→ Do nothing (git, ls, yes/no)
-  │ through?     │
+  │ Skill route? │──yes──→ Invoke matching skill
+  │ (regex match)│         (review, trio, plan, etc.)
   └──────┬───────┘
          │ no
          ▼
   ┌──────────────┐
-  │ Analyze:     │
-  │ - task count │
+  │ Passthrough? │──yes──→ Do nothing (git, ls, yes/no)
+  └──────┬───────┘
+         │ no
+         ▼
+  ┌──────────────┐
+  │classifyIntent│
+  │ - split tasks│
   │ - domains    │
   │ - complexity │
   └──────┬───────┘
          │
-    ┌────┼────┬────────┐
-    ▼    ▼    ▼        ▼
-  SOLO PAIR  TRIO   AMBIGUOUS
-   │    │     │        │
-   │    │     │    ┌───▼────┐
-   ▼    ▼     ▼    │ Ask    │
-  Main  2    3×3   │ user:  │
-  agent devs Tech  │ 1.trio │
-              PM   │ 2.squad│
-             Crit  │ 3.hier │
-                   │ 4.solo │
-                   └────────┘
+    ┌────┴────────┐
+    ▼             ▼
+  SOLO        NON-SOLO
+   │          (pair/trio/squad/hierarchy)
+   ▼             │
+  [BW] solo      ▼
+  proceed     Show plan (tasks + agents)
+              Ask user:
+                1. Confirm plan
+                2. Adjust
+                3. Solo instead
 ```

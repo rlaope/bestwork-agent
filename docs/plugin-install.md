@@ -6,7 +6,6 @@ Inside Claude Code session:
 ```
 /plugin marketplace add https://github.com/rlaope/bestwork-agent
 /plugin install bestwork-agent
-/reload-plugins
 ```
 
 Or from terminal:
@@ -57,9 +56,9 @@ npm install -g bestwork-agent@latest
 bestwork install         # re-register hooks
 ```
 
-For plugin installs, the update name is `bestwork-agent@bestwork-tools`:
-```bash
-/plugin update bestwork-agent@bestwork-tools
+For plugin installs, use the built-in update skill:
+```
+./update
 ```
 
 ## Uninstall

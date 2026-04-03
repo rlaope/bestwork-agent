@@ -1,13 +1,13 @@
 # Agent Prompts
 
-System prompts for bestwork's 36 specialist agents.
+System prompts for bestwork's 49 specialist agents.
 Edit these files to customize agent behavior without rebuilding.
 
 ## Structure
 
-- `tech/` — 18 implementation specialists
-- `pm/` — 8 requirements verification specialists
-- `critic/` — 10 quality review specialists
+- `tech/` — 25 implementation specialists
+- `pm/` — 10 requirements verification specialists
+- `critic/` — 14 quality review specialists
 
 ## Format
 

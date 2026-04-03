@@ -101,11 +101,16 @@ Backend + Frontend + Product + QA (all equal)
 ```
 Everyone works in parallel. No single authority. Consensus-driven. Fast.
 
-**The router picks automatically** based on task signals:
-- Large scope / cross-directory / architecture → hierarchy
-- Single feature / bugfix / localized → squad
+**The gateway picks automatically** based on task signals:
+- Simple fix / rename / format → solo (one agent, no overhead)
+- Two related sub-tasks → pair (one agent per task + critic)
+- Multiple sub-tasks → trio (tech + PM + critic per task, parallel)
+- Large scope / cross-directory / architecture → hierarchy (CTO → Lead → Senior → Junior)
+- Single feature / bugfix / localized → squad (flat, consensus-driven)
 - Security-sensitive files → security team
 - Infra / CI/CD files → infra squad
+
+For non-solo work, the gateway shows you the plan (tasks + agents) and asks you to confirm, adjust, or drop to solo.
 
 ## Install
 
@@ -184,12 +189,21 @@ bestwork org    # full org chart
 
 ### Commands
 
+The smart gateway analyzes your prompt and picks the right mode automatically. No commands to memorize:
+
 ```
-./team Full Team refactor auth module       # hierarchy execution
-./squad Feature Squad add dark mode         # squad execution
+"Refactor the auth module"       → hierarchy (complex, cross-cutting)
+"Add dark mode toggle"           → squad (localized feature)
+"Fix the typo in readme"         → solo (simple task)
 ```
 
-Or just describe what you need — the smart gateway routes it automatically.
+Or use explicit commands:
+
+```
+./trio implement auth | add tests | update docs    # parallel trio execution
+./review                                           # hallucination scan
+./plan refactor auth module                        # scope analysis first
+```
 
 ---
 

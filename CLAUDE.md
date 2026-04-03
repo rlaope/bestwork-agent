@@ -28,7 +28,7 @@ Cloned at the same level for pattern reference only. Do NOT copy code.
 - TypeScript, Node.js 18+, ESM
 - Ink (React for CLI) — TUI components
 - tsup — bundler
-- vitest — testing (342 tests)
+- vitest — testing (343 tests)
 - commander — CLI parser
 
 ## Key Directories
@@ -46,7 +46,7 @@ Cloned at the same level for pattern reference only. Do NOT copy code.
 
 ```bash
 npm run build    # tsup + auto-sync to plugin paths
-npm test         # vitest (342 tests)
+npm test         # vitest (343 tests)
 npx tsc --noEmit # typecheck
 ```
 

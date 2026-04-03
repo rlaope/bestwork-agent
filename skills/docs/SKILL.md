@@ -75,13 +75,42 @@ Read current file. Update:
 - Any architecture changes since last update
 - Key directories if new ones were added
 
-### 7. Verify
+### 7. Verify accuracy
 
-After all updates, run:
+After all updates, run these checks:
+
+**7a. Version numbers** — no stale version references:
 ```bash
 grep -c "0.10.0\|0.9.0\|0.8.0" README.md README.ko.md README.ja.md docs/*.md CLAUDE.md 2>/dev/null
 ```
 If any old version numbers found, fix them.
+
+**7b. Agent counts** — every file must match actual prompt counts:
+```bash
+ls prompts/tech/ | wc -l   # tech count
+ls prompts/pm/ | wc -l     # pm count
+ls prompts/critic/ | wc -l # critic count
+```
+Search all docs for stale agent counts (36, 38, or any number that doesn't match the sum above). Fix them.
+
+**7c. Command references** — every `./command` mentioned in docs must exist:
+Check each `./command` reference against:
+- `SLASH_PREFIXES` in `src/harness/smart-gateway.ts`
+- skill directories in `skills/`
+- hook scripts in `hooks/`
+Remove or correct any references to commands that don't exist (e.g. `./team`, `./squad`).
+
+**7d. Feature descriptions vs code** — spot-check key claims:
+- Team modes described in README must match `TEAM_PRESETS` in `src/harness/org.ts`
+- Gateway flow descriptions must match the actual tiers in `smart-gateway.ts`
+- Install instructions must match actual install paths in `hooks/` and `package.json`
+- Org role counts and level names must match `ALL_ORG_ROLES` in `org.ts`
+
+**7e. Test count** — must match actual:
+```bash
+npm test 2>&1 | tail -3
+```
+Update any stale test count references in CLAUDE.md.
 
 ### 8. Summary
 

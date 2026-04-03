@@ -1,7 +1,7 @@
 {
   "name": "bestwork-agent",
   "version": "1.0.0",
-  "description": "Harness engineering for Claude Code. 38 specialist agents, smart gateway, anti-hallucination, parallel trio execution.",
+  "description": "Harness engineering for Claude Code. 49 specialist agents, smart gateway, anti-hallucination, parallel trio execution.",
   "author": {
     "name": "rlaope",
     "url": "https://github.com/rlaope"
