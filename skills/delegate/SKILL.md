@@ -1,5 +1,5 @@
 ---
-name: autopilot
+name: delegate
 description: Autonomous execution — classify, allocate, and execute without confirmation
 ---
 

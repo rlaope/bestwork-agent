@@ -1678,10 +1678,10 @@ var SLASH_PREFIXES = [
   "./trio",
   "./update",
   // New execution mode skills
-  "./autopilot",
-  "./pipeline",
-  "./ralph",
-  "./ultrawork"
+  "./delegate",
+  "./waterfall",
+  "./deliver",
+  "./blitz"
 ];
 var SKILL_ROUTES = [
   {
@@ -1790,51 +1790,51 @@ var SKILL_ROUTES = [
   },
   {
     patterns: [
-      /(?:run|start|go|do)\s+autopilot/i,
-      /autopilot\s+(?:mode|this|the|on)/i,
-      /자동.*실행|자율.*실행|오토파일럿/i,
+      /(?:run|start|go|do)\s+delegate/i,
+      /delegate\s+(?:this|the|to)/i,
+      /위임.*(해|해줘|하자|시작)|맡겨/i,
       /(?:just|auto)\s+(?:do|fix|build|implement)\s+(?:it|this|everything)/i,
       /확인\s*없이.*(해|실행|돌려)/i,
-      /オートパイロット/i
+      /任せて|委任/i
     ],
-    skill: "autopilot",
-    reason: "autonomous execution without confirmation"
+    skill: "delegate",
+    reason: "autonomous execution \u2014 delegate and let agents handle it"
   },
   {
     patterns: [
-      /(?:run|start|do)\s+pipeline/i,
-      /pipeline\s+(?:mode|this|the|for)/i,
-      /파이프라인.*(돌려|해줘|해|하자|실행|시작)/i,
+      /(?:run|start|do)\s+waterfall/i,
+      /waterfall\s+(?:mode|this|the|for)/i,
+      /워터폴.*(돌려|해줘|해|하자|실행|시작)/i,
       /단계별.*(실행|처리|진행)/i,
       /(?:staged|sequential)\s+(?:execution|processing|build)/i,
-      /パイプライン/i
+      /ウォーターフォール/i
     ],
-    skill: "pipeline",
-    reason: "sequential staged processing with gates"
+    skill: "waterfall",
+    reason: "sequential staged processing \u2014 waterfall execution"
   },
   {
     patterns: [
-      /(?:run|start|do)\s+ralph/i,
-      /ralph\s+(?:mode|this|the|on)/i,
-      /랄프.*(모드|돌려|해줘|해|하자|실행)/i,
+      /(?:run|start|do)\s+deliver/i,
+      /deliver\s+(?:this|the|mode)/i,
+      /딜리버.*(해|해줘|하자|시작)|납품/i,
       /끝까지.*(해|완료|마무리)/i,
       /(?:must|needs?\s+to)\s+(?:complete|finish)\s+(?:fully|completely|everything)/i,
       /완전히.*(끝내|완료|마무리)/i
     ],
-    skill: "ralph",
-    reason: "persistent completion with verify/fix loops"
+    skill: "deliver",
+    reason: "persistent completion \u2014 deliver until every target passes"
   },
   {
     patterns: [
-      /(?:run|start|do)\s+ultrawork/i,
-      /ultrawork\s+(?:mode|this|the|on)/i,
-      /울트라워크.*(돌려|해줘|해|하자|실행)/i,
+      /(?:run|start|do)\s+blitz/i,
+      /blitz\s+(?:this|the|mode|on)/i,
+      /블리츠.*(돌려|해줘|해|하자|실행)/i,
       /(?:maximum|max)\s+parallel/i,
       /(?:burst|blast)\s+(?:fix|refactor|update|change)/i,
       /一斉に|全部同時/i
     ],
-    skill: "ultrawork",
-    reason: "maximum parallelism burst execution"
+    skill: "blitz",
+    reason: "maximum parallelism blitz \u2014 all tasks at once"
   }
 ];
 async function readStdin() {
