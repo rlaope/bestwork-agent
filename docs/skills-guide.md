@@ -142,15 +142,14 @@ Version check and upgrade flow.
     ▼
 [BW] checking for updates...
     │
-    ├─→ installed: 0.9.0
-    ├─→ latest:    0.9.1
+    ├─→ installed: 1.0.0
+    ├─→ latest:    1.0.1
     │
-    ├─ same → [BW] you're on the latest (v0.9.0)
+    ├─ same → [BW] you're on the latest (v1.0.0)
     │
-    └─ newer → [BW] update available: 0.9.0 → 0.9.1
+    └─ newer → [BW] update available: 1.0.0 → 1.0.1
                [BW] upgrading... hang tight
-               /plugin update bestwork-agent
-               /reload-plugins
+               /plugin update bestwork-agent@bestwork-tools
                [BW] done! restart to apply
 ```
 
@@ -193,12 +192,12 @@ bestwork install
 
 ## /bestwork-agent:agents
 
-46 specialist agent catalog.
+49 specialist agent catalog.
 
 ```
 bestwork agents
 
-  TECH (19)          PM (8)            CRITIC (11)
+  TECH (25)          PM (10)           CRITIC (14)
   ─────────          ──────            ───────────
   backend            product           performance
   frontend           API               scalability
@@ -208,16 +207,22 @@ bestwork agents
   API                migration         testing
   mobile             security          hallucination
   testing            growth            DX
-  security                             type safety
-  performance                          cost
-  devops                               devsecops
-  data
-  ML
-  CLI
+  security           compliance        type safety
+  performance        DX                cost
+  devops                               accessibility
+  data                                 devsecops
+  ML                                   i18n
+  CLI                                  agent
   realtime
   auth
   migration
   config
+  agent-engineer
+  plugin
+  accessibility
+  i18n
+  graphql
+  monorepo
   writer
 ```
 
@@ -238,9 +243,56 @@ Configuration snapshot.
   Discord:       configured ✅
   Slack:         not set
   Hooks:         11 registered
-  CLI version:   0.9.0
+  CLI version:   1.0.0
 
-[BW] status complete. bestwork v0.9.0 operational.
+[BW] status complete. bestwork v1.0.0 operational.
+```
+
+---
+
+## /bestwork-agent:docs
+
+Generate or update project documentation from code.
+
+```
+./docs
+    │
+    ▼
+┌─────────────────────────────────┐
+│  1. Scan project structure      │
+│  2. Identify public APIs        │
+│  3. Generate/update docs        │
+│  4. Cross-reference with code   │
+└────────────────┬────────────────┘
+                 │
+         ┌───────┴───────┐
+         ▼               ▼
+   📄 Docs created   📄 Docs updated
+      (new project)     (existing docs)
+```
+
+---
+
+## /bestwork-agent:plan
+
+Analyze task scope and recommend team composition before executing.
+
+```
+./plan refactor auth module
+    │
+    ▼
+┌─────────────────────────────────┐
+│  1. Analyze task complexity     │
+│  2. Identify affected domains   │
+│  3. Recommend team mode         │
+│  4. Save plan to .bestwork/     │
+└────────────────┬────────────────┘
+                 │
+                 ▼
+  Plan: hierarchy — Security Team
+  Agents: tech-auth, tech-security, pm-security
+  Estimated complexity: high
+  Saved to: .bestwork/plans/<id>.json
 ```
 
 ---
@@ -271,7 +323,7 @@ First-time user guide.
 Real-time status bar at bottom of Claude Code.
 
 ```
-[BW#0.9.0] | session:20m | 1478calls | 🔧9 📨
+[BW#1.0.0] | session:20m | 1478calls | 🔧9 📨
   │            │              │          │   │
   version      uptime         tool       hooks notify
                               calls      count status

@@ -53,6 +53,11 @@ npm install -g bestwork-agent@latest
 bestwork install         # re-register hooks
 ```
 
+For plugin installs, the update name is `bestwork-agent@bestwork-tools`:
+```bash
+/plugin update bestwork-agent@bestwork-tools
+```
+
 ## Uninstall
 
 ```bash

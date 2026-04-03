@@ -133,6 +133,14 @@ const SKILL_ROUTES: Array<{ patterns: RegExp[]; skill: string; reason: string; h
     skill: "trio",
     reason: "parallel execution with quality gates",
   },
+  {
+    patterns: [
+      /(docs|문서|readme|documentation).*(최신화|업데이트|갱신|sync|update)/i,
+      /(최신화|업데이트|갱신|sync).*(docs|문서|readme|documentation)/i,
+    ],
+    skill: "docs",
+    reason: "documentation sync with codebase",
+  },
 ];
 
 function modeToTeam(mode: ExecutionMode): string | null {

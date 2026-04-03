@@ -1488,7 +1488,8 @@ var DOMAIN_KEYWORDS = {
   ml: ["ml", "ai", "model", "training", "inference", "embedding", "vector", "llm", "neural", "dataset", "prediction", "\uBAA8\uB378", "\uD559\uC2B5", "\uCD94\uB860"],
   testing: ["test", "testing", "spec", "e2e", "unit test", "integration test", "coverage", "jest", "vitest", "mocha", "pytest", "tdd", "bug", "debug", "\uD14C\uC2A4\uD2B8", "\uBC84\uADF8", "\uB514\uBC84\uADF8", "\u30C6\u30B9\u30C8", "\u30D0\u30B0"],
   agent: ["agent", "orchestrat", "prompt engineer", "multi-agent", "hook system", "gateway", "harness", "bestwork", "agent lifecycle", "quality gate", "\uC5D0\uC774\uC804\uD2B8", "\uC624\uCF00\uC2A4\uD2B8", "\uD504\uB86C\uD504\uD2B8"],
-  plugin: ["plugin", "skill", "hud", "statusline", "marketplace", "plugin.json", "hooks.json", "slash command", "\uD50C\uB7EC\uADF8\uC778", "\uC2A4\uD0AC"]
+  plugin: ["plugin", "skill", "hud", "statusline", "marketplace", "plugin.json", "hooks.json", "slash command", "\uD50C\uB7EC\uADF8\uC778", "\uC2A4\uD0AC"],
+  docs: ["readme", "document", "docs", "changelog", "\uBB38\uC11C", "\uCD5C\uC2E0\uD654", "documentation", "\u30C9\u30AD\u30E5\u30E1\u30F3\u30C8"]
 };
 var DOMAIN_TO_AGENT = {
   backend: "sr-backend",
@@ -1499,7 +1500,8 @@ var DOMAIN_TO_AGENT = {
   ml: "sr-backend",
   testing: "qa-lead",
   agent: "agent-engineer",
-  plugin: "tech-plugin"
+  plugin: "tech-plugin",
+  docs: "tech-writer"
 };
 function splitTasks(task) {
   if (task.includes("|")) {
@@ -1737,6 +1739,14 @@ var SKILL_ROUTES = [
     ],
     skill: "trio",
     reason: "parallel execution with quality gates"
+  },
+  {
+    patterns: [
+      /(docs|문서|readme|documentation).*(최신화|업데이트|갱신|sync|update)/i,
+      /(최신화|업데이트|갱신|sync).*(docs|문서|readme|documentation)/i
+    ],
+    skill: "docs",
+    reason: "documentation sync with codebase"
   }
 ];
 async function readStdin() {

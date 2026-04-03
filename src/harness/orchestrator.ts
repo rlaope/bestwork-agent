@@ -287,6 +287,7 @@ const DOMAIN_KEYWORDS: Record<string, string[]> = {
   testing:  ["test", "testing", "spec", "e2e", "unit test", "integration test", "coverage", "jest", "vitest", "mocha", "pytest", "tdd", "bug", "debug", "테스트", "버그", "디버그", "テスト", "バグ"],
   agent:    ["agent", "orchestrat", "prompt engineer", "multi-agent", "hook system", "gateway", "harness", "bestwork", "agent lifecycle", "quality gate", "에이전트", "오케스트", "프롬프트"],
   plugin:   ["plugin", "skill", "hud", "statusline", "marketplace", "plugin.json", "hooks.json", "slash command", "플러그인", "스킬"],
+  docs:     ["readme", "document", "docs", "changelog", "문서", "최신화", "documentation", "ドキュメント"],
 };
 
 const DOMAIN_TO_AGENT: Record<string, string> = {
@@ -299,6 +300,7 @@ const DOMAIN_TO_AGENT: Record<string, string> = {
   testing:  "qa-lead",
   agent:    "agent-engineer",
   plugin:   "tech-plugin",
+  docs:     "tech-writer",
 };
 
 function splitTasks(task: string): string[] {

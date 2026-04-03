@@ -2,7 +2,7 @@
 
 ## Project
 
-Open-source harness engineering for Claude Code. Organizes AI agents into corporation-style teams (hierarchy/squad/trio) with 38 specialist profiles and 14 org roles.
+Open-source harness engineering for Claude Code. Organizes AI agents into corporation-style teams (hierarchy/squad/trio) with 49 specialist agents (25 tech + 10 pm + 14 critic) and 14 org roles.
 
 ## User Perspective
 
@@ -28,7 +28,7 @@ Cloned at the same level for pattern reference only. Do NOT copy code.
 - TypeScript, Node.js 18+, ESM
 - Ink (React for CLI) — TUI components
 - tsup — bundler
-- vitest — testing (339 tests)
+- vitest — testing (342 tests)
 - commander — CLI parser
 
 ## Key Directories
@@ -38,15 +38,15 @@ Cloned at the same level for pattern reference only. Do NOT copy code.
 - `src/observe/` — session analytics, heatmap, loop detection, replay
 - `hooks/` — Claude Code hooks (shell + agent type)
 - `hooks/bestwork-hud.mjs` — HUD statusline (usage API with 90s poll, exponential backoff, file locking)
-- `skills/` — 12 plugin slash commands (trio, plan, doctor, review, update, etc.)
-- `prompts/` — editable agent system prompts (36 .md files)
+- `skills/` — 13 plugin slash commands (trio, plan, docs, doctor, review, update, etc.)
+- `prompts/` — editable agent system prompts (49 .md files)
 - `scripts/sync-plugin.mjs` — auto-syncs build to plugin cache/marketplace on `npm run build`
 
 ## Build & Test
 
 ```bash
 npm run build    # tsup + auto-sync to plugin paths
-npm test         # vitest (339 tests)
+npm test         # vitest (342 tests)
 npx tsc --noEmit # typecheck
 ```
 

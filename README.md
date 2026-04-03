@@ -195,17 +195,17 @@ Or just describe what you need — the smart gateway routes it automatically.
 
 ## Domain Specialists
 
-On top of the org structure, **36 domain-specific agents** provide deep expertise:
+On top of the org structure, **49 domain-specific agents** provide deep expertise:
 
 ```bash
 bestwork agents    # full catalog
 ```
 
-**18 Tech**: backend, frontend, fullstack, infra, database, API, mobile, testing, security, performance, devops, data, ML, CLI, realtime, auth, migration, config
+**25 Tech**: backend, frontend, fullstack, infra, database, API, mobile, testing, security, performance, devops, data, ML, CLI, realtime, auth, migration, config, agent-engineer, plugin, accessibility, i18n, graphql, monorepo, writer
 
-**8 PM**: product, API, platform, data, infra, migration, security, growth
+**10 PM**: product, API, platform, data, infra, migration, security, growth, compliance, DX
 
-**10 Critic**: performance, scalability, security, consistency, reliability, testing, hallucination, DX, type safety, cost
+**14 Critic**: performance, scalability, security, consistency, reliability, testing, hallucination, DX, type safety, cost, accessibility, devsecops, i18n, agent
 
 Agent prompts live in `prompts/` — edit without rebuilding.
 

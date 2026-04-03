@@ -10,7 +10,7 @@ Claude Codeのための最高のハーネスエンジニアリング。サーク
 
 AIエージェントは一人で作業します。ハルシネーション、ループ、要件の見落とし — 終わってから気づきます。
 
-**bestwork-agent**はエージェントをチームに変えます。すべてのタスクに**Tech**（エンジニア）+ **PM**（プロダクトマネージャー）+ **Critic**（品質レビュアー）が割り当てられます。36の専門プロファイル。自動選択。並列実行。フィードバックループ。リアルタイム通知。
+**bestwork-agent**はエージェントをチームに変えます。すべてのタスクに**Tech**（エンジニア）+ **PM**（プロダクトマネージャー）+ **Critic**（品質レビュアー）が割り当てられます。49の専門エージェント。自動選択。並列実行。フィードバックループ。リアルタイム通知。
 
 ## インストール
 
@@ -38,17 +38,17 @@ Claude Codeを再起動後、`./help`を入力。
 - **Critic** — 品質レビュー + ハルシネーション検出
 - 却下？フィードバックループ → Tech修正 → 再レビュー（最大3回）
 
-### 36の専門エージェント
+### 49の専門エージェント
 
 ```bash
 bestwork agents    # フルカタログ
 ```
 
-**18 Tech**: backend, frontend, fullstack, infra, database, API, mobile, testing, security, performance, devops, data, ML, CLI, realtime, auth, migration, config
+**25 Tech**: backend, frontend, fullstack, infra, database, API, mobile, testing, security, performance, devops, data, ML, CLI, realtime, auth, migration, config, agent-engineer, plugin, accessibility, i18n, graphql, monorepo, writer
 
-**8 PM**: product, API, platform, data, infra, migration, security, growth
+**10 PM**: product, API, platform, data, infra, migration, security, growth, compliance, DX
 
-**10 Critic**: performance, scalability, security, consistency, reliability, testing, hallucination, DX, type safety, cost
+**14 Critic**: performance, scalability, security, consistency, reliability, testing, hallucination, DX, type safety, cost, accessibility, devsecops, i18n, agent
 
 ### 開発コントロール
 
