@@ -28,12 +28,13 @@ npm install -g bestwork-agent
 bestwork install
 ```
 
-### 방법 3: Claude Code 안에서
+### 알림 설정
+
+설치 후 알림 연결:
 
 ```
-./bw-install
-./bw-install --discord <webhook_url>
-./bw-install --strict
+./discord <webhook_url>
+./slack <webhook_url>
 ```
 
 ---
