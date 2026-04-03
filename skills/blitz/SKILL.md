@@ -89,7 +89,7 @@ If any verify fails, fix inline (no retry loop — blitz is about speed).
 - ALL agents launch simultaneously — maximum parallelism
 - NO meeting logs — blitz skips all ceremony
 - NO feedback loops — if something fails, fix it once and move on
-- NO confirmation prompt — blitz is fire-and-forget (like autopilot)
+- NO confirmation prompt — blitz is fire-and-forget (fire-and-forget)
 - Conflicts resolved by completion order (first to finish wins, later merges)
 - Agent selection: tech specialists only, best-fit per task domain
 - Up to 10 parallel tasks (Claude Code agent limit)

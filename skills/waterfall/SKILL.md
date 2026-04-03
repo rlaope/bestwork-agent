@@ -1,5 +1,5 @@
 ---
-name: pipeline
+name: waterfall
 description: Sequential staged processing — each stage must pass before the next begins
 ---
 
@@ -8,23 +8,23 @@ When this skill is invoked, you MUST follow this exact output sequence.
 ## Step 1: Header (print IMMEDIATELY)
 
 ```
-[BW] pipeline mode — sequential stages with gates...
+[BW] waterfall mode — sequential stages with gates...
 ```
 
 ## Step 2: Define stages
 
 Analyze the user's task and break it into sequential stages. Each stage has a gate condition that MUST pass before proceeding.
 
-Default pipeline (adapt based on task):
+Default waterfall (adapt based on task):
 1. **analyze** — understand requirements, identify affected files, map dependencies
 2. **implement** — write the code changes
 3. **verify** — run type checks, linters, tests
 4. **integrate** — ensure changes work with existing code (import checks, no regressions)
 5. **finalize** — clean up, format, commit-ready state
 
-Print the pipeline:
+Print the waterfall:
 ```
-[BW] pipeline stages:
+[BW] waterfall stages:
   1. analyze    → gate: scope documented
   2. implement  → gate: all files written
   3. verify     → gate: type check + tests pass
@@ -64,32 +64,32 @@ or if gate fails:
 ## Step 4: Gate failure handling
 
 - Each stage gets max 3 attempts
-- If a stage fails 3 times, the pipeline halts:
+- If a stage fails 3 times, the waterfall halts:
 ```
-[BW] ✗ pipeline halted at stage 2: implement
+[BW] ✗ waterfall halted at stage 2: implement
 [BW]   reason: {failure description}
 [BW]   completed: stages 1/5
-[BW]   run ./pipeline to resume from stage 2
+[BW]   run ./waterfall to resume from stage 2
 ```
 
-## Step 5: Pipeline complete
+## Step 5: Waterfall complete
 
 ```
 [BW] ═══════════════════════════════════
-[BW] pipeline complete: {N} stages, all gates passed
+[BW] waterfall complete: {N} stages, all gates passed
 [BW] ═══════════════════════════════════
 ```
 
-## Custom pipelines
+## Custom waterfalls
 
 Users can define custom stage orders:
-- `./pipeline test-first` — verify → implement → verify → finalize (TDD)
-- `./pipeline security` — analyze → implement → security-audit → verify → finalize
-- `./pipeline docs` — analyze → implement → document → verify → finalize
+- `./waterfall test-first` — verify → implement → verify → finalize (TDD)
+- `./waterfall security` — analyze → implement → security-audit → verify → finalize
+- `./waterfall docs` — analyze → implement → document → verify → finalize
 
 ## State persistence
 
-Save pipeline state to `.bestwork/state/pipeline.json`:
+Save waterfall state to `.bestwork/state/waterfall.json`:
 ```json
 {
   "created": "<ISO timestamp>",
@@ -102,7 +102,7 @@ Save pipeline state to `.bestwork/state/pipeline.json`:
 }
 ```
 
-This enables resuming a halted pipeline with `./pipeline` (picks up from last incomplete stage).
+This enables resuming a halted waterfall with `./waterfall` (picks up from last incomplete stage).
 
 ## Rules
 
