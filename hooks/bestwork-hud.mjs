@@ -427,4 +427,7 @@ async function main() {
   process.stdout.write(out + "\n");
 }
 
-main().catch(() => process.stdout.write(`${B}${CC}BW${R}${D}#${VERSION}${R}\n`));
+main().catch((e) => {
+  process.stderr.write(`[BW HUD error] ${e?.message || e}\n`);
+  process.stdout.write(`${B}${CC}BW${R}${D}#${VERSION}${R}\n`);
+});

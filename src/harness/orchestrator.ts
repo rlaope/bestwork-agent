@@ -11,6 +11,7 @@
 
 import { ALL_ORG_ROLES, TEAM_PRESETS, type OrgRole, type TeamConfig } from "./org.js";
 import { ALL_AGENTS, getAgentWithPrompt, type AgentProfile } from "./agents/index.js";
+import type { ProjectConfig } from "./notify.js";
 
 // ============================================================
 // Execution Plan — deterministic, serializable, testable
@@ -352,35 +353,68 @@ function detectDomains(task: string): string[] {
 }
 
 /**
+ * Resolve an agent ID respecting project config: filter disabled, prefer preferred.
+ */
+function resolveAgent(agentId: string, config?: ProjectConfig): string | null {
+  if (config?.disabledAgents?.includes(agentId)) return null;
+  return agentId;
+}
+
+/**
+ * Filter agent list, removing disabled agents and preferring preferred ones.
+ */
+function applyAgentConfig(agents: string[], config?: ProjectConfig): string[] {
+  let filtered = config?.disabledAgents
+    ? agents.filter((a) => !config.disabledAgents!.includes(a))
+    : [...agents];
+
+  // If preferred agents are set, move them to front
+  if (config?.preferredAgents?.length) {
+    const preferred = config.preferredAgents.filter((a) => !config.disabledAgents?.includes(a));
+    const existing = new Set(filtered);
+    const boosted = preferred.filter((a) => existing.has(a));
+    const rest = filtered.filter((a) => !boosted.includes(a));
+    filtered = [...boosted, ...rest];
+  }
+
+  return filtered;
+}
+
+/**
  * Build dynamic task allocations: for each sub-task, assign agents based on
  * what's actually needed (just tech, tech+critic, tech+pm+critic, etc.)
  */
-function buildTaskAllocations(tasks: string[], mode: ExecutionMode): TaskAllocation[] {
+function buildTaskAllocations(tasks: string[], mode: ExecutionMode, config?: ProjectConfig): TaskAllocation[] {
   return tasks.map((t) => {
     const domains = detectDomains(t);
-    const techAgent = DOMAIN_TO_AGENT[domains[0]!] ?? "sr-fullstack";
+    let techAgent = DOMAIN_TO_AGENT[domains[0]!] ?? "sr-fullstack";
+
+    // Replace with preferred agent if the current one is disabled
+    if (resolveAgent(techAgent, config) === null) {
+      techAgent = config?.preferredAgents?.[0] ?? "sr-fullstack";
+    }
 
     // Determine agents per task based on overall mode complexity
     if (mode === "passthrough" || mode === "solo") {
-      return { description: t, agents: [techAgent], parallel: false };
+      return { description: t, agents: applyAgentConfig([techAgent], config), parallel: false };
     }
     if (mode === "hierarchy") {
       // Complex: tech + pm + critic + lead
-      return { description: t, agents: [techAgent, "pm-product", "critic-code", "tech-lead"], parallel: true };
+      return { description: t, agents: applyAgentConfig([techAgent, "pm-product", "critic-code", "tech-lead"], config), parallel: true };
     }
     // pair/trio/squad: tech + critic per task
-    return { description: t, agents: [techAgent, "critic-code"], parallel: true };
+    return { description: t, agents: applyAgentConfig([techAgent, "critic-code"], config), parallel: true };
   });
 }
 
-export function classifyIntent(task: string): IntentClassification {
+export function classifyIntent(task: string, config?: ProjectConfig): IntentClassification {
   const tasks = splitTasks(task);
   const taskCount = tasks.length;
 
   // Check passthrough first
   const weight = classifyWeight(task);
   if (weight === "passthrough") {
-    const allocations = buildTaskAllocations(tasks, "passthrough");
+    const allocations = buildTaskAllocations(tasks, "passthrough", config);
     return {
       mode: "passthrough",
       tasks,
@@ -394,16 +428,20 @@ export function classifyIntent(task: string): IntentClassification {
 
   // Detect domains across all sub-tasks
   const allDomains = [...new Set(tasks.flatMap((t) => detectDomains(t)))];
-  const suggestedAgents = allDomains
+  let suggestedAgents = allDomains
     .map((d) => DOMAIN_TO_AGENT[d] ?? "sr-fullstack")
     .filter((a, i, arr) => arr.indexOf(a) === i);
 
+  // Apply project config: filter disabled, boost preferred
+  suggestedAgents = applyAgentConfig(suggestedAgents, config);
+
   // Multi-task path
   if (taskCount >= 3) {
-    const allocations = buildTaskAllocations(tasks, "trio");
+    const mode = config?.defaultMode ?? "trio";
+    const allocations = buildTaskAllocations(tasks, mode, config);
     const total = allocations.reduce((sum, a) => sum + a.agents.length, 0);
     return {
-      mode: "trio",
+      mode,
       tasks,
       reasoning: `Task contains ${taskCount} separable sub-tasks ("${tasks.join(" | ")}") spanning domains: ${allDomains.join(", ")}. ${taskCount} parallel tasks with ${total} total agents.`,
       confidence: "high",
@@ -414,10 +452,11 @@ export function classifyIntent(task: string): IntentClassification {
   }
 
   if (taskCount === 2) {
-    const allocations = buildTaskAllocations(tasks, "pair");
+    const mode = config?.defaultMode ?? "pair";
+    const allocations = buildTaskAllocations(tasks, mode, config);
     const total = allocations.reduce((sum, a) => sum + a.agents.length, 0);
     return {
-      mode: "pair",
+      mode,
       tasks,
       reasoning: `Task splits into 2 sub-tasks covering domains: ${allDomains.join(", ")}. Pair mode with one agent per task.`,
       confidence: "high",
@@ -429,14 +468,14 @@ export function classifyIntent(task: string): IntentClassification {
 
   // Single task — use autoAllocate signals
   const soloWeight = classifyWeight(task);
-  if (soloWeight === "solo") {
-    const allocations = buildTaskAllocations(tasks, "solo");
+  if (soloWeight === "solo" && !config?.defaultMode) {
+    const allocations = buildTaskAllocations(tasks, "solo", config);
     return {
       mode: "solo",
       tasks,
       reasoning: `Single lightweight task matching solo pattern (typo fix, rename, format, or minor update). One senior developer sufficient.`,
       confidence: "high",
-      suggestedAgents: ["sr-fullstack"],
+      suggestedAgents: applyAgentConfig(["sr-fullstack"], config),
       taskAllocations: allocations,
       totalAgents: 1,
     };
@@ -454,10 +493,11 @@ export function classifyIntent(task: string): IntentClassification {
   const isComplex = complexitySignals.some((p) => p.test(task)) || allDomains.length >= 3;
 
   if (isComplex) {
-    const allocations = buildTaskAllocations(tasks, "hierarchy");
+    const mode = config?.defaultMode ?? "hierarchy";
+    const allocations = buildTaskAllocations(tasks, mode, config);
     const total = allocations.reduce((sum, a) => sum + a.agents.length, 0);
     return {
-      mode: "hierarchy",
+      mode,
       tasks,
       reasoning: `Complex single task touching ${allDomains.length} domain(s) (${allDomains.join(", ")}) with structural complexity signals. Hierarchy mode with senior → lead → CTO chain.`,
       confidence: allDomains.length >= 2 ? "high" : "medium",
@@ -469,11 +509,16 @@ export function classifyIntent(task: string): IntentClassification {
 
   // Fallback: use autoAllocate to decide pair vs solo
   const allocation = autoAllocate(task, { domains: allDomains });
-  const finalMode: ExecutionMode = allocation.mode === "passthrough" || allocation.mode === "solo"
+  let finalMode: ExecutionMode = allocation.mode === "passthrough" || allocation.mode === "solo"
     ? allocation.mode
     : allDomains.length >= 2 ? "pair" : "solo";
 
-  const allocations = buildTaskAllocations(tasks, finalMode);
+  // Apply defaultMode override from project config
+  if (config?.defaultMode && finalMode !== "passthrough") {
+    finalMode = config.defaultMode;
+  }
+
+  const allocations = buildTaskAllocations(tasks, finalMode, config);
   const total = allocations.reduce((sum, a) => sum + a.agents.length, 0);
 
   return {

@@ -5,6 +5,9 @@ export const perfCriticAgent: AgentProfile = {
   role: "critic",
   name: "Performance Critic",
   specialty: "Runtime performance, memory, latency, throughput",
+  costTier: "medium",
+  useWhen: ["Reviewing code in hot paths or high-traffic endpoints", "Checking for N+1 queries, unbounded caches, or memory leaks", "Bundle size impact analysis of new dependencies"],
+  avoidWhen: ["One-time scripts or low-frequency admin operations", "Documentation or config-only changes"],
   systemPrompt: `You are a performance critic. Your job is to catch measurable performance problems — not to speculate about theoretical slowness.
 
 CONFIDENCE THRESHOLD: Only flag issues with >80% confidence. Uncertain findings waste developer time.

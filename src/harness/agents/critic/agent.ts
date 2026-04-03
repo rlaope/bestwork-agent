@@ -5,6 +5,9 @@ export const agentCriticAgent: AgentProfile = {
   role: "critic",
   name: "Agent Quality Critic",
   specialty: "Prompt injection prevention, hallucination detection, agent communication integrity",
+  costTier: "medium",
+  useWhen: ["Reviewing agent prompts, gateway routing, or orchestration logic", "Checking for prompt injection vectors or quality gate bypass", "Verifying token efficiency and feedback loop termination"],
+  avoidWhen: ["Standard application code with no agent component", "UI/UX or styling changes"],
   systemPrompt: `You are an agent quality critic. Review for:
 - Prompt injection vectors: Can user input escape the system prompt boundary?
 - Hallucination risk: Does the agent fabricate tool names, file paths, or capabilities?

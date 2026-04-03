@@ -211,6 +211,9 @@ var backendAgent = {
   role: "tech",
   name: "Backend Engineer",
   specialty: "Server-side logic, APIs, databases, authentication",
+  costTier: "medium",
+  useWhen: ["Building REST/GraphQL APIs, route handlers, or middleware", "Database schema design, queries, or migrations", "Authentication and authorization logic"],
+  avoidWhen: ["Pure frontend UI work with no backend component", "Infrastructure/DevOps tasks like CI/CD or Docker"],
   systemPrompt: `You are a backend engineering specialist.
 
 CONTEXT GATHERING (do this first):
@@ -251,6 +254,9 @@ var frontendAgent = {
   role: "tech",
   name: "Frontend Engineer",
   specialty: "UI components, state management, styling, accessibility",
+  costTier: "medium",
+  useWhen: ["Building UI components, pages, or design system elements", "State management, client-side routing, or data fetching", "CSS/styling, responsive design, or animations"],
+  avoidWhen: ["Pure backend API or database work", "Infrastructure, deployment, or DevOps tasks"],
   systemPrompt: `You are a frontend engineering specialist.
 
 CONTEXT GATHERING (do this first):
@@ -292,6 +298,9 @@ var fullstackAgent = {
   role: "tech",
   name: "Fullstack Engineer",
   specialty: "End-to-end features spanning client and server",
+  costTier: "high",
+  useWhen: ["End-to-end feature spanning both API and UI", "Shared type definitions across client and server", "General-purpose tasks that touch multiple layers"],
+  avoidWhen: ["Specialized deep-dive in a single domain (use dedicated agent)", "Pure infrastructure or DevOps work"],
   systemPrompt: `You are a fullstack engineering specialist.
 
 CONTEXT GATHERING (do this first):
@@ -336,6 +345,9 @@ var infraAgent = {
   role: "tech",
   name: "Infrastructure Engineer",
   specialty: "CI/CD, Docker, cloud, deployment, monitoring",
+  costTier: "medium",
+  useWhen: ["Docker, Kubernetes, or container orchestration", "CI/CD pipeline setup (GitHub Actions, GitLab CI)", "Infrastructure as code (Terraform, Pulumi) or cloud config"],
+  avoidWhen: ["Application business logic or feature code", "UI/UX or design system tasks"],
   systemPrompt: `You are an infrastructure specialist. Focus on:
 - Docker, docker-compose, Kubernetes configs
 - CI/CD pipelines (GitHub Actions, GitLab CI)
@@ -350,6 +362,9 @@ var databaseAgent = {
   role: "tech",
   name: "Database Engineer",
   specialty: "Schema design, queries, migrations, optimization",
+  costTier: "medium",
+  useWhen: ["Schema design, normalization, or indexing strategy", "Query optimization or execution plan analysis", "Zero-downtime database migrations"],
+  avoidWhen: ["Application-level business logic unrelated to data storage", "Frontend or UI tasks"],
   systemPrompt: `You are a database specialist. Focus on:
 - Schema design, normalization, indexing strategy
 - Query optimization, execution plans
@@ -364,6 +379,9 @@ var apiAgent = {
   role: "tech",
   name: "API Engineer",
   specialty: "API design, versioning, documentation, contracts",
+  costTier: "medium",
+  useWhen: ["Designing new API endpoints or restructuring existing ones", "API versioning, backward compatibility, or contract changes", "OpenAPI/Swagger documentation generation"],
+  avoidWhen: ["Internal business logic with no API surface", "Frontend-only UI changes"],
   systemPrompt: `You are an API design specialist. Focus on:
 - RESTful design, resource naming, HTTP semantics
 - GraphQL schema, resolvers, data loaders
@@ -378,6 +396,9 @@ var mobileAgent = {
   role: "tech",
   name: "Mobile Engineer",
   specialty: "React Native, Flutter, iOS/Android",
+  costTier: "medium",
+  useWhen: ["React Native, Flutter, or native iOS/Android development", "Mobile-specific UX patterns (navigation, gestures, deep links)", "Offline support, local storage, or push notifications"],
+  avoidWhen: ["Web-only frontend development", "Backend API or server-side logic"],
   systemPrompt: `You are a mobile engineering specialist. Focus on:
 - Cross-platform (React Native, Flutter) or native (Swift, Kotlin)
 - Mobile-specific UX patterns (navigation, gestures)
@@ -392,6 +413,9 @@ var testingAgent = {
   role: "tech",
   name: "Test Engineer",
   specialty: "Unit tests, integration tests, E2E, TDD",
+  costTier: "medium",
+  useWhen: ["Writing unit, integration, or E2E tests", "TDD workflow or test coverage improvement", "Debugging flaky tests or test infrastructure issues"],
+  avoidWhen: ["Production code implementation with no test component", "Documentation or config-only changes"],
   systemPrompt: `You are a testing specialist.
 
 CONTEXT GATHERING (do this first):
@@ -440,6 +464,9 @@ var securityAgent = {
   role: "tech",
   name: "Security Engineer",
   specialty: "Auth, encryption, vulnerability prevention, OWASP",
+  costTier: "medium",
+  useWhen: ["Security audit, OWASP Top 10 prevention, or vulnerability remediation", "Encryption, secret management, or CSP/CORS configuration", "Input validation and output encoding hardening"],
+  avoidWhen: ["Feature development with no security implications", "Styling, layout, or purely cosmetic changes"],
   systemPrompt: `You are a security engineering specialist.
 
 CONTEXT GATHERING (do this first):
@@ -482,6 +509,9 @@ var performanceAgent = {
   role: "tech",
   name: "Performance Engineer",
   specialty: "Optimization, profiling, caching, load handling",
+  costTier: "medium",
+  useWhen: ["Profiling CPU, memory, or I/O bottlenecks", "Caching strategy design (Redis, CDN, in-memory)", "Load testing, capacity planning, or bundle optimization"],
+  avoidWhen: ["Feature development with no performance concerns", "Documentation or config-only changes"],
   systemPrompt: `You are a performance engineering specialist. Focus on:
 - Profiling CPU, memory, I/O bottlenecks
 - Caching strategies (Redis, in-memory, CDN)
@@ -496,6 +526,9 @@ var devopsAgent = {
   role: "tech",
   name: "DevOps Engineer",
   specialty: "Automation, deployment pipelines, reliability",
+  costTier: "medium",
+  useWhen: ["Deployment automation, blue-green, or canary releases", "Observability setup (metrics, logs, traces, alerting)", "Incident response, runbooks, or SLO definition"],
+  avoidWhen: ["Application feature development", "Frontend component or styling work"],
   systemPrompt: `You are a DevOps specialist. Focus on:
 - Deployment automation, blue-green, canary
 - Container orchestration, service mesh
@@ -510,6 +543,9 @@ var dataAgent = {
   role: "tech",
   name: "Data Engineer",
   specialty: "Pipelines, ETL, streaming, data modeling",
+  costTier: "high",
+  useWhen: ["Building data pipelines, ETL/ELT processes, or streaming jobs", "Data modeling (star schema, data vault) or warehouse design", "Message queue integration (Kafka, RabbitMQ, SQS)"],
+  avoidWhen: ["Simple CRUD API development", "Frontend UI or styling work"],
   systemPrompt: `You are a data engineering specialist. Focus on:
 - Data pipelines (batch and streaming)
 - ETL/ELT processes, data transformation
@@ -524,6 +560,9 @@ var mlAgent = {
   role: "tech",
   name: "ML Engineer",
   specialty: "Model integration, inference, embeddings, AI features",
+  costTier: "high",
+  useWhen: ["Model serving, inference optimization, or AI API integration", "Embedding generation, vector search, or RAG pipelines", "Feature engineering or model monitoring setup"],
+  avoidWhen: ["Standard CRUD or web development with no AI component", "Infrastructure or DevOps tasks unrelated to ML"],
   systemPrompt: `You are an ML engineering specialist. Focus on:
 - Model serving, inference optimization
 - Embedding generation and vector search
@@ -538,6 +577,9 @@ var cliAgent = {
   role: "tech",
   name: "CLI/Tools Engineer",
   specialty: "Command-line tools, developer tooling, scripts",
+  costTier: "low",
+  useWhen: ["Building or modifying CLI commands and argument parsing", "Developer tooling, scripts, or automation", "Shell integration, exit codes, or cross-platform CLI compat"],
+  avoidWhen: ["Web UI or mobile app development", "Database or API design tasks"],
   systemPrompt: `You are a CLI/tooling specialist. Focus on:
 - CLI argument parsing, subcommands, help text
 - Interactive prompts, progress indicators
@@ -552,6 +594,9 @@ var realtimeAgent = {
   role: "tech",
   name: "Realtime Engineer",
   specialty: "WebSocket, SSE, pub/sub, live updates",
+  costTier: "medium",
+  useWhen: ["WebSocket or SSE server/client implementation", "Pub/sub patterns or event-driven architecture", "Connection management, reconnection, or heartbeat logic"],
+  avoidWhen: ["Standard request/response HTTP APIs", "Batch processing or offline-only workflows"],
   systemPrompt: `You are a realtime systems specialist. Focus on:
 - WebSocket server/client implementation
 - Server-Sent Events (SSE)
@@ -566,6 +611,9 @@ var authAgent = {
   role: "tech",
   name: "Auth Engineer",
   specialty: "Authentication, authorization, identity, SSO",
+  costTier: "medium",
+  useWhen: ["Implementing OAuth2, JWT, or SSO flows", "RBAC/ABAC permission model design", "Session management, token refresh, or logout logic"],
+  avoidWhen: ["Non-auth backend work like CRUD endpoints", "Frontend styling or layout tasks"],
   systemPrompt: `You are an authentication/authorization specialist. Focus on:
 - OAuth2 flows (authorization code, PKCE, client credentials)
 - JWT handling (signing, verification, rotation)
@@ -580,6 +628,9 @@ var migrationAgent = {
   role: "tech",
   name: "Migration Engineer",
   specialty: "Code migration, upgrades, refactoring, legacy",
+  costTier: "high",
+  useWhen: ["Incremental codebase migration or framework upgrade", "Legacy code refactoring with backward compatibility", "Dependency upgrades with breaking change handling"],
+  avoidWhen: ["Greenfield feature development from scratch", "Simple bug fixes or typo corrections"],
   systemPrompt: `You are a migration/refactoring specialist. Focus on:
 - Incremental migration strategies
 - Backward compatibility during transition
@@ -594,6 +645,9 @@ var configAgent = {
   role: "tech",
   name: "Config/Build Engineer",
   specialty: "Build systems, bundlers, TypeScript config, monorepo",
+  costTier: "low",
+  useWhen: ["TypeScript config, module resolution, or bundler setup", "Package publishing, versioning, or build pipeline changes", "Environment-specific configuration issues"],
+  avoidWhen: ["Runtime application logic or feature development", "UI/UX or design system work"],
   systemPrompt: `You are a build/config specialist. Focus on:
 - TypeScript configuration, module resolution
 - Bundler setup (tsup, esbuild, webpack, vite)
@@ -608,6 +662,9 @@ var writerAgent = {
   role: "tech",
   name: "Technical Writer",
   specialty: "README, API docs, changelog, release notes, i18n documentation",
+  costTier: "low",
+  useWhen: ["README, changelog, or API documentation updates", "Release notes or contributing guide writing", "Documentation translation or i18n content"],
+  avoidWhen: ["Code implementation or bug fixes", "Infrastructure or deployment tasks"],
   systemPrompt: `You are a Technical Writer. You produce clear, accurate documentation that makes projects accessible. Focus on:
 - README.md: keep in sync with current project state (features, install, usage)
 - API documentation: generate OpenAPI/Swagger specs from route handlers, JSDoc from interfaces
@@ -627,6 +684,9 @@ var i18nAgent = {
   role: "tech",
   name: "i18n Specialist",
   specialty: "Internationalization, localization, message catalogs, RTL support",
+  costTier: "medium",
+  useWhen: ["Adding i18n infrastructure or translation key management", "RTL/LTR layout support or bidirectional text handling", "Pluralization, date/number/currency locale formatting"],
+  avoidWhen: ["Monolingual projects with no localization need", "Backend-only logic with no user-visible strings"],
   systemPrompt: `You are an internationalization and localization specialist. Focus on:
 - Message catalog structure, translation key naming conventions, namespace organization
 - Locale detection, language negotiation, fallback chains
@@ -642,6 +702,9 @@ var accessibilityAgent = {
   role: "tech",
   name: "Accessibility Specialist",
   specialty: "WCAG compliance, ARIA, keyboard navigation, screen reader support",
+  costTier: "medium",
+  useWhen: ["WCAG 2.1 compliance audit or remediation", "ARIA roles, keyboard navigation, or focus management", "Color contrast, reduced motion, or screen reader testing"],
+  avoidWhen: ["Backend-only API or database work", "CLI tools or server-side scripts"],
   systemPrompt: `You are an accessibility engineering specialist. Focus on:
 - WCAG 2.1 AA/AAA compliance, success criteria, techniques
 - ARIA roles, states, properties, landmark regions
@@ -657,6 +720,9 @@ var graphqlAgent = {
   role: "tech",
   name: "GraphQL Specialist",
   specialty: "Schema design, resolvers, fragments, caching, N+1 prevention",
+  costTier: "medium",
+  useWhen: ["GraphQL schema design, resolvers, or dataloader setup", "N+1 query prevention or GraphQL caching strategy", "Subscription or real-time GraphQL features"],
+  avoidWhen: ["REST-only API projects with no GraphQL", "Frontend-only work that does not touch the query layer"],
   systemPrompt: `You are a GraphQL specialist. Focus on:
 - Schema design, type definitions, interfaces, unions, input types
 - Resolver implementation, context, dataloaders for N+1 prevention
@@ -672,6 +738,9 @@ var monorepoAgent = {
   role: "tech",
   name: "Monorepo Specialist",
   specialty: "Turborepo/Nx, workspace dependencies, shared packages, build orchestration",
+  costTier: "medium",
+  useWhen: ["Monorepo pipeline configuration or workspace dependency management", "Shared package design, changesets, or versioning strategy", "Incremental build, remote caching, or affected-only CI runs"],
+  avoidWhen: ["Single-package projects with no workspace structure", "Runtime application logic unrelated to build orchestration"],
   systemPrompt: `You are a monorepo architecture specialist. Focus on:
 - Turborepo/Nx pipeline configuration, task graph, caching
 - Workspace dependency management, package boundaries, internal packages
@@ -687,6 +756,9 @@ var agentEngineerAgent = {
   role: "tech",
   name: "AI Agent Engineer",
   specialty: "Multi-agent orchestration, prompt engineering, tool use, agent communication",
+  costTier: "high",
+  useWhen: ["Multi-agent orchestration, prompt engineering, or tool use design", "Hook system, gateway routing, or agent lifecycle management", "Quality gates, feedback loops, or anti-hallucination measures"],
+  avoidWhen: ["Standard web application development with no agent component", "Infrastructure or DevOps tasks unrelated to agents"],
   systemPrompt: `You are an AI agent engineering specialist. Focus on:
 - Multi-agent orchestration patterns (hierarchy, squad, pipeline)
 - Prompt engineering: system prompts, few-shot, chain-of-thought, structured output
@@ -707,6 +779,9 @@ var pluginAgent = {
   role: "tech",
   name: "Plugin Engineer",
   specialty: "Claude Code plugin development, hooks, skills, HUD, marketplace distribution",
+  costTier: "medium",
+  useWhen: ["Plugin manifest, skill YAML, or hooks.json development", "HUD/statusline caching, TTL, or project-scoped state", "Plugin distribution, install flow, or upgrade lifecycle"],
+  avoidWhen: ["Non-plugin application development", "General web or mobile feature work"],
   systemPrompt: `You are a Claude Code plugin engineering specialist. Focus on:
 - Plugin architecture: plugin.json manifest, skill YAML frontmatter, hooks.json
 - Hook development: shell hooks, agent hooks, cross-platform runner (run.cjs)
@@ -755,6 +830,9 @@ var productAgent = {
   role: "pm",
   name: "Product PM",
   specialty: "User-facing features, UX requirements, user stories",
+  costTier: "low",
+  useWhen: ["Verifying feature matches user story or UX requirements", "Reviewing edge cases in user interaction flows", "Checking for scope creep in feature implementation"],
+  avoidWhen: ["Pure infrastructure or DevOps work with no user-facing impact", "Low-level performance optimization"],
   systemPrompt: `You are a product manager reviewing implementation. Verify:
 - Does the feature match the user story?
 - Is the UX intuitive? Any confusing flows?
@@ -778,6 +856,9 @@ var apiPmAgent = {
   role: "pm",
   name: "API PM",
   specialty: "API contracts, developer experience, documentation",
+  costTier: "low",
+  useWhen: ["Reviewing API design for RESTful conventions and consistency", "Verifying API documentation and backward compatibility", "Checking error formats, status codes, and pagination"],
+  avoidWhen: ["Internal implementation with no API surface", "Frontend-only UI changes"],
   systemPrompt: `You are an API product manager. Verify:
 - Does the API follow RESTful conventions?
 - Are responses consistent and well-structured?
@@ -801,6 +882,9 @@ var platformAgent = {
   role: "pm",
   name: "Platform PM",
   specialty: "SDK, developer tools, extensibility",
+  costTier: "low",
+  useWhen: ["Reviewing SDK or developer tool usability", "Verifying extension points and configuration intuitiveness", "Cross-environment compatibility checks"],
+  avoidWhen: ["End-user product features with no developer-facing surface", "Database or infrastructure changes"],
   systemPrompt: `You are a platform PM. Verify:
 - Is the developer experience smooth?
 - Are extension points well-designed?
@@ -815,6 +899,9 @@ var dataPmAgent = {
   role: "pm",
   name: "Data PM",
   specialty: "Data pipeline requirements, data quality, compliance",
+  costTier: "low",
+  useWhen: ["Reviewing data pipeline requirements or data quality checks", "Verifying PII handling and privacy compliance in data flows", "Schema change backward compatibility review"],
+  avoidWhen: ["Non-data application features", "Frontend or UI-only changes"],
   systemPrompt: `You are a data PM. Verify:
 - Data flows match requirements?
 - Data quality checks in place?
@@ -829,6 +916,9 @@ var infraPmAgent = {
   role: "pm",
   name: "Infrastructure PM",
   specialty: "Deployment requirements, SLAs, operational readiness",
+  costTier: "low",
+  useWhen: ["Reviewing deployment strategy and rollback plans", "Verifying monitoring, alerting, and SLA requirements", "Operational readiness and resource planning review"],
+  avoidWhen: ["Application feature development", "UI/UX or design tasks"],
   systemPrompt: `You are an infrastructure PM. Verify:
 - Deployment strategy safe (rollback plan)?
 - Monitoring/alerting configured?
@@ -843,6 +933,9 @@ var migrationPmAgent = {
   role: "pm",
   name: "Migration PM",
   specialty: "Migration scope, rollback plans, timeline",
+  costTier: "low",
+  useWhen: ["Reviewing migration scope, rollback plans, and timelines", "Verifying data integrity preservation during migration", "Feature parity checks between old and new systems"],
+  avoidWhen: ["Greenfield development with no migration", "Simple bug fixes or minor changes"],
   systemPrompt: `You are a migration PM. Verify:
 - Migration scope fully covered? Nothing missed?
 - Rollback plan exists and tested?
@@ -857,6 +950,9 @@ var securityPmAgent = {
   role: "pm",
   name: "Security PM",
   specialty: "Security requirements, compliance, audit",
+  costTier: "low",
+  useWhen: ["Reviewing security requirements and compliance implementation", "Verifying auth flows, session handling, and rate limiting", "Audit logging and access control scope review"],
+  avoidWhen: ["Non-security feature development", "Styling or documentation-only changes"],
   systemPrompt: `You are a security PM. Verify:
 - Security requirements from spec are implemented?
 - Compliance requirements met (SOC2, GDPR)?
@@ -880,6 +976,9 @@ var growthAgent = {
   role: "pm",
   name: "Growth PM",
   specialty: "Analytics, metrics, A/B testing, conversion",
+  costTier: "low",
+  useWhen: ["Reviewing analytics event tracking or metrics setup", "A/B test configuration or conversion funnel verification", "Growth feature requirements and success metric definition"],
+  avoidWhen: ["Internal tooling with no user-facing metrics", "Infrastructure or DevOps tasks"],
   systemPrompt: `You are a growth PM. Verify:
 - Analytics events tracked correctly?
 - Success metrics measurable?
@@ -894,6 +993,9 @@ var dxPmAgent = {
   role: "pm",
   name: "Developer Experience PM",
   specialty: "Plugin UX, install experience, error messages, onboarding",
+  costTier: "low",
+  useWhen: ["Reviewing install/setup flow or onboarding experience", "Verifying error messages are actionable and user-friendly", "Plugin description clarity or gateway transparency review"],
+  avoidWhen: ["Backend-only internal logic with no developer-facing surface", "Performance optimization or infrastructure tasks"],
   systemPrompt: `You are a developer experience product manager reviewing implementation. Verify:
 - Is the install/setup flow frictionless? Can a developer go from zero to working in under 2 minutes?
 - Are error messages actionable? Do they tell the developer what went wrong AND how to fix it?
@@ -918,6 +1020,9 @@ var compliancePmAgent = {
   role: "pm",
   name: "Compliance PM",
   specialty: "GDPR, SOC2, data retention, audit trails, privacy by design",
+  costTier: "low",
+  useWhen: ["GDPR, SOC2, or data retention compliance review", "Audit trail completeness and PII handling verification", "Privacy by design assessment for new data collection"],
+  avoidWhen: ["Projects with no PII or compliance requirements", "Internal developer tooling with no user data"],
   systemPrompt: `You are a compliance product manager reviewing implementation. Verify:
 - GDPR requirements: consent, data subject rights, lawful basis documented?
 - SOC2 controls: access logging, change management, incident response covered?
@@ -956,6 +1061,9 @@ var perfCriticAgent = {
   role: "critic",
   name: "Performance Critic",
   specialty: "Runtime performance, memory, latency, throughput",
+  costTier: "medium",
+  useWhen: ["Reviewing code in hot paths or high-traffic endpoints", "Checking for N+1 queries, unbounded caches, or memory leaks", "Bundle size impact analysis of new dependencies"],
+  avoidWhen: ["One-time scripts or low-frequency admin operations", "Documentation or config-only changes"],
   systemPrompt: `You are a performance critic. Your job is to catch measurable performance problems \u2014 not to speculate about theoretical slowness.
 
 CONFIDENCE THRESHOLD: Only flag issues with >80% confidence. Uncertain findings waste developer time.
@@ -1005,6 +1113,9 @@ var scaleCriticAgent = {
   role: "critic",
   name: "Scalability Critic",
   specialty: "High traffic, horizontal scaling, distributed systems",
+  costTier: "medium",
+  useWhen: ["Reviewing code that must handle high concurrency or traffic", "Checking for shared state that prevents horizontal scaling", "Rate limiting, backpressure, or single-point-of-failure analysis"],
+  avoidWhen: ["Single-user CLI tools or local scripts", "Prototypes or MVPs not expected to scale"],
   systemPrompt: `You are a scalability critic. Review code for:
 - Will this work under 100x current load?
 - Shared state that prevents horizontal scaling?
@@ -1020,6 +1131,9 @@ var securityCriticAgent = {
   role: "critic",
   name: "Security Critic",
   specialty: "Vulnerabilities, injection, auth bypass, data exposure",
+  costTier: "medium",
+  useWhen: ["Reviewing code that handles user input, auth, or sensitive data", "Checking for SQL injection, XSS, CSRF, or auth bypass", "Auditing secret handling, encryption, or access control"],
+  avoidWhen: ["Pure styling or layout changes with no data handling", "Documentation-only updates"],
   systemPrompt: `You are a security critic. Your job is to catch real exploitable vulnerabilities \u2014 not theoretical concerns.
 
 CONFIDENCE THRESHOLD: Only flag issues with >80% confidence. Uncertain findings waste developer time.
@@ -1064,6 +1178,9 @@ var consistencyCriticAgent = {
   role: "critic",
   name: "Consistency Critic",
   specialty: "Code style, naming, patterns, architecture alignment",
+  costTier: "low",
+  useWhen: ["Reviewing new code for adherence to existing codebase conventions", "Checking naming, error handling, and file organization consistency", "Verifying architectural pattern alignment in new modules"],
+  avoidWhen: ["Greenfield projects with no established conventions yet", "Trivial one-line fixes"],
   systemPrompt: `You are a consistency critic. Your job is to catch patterns that diverge from the established codebase conventions \u2014 not to impose your own preferences.
 
 CONFIDENCE THRESHOLD: Only flag issues with >80% confidence. Uncertain findings waste developer time.
@@ -1110,6 +1227,9 @@ var reliabilityCriticAgent = {
   role: "critic",
   name: "Reliability Critic",
   specialty: "Error handling, fault tolerance, graceful degradation",
+  costTier: "low",
+  useWhen: ["Reviewing error handling and exception coverage", "Checking timeout handling and retry logic for external calls", "Verifying graceful degradation when dependencies fail"],
+  avoidWhen: ["Purely cosmetic UI changes", "Documentation or comment-only updates"],
   systemPrompt: `You are a reliability critic. Review code for:
 - Unhandled promise rejections, uncaught exceptions
 - Missing error boundaries, fallbacks
@@ -1125,6 +1245,9 @@ var testingCriticAgent = {
   role: "critic",
   name: "Test Critic",
   specialty: "Test quality, coverage, flakiness, assertions",
+  costTier: "low",
+  useWhen: ["Reviewing test quality, assertion strength, and coverage gaps", "Checking for flaky test patterns or non-deterministic tests", "Verifying edge case coverage for critical code paths"],
+  avoidWhen: ["Config-only or documentation changes with no test impact", "Reviewing production code without associated tests"],
   systemPrompt: `You are a test quality critic. Your job is to ensure tests actually catch bugs \u2014 not to demand more tests for the sake of coverage numbers.
 
 CONFIDENCE THRESHOLD: Only flag issues with >80% confidence. Uncertain findings waste developer time.
@@ -1169,6 +1292,9 @@ var hallucinationCriticAgent = {
   role: "critic",
   name: "Hallucination Critic",
   specialty: "Platform mismatch, fake APIs, nonexistent imports",
+  costTier: "medium",
+  useWhen: ["Reviewing AI-generated code for fabricated imports or APIs", "Verifying file paths, package versions, and CLI flags exist", "Checking OS compatibility of platform-specific code"],
+  avoidWhen: ["Human-written code that has already been tested", "Documentation or config changes with no code"],
   systemPrompt: `You are a hallucination critic. This is your PRIMARY job \u2014 catching fabricated code before it ships.
 
 CONFIDENCE THRESHOLD: Only flag issues with >80% confidence. Uncertain findings waste developer time. If you are not sure, say nothing.
@@ -1217,6 +1343,9 @@ var dxCriticAgent = {
   role: "critic",
   name: "Developer Experience Critic",
   specialty: "Readability, maintainability, onboarding friction",
+  costTier: "low",
+  useWhen: ["Reviewing code readability and maintainability", "Checking for magic numbers, unclear names, or overly complex functions", "Verifying error messages are helpful for debugging"],
+  avoidWhen: ["Performance-critical inner loops where clarity is secondary", "Auto-generated or machine-only code"],
   systemPrompt: `You are a developer experience critic. Review for:
 - Can a new developer understand this in 5 minutes?
 - Are there magic numbers, unclear variable names?
@@ -1232,6 +1361,9 @@ var typeCriticAgent = {
   role: "critic",
   name: "Type Safety Critic",
   specialty: "TypeScript types, generics, type narrowing, any usage",
+  costTier: "low",
+  useWhen: ["Reviewing TypeScript code for any/as/ts-ignore usage", "Checking generic constraints and union type narrowing", "Verifying exported function return types are explicit"],
+  avoidWhen: ["JavaScript-only projects without TypeScript", "Shell scripts, config files, or documentation"],
   systemPrompt: `You are a type safety critic. Review for:
 - Any usage of 'any', 'as' casts, @ts-ignore?
 - Missing return types on exported functions?
@@ -1247,6 +1379,9 @@ var costCriticAgent = {
   role: "critic",
   name: "Cost Critic",
   specialty: "Resource usage, API call efficiency, waste prevention",
+  costTier: "low",
+  useWhen: ["Reviewing code for unnecessary API calls or redundant fetches", "Checking caching strategy for frequently accessed data", "Cloud resource provisioning or cost optimization review"],
+  avoidWhen: ["Prototypes or one-off scripts where cost is irrelevant", "Documentation or config-only changes"],
   systemPrompt: `You are a cost/efficiency critic. Review for:
 - Unnecessary API calls, redundant fetches
 - Missing caching where data doesn't change
@@ -1262,6 +1397,9 @@ var devsecopsAgent = {
   role: "critic",
   name: "DevSecOps Critic",
   specialty: "Hardcoded secrets, CVE scanning, license compatibility, supply chain security",
+  costTier: "medium",
+  useWhen: ["Checking for hardcoded secrets, leaked credentials, or .env exposure", "CVE scanning, dependency audit, or license compatibility review", "Supply chain risk assessment for new dependencies"],
+  avoidWhen: ["Code with no secrets, dependencies, or external packages", "Pure frontend styling changes"],
   systemPrompt: `You are a DevSecOps critic. Your job is to catch security and compliance issues BEFORE deployment \u2014 not to produce audit theater.
 
 CONFIDENCE THRESHOLD: Only flag issues with >80% confidence. Uncertain findings waste developer time.
@@ -1313,6 +1451,9 @@ var accessibilityCriticAgent = {
   role: "critic",
   name: "Accessibility Critic",
   specialty: "WCAG AA/AAA violations, focus management, color contrast ratios",
+  costTier: "low",
+  useWhen: ["Reviewing UI components for WCAG AA/AAA violations", "Checking focus management, tab order, and keyboard interactions", "Color contrast and ARIA attribute correctness audit"],
+  avoidWhen: ["Backend-only API or server logic", "CLI tools or non-visual interfaces"],
   systemPrompt: `You are an accessibility critic. Review code for:
 - Missing alt text, empty aria-label, non-descriptive link text
 - Focus management failures: lost focus, no focus indicator, broken tab order
@@ -1328,6 +1469,9 @@ var i18nCriticAgent = {
   role: "critic",
   name: "i18n Critic",
   specialty: "Hardcoded strings, locale assumptions, date/number formatting",
+  costTier: "low",
+  useWhen: ["Reviewing user-visible strings for hardcoded text", "Checking locale assumptions in date, number, or currency formatting", "Verifying pluralization and translation key completeness"],
+  avoidWhen: ["Monolingual internal tools with no i18n requirement", "Backend-only logic with no user-visible output"],
   systemPrompt: `You are an i18n critic. Review code for:
 - Hardcoded user-visible strings not run through i18n/t() functions
 - Locale assumptions: hardcoded date formats, number separators, currency symbols
@@ -1343,6 +1487,9 @@ var agentCriticAgent = {
   role: "critic",
   name: "Agent Quality Critic",
   specialty: "Prompt injection prevention, hallucination detection, agent communication integrity",
+  costTier: "medium",
+  useWhen: ["Reviewing agent prompts, gateway routing, or orchestration logic", "Checking for prompt injection vectors or quality gate bypass", "Verifying token efficiency and feedback loop termination"],
+  avoidWhen: ["Standard application code with no agent component", "UI/UX or styling changes"],
   systemPrompt: `You are an agent quality critic. Review for:
 - Prompt injection vectors: Can user input escape the system prompt boundary?
 - Hallucination risk: Does the agent fabricate tool names, file paths, or capabilities?
@@ -1530,25 +1677,43 @@ function detectDomains(task) {
   }
   return found.length > 0 ? [...new Set(found)] : ["backend"];
 }
-function buildTaskAllocations(tasks, mode) {
+function resolveAgent(agentId, config) {
+  if (config?.disabledAgents?.includes(agentId)) return null;
+  return agentId;
+}
+function applyAgentConfig(agents, config) {
+  let filtered = config?.disabledAgents ? agents.filter((a) => !config.disabledAgents.includes(a)) : [...agents];
+  if (config?.preferredAgents?.length) {
+    const preferred = config.preferredAgents.filter((a) => !config.disabledAgents?.includes(a));
+    const existing = new Set(filtered);
+    const boosted = preferred.filter((a) => existing.has(a));
+    const rest = filtered.filter((a) => !boosted.includes(a));
+    filtered = [...boosted, ...rest];
+  }
+  return filtered;
+}
+function buildTaskAllocations(tasks, mode, config) {
   return tasks.map((t) => {
     const domains = detectDomains(t);
-    const techAgent = DOMAIN_TO_AGENT[domains[0]] ?? "sr-fullstack";
+    let techAgent = DOMAIN_TO_AGENT[domains[0]] ?? "sr-fullstack";
+    if (resolveAgent(techAgent, config) === null) {
+      techAgent = config?.preferredAgents?.[0] ?? "sr-fullstack";
+    }
     if (mode === "passthrough" || mode === "solo") {
-      return { description: t, agents: [techAgent], parallel: false };
+      return { description: t, agents: applyAgentConfig([techAgent], config), parallel: false };
     }
     if (mode === "hierarchy") {
-      return { description: t, agents: [techAgent, "pm-product", "critic-code", "tech-lead"], parallel: true };
+      return { description: t, agents: applyAgentConfig([techAgent, "pm-product", "critic-code", "tech-lead"], config), parallel: true };
     }
-    return { description: t, agents: [techAgent, "critic-code"], parallel: true };
+    return { description: t, agents: applyAgentConfig([techAgent, "critic-code"], config), parallel: true };
   });
 }
-function classifyIntent(task) {
+function classifyIntent(task, config) {
   const tasks = splitTasks(task);
   const taskCount = tasks.length;
   const weight = classifyWeight(task);
   if (weight === "passthrough") {
-    const allocations2 = buildTaskAllocations(tasks, "passthrough");
+    const allocations2 = buildTaskAllocations(tasks, "passthrough", config);
     return {
       mode: "passthrough",
       tasks,
@@ -1560,12 +1725,14 @@ function classifyIntent(task) {
     };
   }
   const allDomains = [...new Set(tasks.flatMap((t) => detectDomains(t)))];
-  const suggestedAgents = allDomains.map((d) => DOMAIN_TO_AGENT[d] ?? "sr-fullstack").filter((a, i, arr) => arr.indexOf(a) === i);
+  let suggestedAgents = allDomains.map((d) => DOMAIN_TO_AGENT[d] ?? "sr-fullstack").filter((a, i, arr) => arr.indexOf(a) === i);
+  suggestedAgents = applyAgentConfig(suggestedAgents, config);
   if (taskCount >= 3) {
-    const allocations2 = buildTaskAllocations(tasks, "trio");
+    const mode = config?.defaultMode ?? "trio";
+    const allocations2 = buildTaskAllocations(tasks, mode, config);
     const total2 = allocations2.reduce((sum, a) => sum + a.agents.length, 0);
     return {
-      mode: "trio",
+      mode,
       tasks,
       reasoning: `Task contains ${taskCount} separable sub-tasks ("${tasks.join(" | ")}") spanning domains: ${allDomains.join(", ")}. ${taskCount} parallel tasks with ${total2} total agents.`,
       confidence: "high",
@@ -1575,10 +1742,11 @@ function classifyIntent(task) {
     };
   }
   if (taskCount === 2) {
-    const allocations2 = buildTaskAllocations(tasks, "pair");
+    const mode = config?.defaultMode ?? "pair";
+    const allocations2 = buildTaskAllocations(tasks, mode, config);
     const total2 = allocations2.reduce((sum, a) => sum + a.agents.length, 0);
     return {
-      mode: "pair",
+      mode,
       tasks,
       reasoning: `Task splits into 2 sub-tasks covering domains: ${allDomains.join(", ")}. Pair mode with one agent per task.`,
       confidence: "high",
@@ -1588,14 +1756,14 @@ function classifyIntent(task) {
     };
   }
   const soloWeight = classifyWeight(task);
-  if (soloWeight === "solo") {
-    const allocations2 = buildTaskAllocations(tasks, "solo");
+  if (soloWeight === "solo" && !config?.defaultMode) {
+    const allocations2 = buildTaskAllocations(tasks, "solo", config);
     return {
       mode: "solo",
       tasks,
       reasoning: `Single lightweight task matching solo pattern (typo fix, rename, format, or minor update). One senior developer sufficient.`,
       confidence: "high",
-      suggestedAgents: ["sr-fullstack"],
+      suggestedAgents: applyAgentConfig(["sr-fullstack"], config),
       taskAllocations: allocations2,
       totalAgents: 1
     };
@@ -1610,10 +1778,11 @@ function classifyIntent(task) {
   ];
   const isComplex = complexitySignals.some((p) => p.test(task)) || allDomains.length >= 3;
   if (isComplex) {
-    const allocations2 = buildTaskAllocations(tasks, "hierarchy");
+    const mode = config?.defaultMode ?? "hierarchy";
+    const allocations2 = buildTaskAllocations(tasks, mode, config);
     const total2 = allocations2.reduce((sum, a) => sum + a.agents.length, 0);
     return {
-      mode: "hierarchy",
+      mode,
       tasks,
       reasoning: `Complex single task touching ${allDomains.length} domain(s) (${allDomains.join(", ")}) with structural complexity signals. Hierarchy mode with senior \u2192 lead \u2192 CTO chain.`,
       confidence: allDomains.length >= 2 ? "high" : "medium",
@@ -1623,8 +1792,11 @@ function classifyIntent(task) {
     };
   }
   const allocation = autoAllocate(task, { domains: allDomains });
-  const finalMode = allocation.mode === "passthrough" || allocation.mode === "solo" ? allocation.mode : allDomains.length >= 2 ? "pair" : "solo";
-  const allocations = buildTaskAllocations(tasks, finalMode);
+  let finalMode = allocation.mode === "passthrough" || allocation.mode === "solo" ? allocation.mode : allDomains.length >= 2 ? "pair" : "solo";
+  if (config?.defaultMode && finalMode !== "passthrough") {
+    finalMode = config.defaultMode;
+  }
+  const allocations = buildTaskAllocations(tasks, finalMode, config);
   const total = allocations.reduce((sum, a) => sum + a.agents.length, 0);
   return {
     mode: finalMode,
@@ -1637,12 +1809,52 @@ function classifyIntent(task) {
   };
 }
 
-// src/harness/smart-gateway.ts
-import { appendFileSync, mkdirSync } from "fs";
+// src/harness/notify.ts
+import { readFile as readFile2, writeFile, mkdir } from "fs/promises";
 import { join as join2 } from "path";
 import { homedir } from "os";
+var CONFIG_DIR = join2(homedir(), ".bestwork");
+var CONFIG_FILE = join2(CONFIG_DIR, "config.json");
+async function loadConfig() {
+  try {
+    const raw = await readFile2(CONFIG_FILE, "utf-8");
+    return JSON.parse(raw);
+  } catch {
+    return { notify: {} };
+  }
+}
+async function loadMergedConfig(cwd) {
+  const globalConfig = await loadConfig();
+  const projectDir = join2(cwd ?? process.cwd(), ".bestwork");
+  const projectConfigFile = join2(projectDir, "config.json");
+  let projectConfig = {};
+  try {
+    const raw = await readFile2(projectConfigFile, "utf-8");
+    projectConfig = JSON.parse(raw);
+  } catch {
+  }
+  return {
+    notify: {
+      ...globalConfig.notify,
+      ...projectConfig.notify ?? {}
+    },
+    project: {
+      ...globalConfig.project,
+      ...projectConfig.project
+    }
+  };
+}
+async function loadProjectConfig(cwd) {
+  const merged = await loadMergedConfig(cwd);
+  return merged.project ?? {};
+}
+
+// src/harness/smart-gateway.ts
+import { appendFileSync, mkdirSync } from "fs";
+import { join as join3 } from "path";
+import { homedir as homedir2 } from "os";
 import { execSync } from "child_process";
-var BW_DIR = join2(homedir(), ".bestwork");
+var BW_DIR = join3(homedir2(), ".bestwork");
 var PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT || "";
 var SLASH_PREFIXES = [
   "./bw-install",
@@ -1856,7 +2068,7 @@ function log(msg) {
   try {
     mkdirSync(BW_DIR, { recursive: true });
     const ts = (/* @__PURE__ */ new Date()).toISOString().slice(11, 19);
-    appendFileSync(join2(BW_DIR, "gateway.log"), `[${ts}] ${msg}
+    appendFileSync(join3(BW_DIR, "gateway.log"), `[${ts}] ${msg}
 `);
   } catch {
   }
@@ -1920,7 +2132,12 @@ IMPORTANT: Do NOT skip this. Invoke the Skill tool with skill="bestwork-agent:${
       return;
     }
   }
-  const intent = classifyIntent(prompt);
+  let projectConfig;
+  try {
+    projectConfig = await loadProjectConfig();
+  } catch {
+  }
+  const intent = classifyIntent(prompt, projectConfig);
   const agentList = intent.suggestedAgents.join(", ");
   if (intent.mode === "passthrough") {
     output(`[BW] direct execution`);

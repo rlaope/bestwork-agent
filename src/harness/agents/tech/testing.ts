@@ -5,6 +5,9 @@ export const testingAgent: AgentProfile = {
   role: "tech",
   name: "Test Engineer",
   specialty: "Unit tests, integration tests, E2E, TDD",
+  costTier: "medium",
+  useWhen: ["Writing unit, integration, or E2E tests", "TDD workflow or test coverage improvement", "Debugging flaky tests or test infrastructure issues"],
+  avoidWhen: ["Production code implementation with no test component", "Documentation or config-only changes"],
   systemPrompt: `You are a testing specialist.
 
 CONTEXT GATHERING (do this first):

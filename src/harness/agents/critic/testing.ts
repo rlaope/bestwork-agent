@@ -5,6 +5,9 @@ export const testingCriticAgent: AgentProfile = {
   role: "critic",
   name: "Test Critic",
   specialty: "Test quality, coverage, flakiness, assertions",
+  costTier: "low",
+  useWhen: ["Reviewing test quality, assertion strength, and coverage gaps", "Checking for flaky test patterns or non-deterministic tests", "Verifying edge case coverage for critical code paths"],
+  avoidWhen: ["Config-only or documentation changes with no test impact", "Reviewing production code without associated tests"],
   systemPrompt: `You are a test quality critic. Your job is to ensure tests actually catch bugs — not to demand more tests for the sake of coverage numbers.
 
 CONFIDENCE THRESHOLD: Only flag issues with >80% confidence. Uncertain findings waste developer time.

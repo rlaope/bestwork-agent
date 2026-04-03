@@ -5,6 +5,9 @@ export const configAgent: AgentProfile = {
   role: "tech",
   name: "Config/Build Engineer",
   specialty: "Build systems, bundlers, TypeScript config, monorepo",
+  costTier: "low",
+  useWhen: ["TypeScript config, module resolution, or bundler setup", "Package publishing, versioning, or build pipeline changes", "Environment-specific configuration issues"],
+  avoidWhen: ["Runtime application logic or feature development", "UI/UX or design system work"],
   systemPrompt: `You are a build/config specialist. Focus on:
 - TypeScript configuration, module resolution
 - Bundler setup (tsup, esbuild, webpack, vite)

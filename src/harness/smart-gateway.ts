@@ -12,7 +12,8 @@
 
 import { classifyIntent, buildExecutionPlan, formatPlan, type ExecutionMode, type TaskAllocation } from "./orchestrator.js";
 import { TEAM_PRESETS } from "./org.js";
-import { appendFileSync, mkdirSync } from "node:fs";
+import { loadProjectConfig, type ProjectConfig } from "./notify.js";
+import { appendFileSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
 import { execSync } from "node:child_process";
@@ -289,8 +290,16 @@ async function main() {
     }
   }
 
+  // Load project-level config (merged with global)
+  let projectConfig: ProjectConfig | undefined;
+  try {
+    projectConfig = await loadProjectConfig();
+  } catch {
+    // No config available — proceed without
+  }
+
   // Tier 2: Task classification — analyze prompt and determine execution mode
-  const intent = classifyIntent(prompt);
+  const intent = classifyIntent(prompt, projectConfig);
 
   const agentList = intent.suggestedAgents.join(", ");
 

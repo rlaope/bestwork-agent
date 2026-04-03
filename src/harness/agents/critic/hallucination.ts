@@ -5,6 +5,9 @@ export const hallucinationCriticAgent: AgentProfile = {
   role: "critic",
   name: "Hallucination Critic",
   specialty: "Platform mismatch, fake APIs, nonexistent imports",
+  costTier: "medium",
+  useWhen: ["Reviewing AI-generated code for fabricated imports or APIs", "Verifying file paths, package versions, and CLI flags exist", "Checking OS compatibility of platform-specific code"],
+  avoidWhen: ["Human-written code that has already been tested", "Documentation or config changes with no code"],
   systemPrompt: `You are a hallucination critic. This is your PRIMARY job — catching fabricated code before it ships.
 
 CONFIDENCE THRESHOLD: Only flag issues with >80% confidence. Uncertain findings waste developer time. If you are not sure, say nothing.

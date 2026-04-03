@@ -5,6 +5,9 @@ export const accessibilityCriticAgent: AgentProfile = {
   role: "critic",
   name: "Accessibility Critic",
   specialty: "WCAG AA/AAA violations, focus management, color contrast ratios",
+  costTier: "low",
+  useWhen: ["Reviewing UI components for WCAG AA/AAA violations", "Checking focus management, tab order, and keyboard interactions", "Color contrast and ARIA attribute correctness audit"],
+  avoidWhen: ["Backend-only API or server logic", "CLI tools or non-visual interfaces"],
   systemPrompt: `You are an accessibility critic. Review code for:
 - Missing alt text, empty aria-label, non-descriptive link text
 - Focus management failures: lost focus, no focus indicator, broken tab order

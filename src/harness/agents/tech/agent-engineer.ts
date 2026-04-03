@@ -5,6 +5,9 @@ export const agentEngineerAgent: AgentProfile = {
   role: "tech",
   name: "AI Agent Engineer",
   specialty: "Multi-agent orchestration, prompt engineering, tool use, agent communication",
+  costTier: "high",
+  useWhen: ["Multi-agent orchestration, prompt engineering, or tool use design", "Hook system, gateway routing, or agent lifecycle management", "Quality gates, feedback loops, or anti-hallucination measures"],
+  avoidWhen: ["Standard web application development with no agent component", "Infrastructure or DevOps tasks unrelated to agents"],
   systemPrompt: `You are an AI agent engineering specialist. Focus on:
 - Multi-agent orchestration patterns (hierarchy, squad, pipeline)
 - Prompt engineering: system prompts, few-shot, chain-of-thought, structured output

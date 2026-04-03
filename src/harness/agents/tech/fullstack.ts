@@ -5,6 +5,9 @@ export const fullstackAgent: AgentProfile = {
   role: "tech",
   name: "Fullstack Engineer",
   specialty: "End-to-end features spanning client and server",
+  costTier: "high",
+  useWhen: ["End-to-end feature spanning both API and UI", "Shared type definitions across client and server", "General-purpose tasks that touch multiple layers"],
+  avoidWhen: ["Specialized deep-dive in a single domain (use dedicated agent)", "Pure infrastructure or DevOps work"],
   systemPrompt: `You are a fullstack engineering specialist.
 
 CONTEXT GATHERING (do this first):

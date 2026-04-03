@@ -56,17 +56,17 @@ export function formatAgentCatalog(): string {
 
   lines.push("  TECH AGENTS (implementation):");
   for (const a of TECH_AGENTS) {
-    lines.push(`    ${a.id.padEnd(22)} ${a.specialty}`);
+    lines.push(`    ${a.id.padEnd(22)} [${a.costTier}] ${a.specialty}`);
   }
 
   lines.push("\n  PM AGENTS (requirements verification):");
   for (const a of PM_AGENTS) {
-    lines.push(`    ${a.id.padEnd(22)} ${a.specialty}`);
+    lines.push(`    ${a.id.padEnd(22)} [${a.costTier}] ${a.specialty}`);
   }
 
   lines.push("\n  CRITIC AGENTS (quality review):");
   for (const a of CRITIC_AGENTS) {
-    lines.push(`    ${a.id.padEnd(22)} ${a.specialty}`);
+    lines.push(`    ${a.id.padEnd(22)} [${a.costTier}] ${a.specialty}`);
   }
 
   lines.push(

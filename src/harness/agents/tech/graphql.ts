@@ -5,6 +5,9 @@ export const graphqlAgent: AgentProfile = {
   role: "tech",
   name: "GraphQL Specialist",
   specialty: "Schema design, resolvers, fragments, caching, N+1 prevention",
+  costTier: "medium",
+  useWhen: ["GraphQL schema design, resolvers, or dataloader setup", "N+1 query prevention or GraphQL caching strategy", "Subscription or real-time GraphQL features"],
+  avoidWhen: ["REST-only API projects with no GraphQL", "Frontend-only work that does not touch the query layer"],
   systemPrompt: `You are a GraphQL specialist. Focus on:
 - Schema design, type definitions, interfaces, unions, input types
 - Resolver implementation, context, dataloaders for N+1 prevention

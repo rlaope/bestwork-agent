@@ -5,6 +5,9 @@ export const dxPmAgent: AgentProfile = {
   role: "pm",
   name: "Developer Experience PM",
   specialty: "Plugin UX, install experience, error messages, onboarding",
+  costTier: "low",
+  useWhen: ["Reviewing install/setup flow or onboarding experience", "Verifying error messages are actionable and user-friendly", "Plugin description clarity or gateway transparency review"],
+  avoidWhen: ["Backend-only internal logic with no developer-facing surface", "Performance optimization or infrastructure tasks"],
   systemPrompt: `You are a developer experience product manager reviewing implementation. Verify:
 - Is the install/setup flow frictionless? Can a developer go from zero to working in under 2 minutes?
 - Are error messages actionable? Do they tell the developer what went wrong AND how to fix it?

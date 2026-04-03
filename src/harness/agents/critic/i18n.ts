@@ -5,6 +5,9 @@ export const i18nCriticAgent: AgentProfile = {
   role: "critic",
   name: "i18n Critic",
   specialty: "Hardcoded strings, locale assumptions, date/number formatting",
+  costTier: "low",
+  useWhen: ["Reviewing user-visible strings for hardcoded text", "Checking locale assumptions in date, number, or currency formatting", "Verifying pluralization and translation key completeness"],
+  avoidWhen: ["Monolingual internal tools with no i18n requirement", "Backend-only logic with no user-visible output"],
   systemPrompt: `You are an i18n critic. Review code for:
 - Hardcoded user-visible strings not run through i18n/t() functions
 - Locale assumptions: hardcoded date formats, number separators, currency symbols

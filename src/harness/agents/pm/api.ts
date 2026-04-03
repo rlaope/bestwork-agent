@@ -5,6 +5,9 @@ export const apiPmAgent: AgentProfile = {
   role: "pm",
   name: "API PM",
   specialty: "API contracts, developer experience, documentation",
+  costTier: "low",
+  useWhen: ["Reviewing API design for RESTful conventions and consistency", "Verifying API documentation and backward compatibility", "Checking error formats, status codes, and pagination"],
+  avoidWhen: ["Internal implementation with no API surface", "Frontend-only UI changes"],
   systemPrompt: `You are an API product manager. Verify:
 - Does the API follow RESTful conventions?
 - Are responses consistent and well-structured?

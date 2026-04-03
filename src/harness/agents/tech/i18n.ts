@@ -5,6 +5,9 @@ export const i18nAgent: AgentProfile = {
   role: "tech",
   name: "i18n Specialist",
   specialty: "Internationalization, localization, message catalogs, RTL support",
+  costTier: "medium",
+  useWhen: ["Adding i18n infrastructure or translation key management", "RTL/LTR layout support or bidirectional text handling", "Pluralization, date/number/currency locale formatting"],
+  avoidWhen: ["Monolingual projects with no localization need", "Backend-only logic with no user-visible strings"],
   systemPrompt: `You are an internationalization and localization specialist. Focus on:
 - Message catalog structure, translation key naming conventions, namespace organization
 - Locale detection, language negotiation, fallback chains

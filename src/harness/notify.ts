@@ -11,8 +11,22 @@ export interface NotifyConfig {
   telegram?: { botToken: string; chatId: string };
 }
 
+export interface ProjectConfig {
+  /** Default execution mode override */
+  defaultMode?: "solo" | "pair" | "trio" | "squad" | "hierarchy";
+  /** Agent IDs to prefer when multiple agents could fit */
+  preferredAgents?: string[];
+  /** Agent IDs to never assign */
+  disabledAgents?: string[];
+  /** Custom test command for the project */
+  testCommand?: string;
+  /** Custom build command for the project */
+  buildCommand?: string;
+}
+
 export interface BestworkConfig {
   notify: NotifyConfig;
+  project?: ProjectConfig;
 }
 
 export async function loadConfig(): Promise<BestworkConfig> {
@@ -22,6 +36,44 @@ export async function loadConfig(): Promise<BestworkConfig> {
   } catch {
     return { notify: {} };
   }
+}
+
+/**
+ * Load project-level config from .bestwork/config.json in CWD,
+ * merged with global ~/.bestwork/config.json. Project config wins.
+ */
+export async function loadMergedConfig(cwd?: string): Promise<BestworkConfig> {
+  const globalConfig = await loadConfig();
+  const projectDir = join(cwd ?? process.cwd(), ".bestwork");
+  const projectConfigFile = join(projectDir, "config.json");
+
+  let projectConfig: Partial<BestworkConfig> = {};
+  try {
+    const raw = await readFile(projectConfigFile, "utf-8");
+    projectConfig = JSON.parse(raw);
+  } catch {
+    // No project config — use global only
+  }
+
+  // Merge: project.project wins over global.project, notify is deep-merged
+  return {
+    notify: {
+      ...globalConfig.notify,
+      ...(projectConfig.notify ?? {}),
+    },
+    project: {
+      ...globalConfig.project,
+      ...projectConfig.project,
+    },
+  };
+}
+
+/**
+ * Load only the project-level settings (from both project + global config).
+ */
+export async function loadProjectConfig(cwd?: string): Promise<ProjectConfig> {
+  const merged = await loadMergedConfig(cwd);
+  return merged.project ?? {};
 }
 
 export async function saveConfig(config: BestworkConfig): Promise<void> {
