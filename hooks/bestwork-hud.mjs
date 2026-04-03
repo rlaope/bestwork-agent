@@ -56,6 +56,7 @@ const POLL_INTERVAL_MS = 90_000;       // 90s between successful API calls
 const CACHE_TTL_FAILURE_MS = 15_000;   // 15s for non-transient errors
 const CACHE_TTL_NETWORK_MS = 120_000;  // 2min for network errors
 const MAX_BACKOFF_MS = 300_000;        // 5min cap for 429 backoff
+const NO_DATA_BACKOFF_MS = 60_000;     // 1min backoff when we have zero data (recovery mode)
 const MAX_STALE_MS = 900_000;          // 15min stale data cutoff
 const API_TIMEOUT_MS = 5_000;          // 5s API timeout
 const LOCK_TIMEOUT_MS = 15_000;        // 15s lock staleness
@@ -170,11 +171,16 @@ async function getUsage() {
   // Check if cache is still valid
   if (cache) {
     if (cache.rateLimited) {
-      // Use server's retry-after if available, otherwise exponential backoff
-      const retryAfterMs = cache.retryAfterMs || 0;
       const count = cache.rateLimitedCount || 1;
+      // Cap server retry-after to MAX_BACKOFF_MS — servers sometimes return 1h+
+      const retryAfterMs = Math.min(cache.retryAfterMs || 0, MAX_BACKOFF_MS);
       const calcBackoff = Math.min(POLL_INTERVAL_MS * Math.pow(2, Math.max(0, count - 1)), MAX_BACKOFF_MS);
-      const backoff = retryAfterMs > 0 ? Math.max(retryAfterMs, calcBackoff) : calcBackoff;
+      let backoff = retryAfterMs > 0 ? Math.max(retryAfterMs, calcBackoff) : calcBackoff;
+      // Recovery mode: if we have NO data at all, use a shorter backoff so the HUD
+      // isn't stuck showing "--%" forever waiting for a 1-hour retry-after to expire
+      if (!cache.data) {
+        backoff = Math.min(backoff, NO_DATA_BACKOFF_MS);
+      }
       if (Date.now() - cache.ts < backoff) {
         return staleDataOrNull(cache);
       }
@@ -225,8 +231,14 @@ async function getUsage() {
     const freshCache = readUsageCache() || cache;
 
     if (e?.type === "rate_limited" || e === "rate_limited") {
-      const count = (freshCache?.rateLimitedCount || 0) + 1;
-      const retryAfterMs = e?.retryAfterMs || 0;
+      // Cap retry-after to MAX_BACKOFF_MS — server sometimes sends 3600s (1 hour)
+      const rawRetryMs = e?.retryAfterMs || 0;
+      const retryAfterMs = Math.min(rawRetryMs, MAX_BACKOFF_MS);
+      // If the previous backoff already expired (we just retried), reset count to 1
+      // so exponential backoff doesn't grow unbounded across recovery attempts
+      const prevCount = freshCache?.rateLimitedCount || 0;
+      const prevBackoffExpired = freshCache?.ts && (Date.now() - freshCache.ts >= MAX_BACKOFF_MS);
+      const count = prevBackoffExpired ? 1 : prevCount + 1;
       writeUsageCache({
         ts: Date.now(), data: freshCache?.data || null,
         rateLimited: true, rateLimitedCount: count,

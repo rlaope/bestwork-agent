@@ -11,11 +11,13 @@ When this skill is invoked, IMMEDIATELY print:
 
 Walk through:
 1. **What it does**: bestwork-agent organizes your AI into specialist teams — Tech, PM, Critic
-2. **Quick setup**: Run `bestwork install` to activate hooks
+2. **Quick setup**:
+   - Plugin (recommended): `/plugin marketplace add https://github.com/rlaope/bestwork-agent` then `/plugin install bestwork-agent`
+   - npm: `npm install -g bestwork-agent && bestwork install`
 3. **Key commands**:
    - `/bestwork-agent:trio` — parallel execution with quality gates
    - `/bestwork-agent:review` — hallucination scanner
-   - `/bestwork-agent:agents` — see all 46 specialist profiles
+   - `/bestwork-agent:agents` — see all 49 specialist agents
    - `/bestwork-agent:health` — session health check
    - `./discord <url>` or `./slack <url>` — notification setup
 4. **Team modes**: hierarchy (CTO → Lead → Senior → Junior) vs squad (flat, parallel)

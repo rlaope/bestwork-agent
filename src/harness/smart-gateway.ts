@@ -10,7 +10,7 @@
  * Replaces the keyword-based bestwork-smart-gateway.sh
  */
 
-import { classifyIntent, buildExecutionPlan, formatPlan, type ExecutionMode } from "./orchestrator.js";
+import { classifyIntent, buildExecutionPlan, formatPlan, type ExecutionMode, type TaskAllocation } from "./orchestrator.js";
 import { TEAM_PRESETS } from "./org.js";
 import { appendFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
@@ -255,63 +255,45 @@ async function main() {
     return;
   }
 
-  // Non-solo: present team structure options with pros/cons, let user pick
-  const tasks = intent.tasks.map((t: string, i: number) => {
-    const agent = intent.suggestedAgents[i] || intent.suggestedAgents[0] || "tech-fullstack";
-    return `  ${i + 1}. ${t} → ${agent}`;
+  // Non-solo: show dynamic task+agent breakdown, ask user to confirm
+  const allocations = intent.taskAllocations;
+  const totalAgents = intent.totalAgents;
+  const taskCount = allocations.length;
+
+  const taskLines = allocations.map((a: TaskAllocation, i: number) => {
+    return `  ${i + 1}. "${a.description}" → [${a.agents.join(", ")}]${a.parallel ? " (parallel)" : ""}`;
   }).join("\n");
 
-  // Detect language from prompt for localized descriptions
+  // Detect language from prompt for localized question
   const isKo = /[가-힣]/.test(prompt);
   const isJa = /[\u3040-\u309F\u30A0-\u30FF]/.test(prompt);
 
-  // Outcome-based descriptions (what the user actually gets)
-  // Result-focused descriptions (what's different about the output, not the process)
-  const DESC = isKo ? {
-    trio: "개발자가 구현 → PM이 요구사항 충족 확인 → 크리틱이 코드 품질 리뷰. 예: '로그인 기능 추가해줘' → 구현 + 보안 검증 + 테스트 리포트",
-    squad: "백엔드+프론트+QA가 각자 영역 동시에 작업. 예: 'API + UI + 테스트 한번에' → 3명이 병렬로 각각 완성",
-    hierarchy: "주니어가 구현 → 시니어가 개선 → 리드가 아키텍처 확인 → CTO 최종 승인. 예: '인증 시스템 리팩토링' → 4단계 검토 거친 코드",
-    pair: "2명이 각자 영역 구현 후 서로 크로스 리뷰. 예: 'API 추가하고 프론트도' → 백엔드+프론트 동시에, 상호 검증",
-    solo: "전문가 1명이 바로 작업. 예: '버그 수정해줘' → 즉시 완료",
-  } : isJa ? {
-    trio: "開発→PM検証→クリティックレビュー。例: 'ログイン機能追加' → 実装+セキュリティ検証+テストレポート",
-    squad: "各専門家が並列作業。例: 'API+UI+テスト' → 3名同時に各自完成",
-    hierarchy: "ジュニア実装→シニア改善→リード確認→CTO承認。例: '認証リファクタ' → 4段階レビュー済みコード",
-    pair: "2名が実装後クロスレビュー。例: 'APIとフロント' → 同時実装+相互検証",
-    solo: "専門家1名が即座に作業。例: 'バグ修正' → 即完了",
-  } : {
-    trio: "Dev implements → PM verifies requirements → Critic reviews quality. e.g. 'Add login' → code + security check + test report",
-    squad: "Specialists work their domains in parallel. e.g. 'API + UI + tests' → 3 people build simultaneously",
-    hierarchy: "Junior builds → Senior improves → Lead reviews → CTO approves. e.g. 'Refactor auth' → 4-stage reviewed code",
-    pair: "2 specialists build then cross-review. e.g. 'API + frontend' → parallel build + mutual verification",
-    solo: "Single expert works directly. e.g. 'Fix bug' → instant completion",
-  };
-
-  const qLabel = isKo ? "어떤 팀 구조로 진행할까요?" : isJa ? "どのチーム構成で進めますか？" : "Which team structure?";
-
-  // Build options: recommended first, then 3 alternatives (4 max for AskUserQuestion)
-  const modes = ["trio", "squad", "hierarchy", "pair"] as const;
-  const rec = intent.mode;
-  const others = modes.filter(m => m !== rec).slice(0, 3);
-  const sorted = [rec, ...others];
-  const optionLines = sorted.map((m, i) => {
-    const label = i === 0 ? `${m.charAt(0).toUpperCase() + m.slice(1)} (Recommended)` : m.charAt(0).toUpperCase() + m.slice(1);
-    return `  ${i + 1}. label: "${label}", description: "${DESC[m as keyof typeof DESC]}"`;
-  }).join("\n");
+  const qLabel = isKo ? "이 계획으로 진행할까요?" : isJa ? "このプランで進めますか？" : "Proceed with this plan?";
+  const confirmLabel = isKo ? "확인, 진행" : isJa ? "確認、進行" : "Confirm plan";
+  const adjustLabel = isKo ? "조정하고 싶어" : isJa ? "調整したい" : "Adjust";
+  const soloLabel = isKo ? "솔로로 할게" : isJa ? "ソロでやる" : "Solo instead";
 
   output(
-`[BW] ${intent.tasks.length} sub-tasks detected (bestwork:${agentList})
+`[BW] ${taskCount} task(s), ${totalAgents} agents (bestwork:${agentList})
 
-Tasks:
-${tasks}
+Plan:
+${taskLines}
 
-You MUST use AskUserQuestion tool to let the user pick the team structure:
+  Total: ${taskCount} parallel task(s), ${totalAgents} agent(s)
+  Reasoning: ${intent.reasoning}
+
+You MUST use AskUserQuestion tool to let the user confirm:
 - question: "${qLabel}"
-- header: "BW Team"
+- header: "BW Plan"
 - options:
-${optionLines}
+  1. label: "${confirmLabel}", description: "Execute ${taskCount} task(s) with ${totalAgents} agent(s) as shown above"
+  2. label: "${adjustLabel}", description: "Modify tasks or agent assignments before executing"
+  3. label: "${soloLabel}", description: "Skip team allocation, execute as single agent"
 
-After user picks, execute that mode with the tasks listed above. Print [BW] {mode} — bestwork:{agents} as first line.`
+After user picks:
+- "Confirm plan" → execute each task with its assigned agents in parallel. Print [BW] ${intent.mode} — bestwork:{agents} as first line.
+- "Adjust" → ask what to change (add/remove agents, split/merge tasks), then re-present the plan.
+- "Solo instead" → proceed with single agent (bestwork:${intent.suggestedAgents[0] || "sr-fullstack"}).`
   );
 }
 

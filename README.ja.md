@@ -14,6 +14,15 @@ AIエージェントは一人で作業します。ハルシネーション、ル
 
 ## インストール
 
+### 方法1: Claude Codeプラグイン（推奨）
+
+```
+/plugin marketplace add https://github.com/rlaope/bestwork-agent
+/plugin install bestwork-agent
+```
+
+### 方法2: npm
+
 ```bash
 npm install -g bestwork-agent
 bestwork install

@@ -269,12 +269,21 @@ export function autoAllocate(
 // Intent Gate — structured classification with reasoning
 // ============================================================
 
+export interface TaskAllocation {
+  description: string;
+  agents: string[];
+  parallel: boolean;
+}
+
 export interface IntentClassification {
   mode: ExecutionMode;
   tasks: string[];
   reasoning: string;
   confidence: "high" | "medium" | "low";
   suggestedAgents: string[];
+  /** Dynamic task+agent breakdown — replaces fixed team structures */
+  taskAllocations: TaskAllocation[];
+  totalAgents: number;
 }
 
 const DOMAIN_KEYWORDS: Record<string, string[]> = {
@@ -342,6 +351,28 @@ function detectDomains(task: string): string[] {
   return found.length > 0 ? [...new Set(found)] : ["backend"];
 }
 
+/**
+ * Build dynamic task allocations: for each sub-task, assign agents based on
+ * what's actually needed (just tech, tech+critic, tech+pm+critic, etc.)
+ */
+function buildTaskAllocations(tasks: string[], mode: ExecutionMode): TaskAllocation[] {
+  return tasks.map((t) => {
+    const domains = detectDomains(t);
+    const techAgent = DOMAIN_TO_AGENT[domains[0]!] ?? "sr-fullstack";
+
+    // Determine agents per task based on overall mode complexity
+    if (mode === "passthrough" || mode === "solo") {
+      return { description: t, agents: [techAgent], parallel: false };
+    }
+    if (mode === "hierarchy") {
+      // Complex: tech + pm + critic + lead
+      return { description: t, agents: [techAgent, "pm-product", "critic-code", "tech-lead"], parallel: true };
+    }
+    // pair/trio/squad: tech + critic per task
+    return { description: t, agents: [techAgent, "critic-code"], parallel: true };
+  });
+}
+
 export function classifyIntent(task: string): IntentClassification {
   const tasks = splitTasks(task);
   const taskCount = tasks.length;
@@ -349,12 +380,15 @@ export function classifyIntent(task: string): IntentClassification {
   // Check passthrough first
   const weight = classifyWeight(task);
   if (weight === "passthrough") {
+    const allocations = buildTaskAllocations(tasks, "passthrough");
     return {
       mode: "passthrough",
       tasks,
       reasoning: "Task matches passthrough pattern (git/shell/npm command or simple acknowledgement) — no agent allocation needed.",
       confidence: "high",
       suggestedAgents: [],
+      taskAllocations: allocations,
+      totalAgents: 0,
     };
   }
 
@@ -366,34 +400,45 @@ export function classifyIntent(task: string): IntentClassification {
 
   // Multi-task path
   if (taskCount >= 3) {
+    const allocations = buildTaskAllocations(tasks, "trio");
+    const total = allocations.reduce((sum, a) => sum + a.agents.length, 0);
     return {
       mode: "trio",
       tasks,
-      reasoning: `Task contains ${taskCount} separable sub-tasks ("${tasks.join(" | ")}") spanning domains: ${allDomains.join(", ")}. Trio mode assigns one agent per sub-task in parallel.`,
+      reasoning: `Task contains ${taskCount} separable sub-tasks ("${tasks.join(" | ")}") spanning domains: ${allDomains.join(", ")}. ${taskCount} parallel tasks with ${total} total agents.`,
       confidence: "high",
       suggestedAgents,
+      taskAllocations: allocations,
+      totalAgents: total,
     };
   }
 
   if (taskCount === 2) {
+    const allocations = buildTaskAllocations(tasks, "pair");
+    const total = allocations.reduce((sum, a) => sum + a.agents.length, 0);
     return {
       mode: "pair",
       tasks,
       reasoning: `Task splits into 2 sub-tasks covering domains: ${allDomains.join(", ")}. Pair mode with one agent per task.`,
       confidence: "high",
       suggestedAgents,
+      taskAllocations: allocations,
+      totalAgents: total,
     };
   }
 
   // Single task — use autoAllocate signals
   const soloWeight = classifyWeight(task);
   if (soloWeight === "solo") {
+    const allocations = buildTaskAllocations(tasks, "solo");
     return {
       mode: "solo",
       tasks,
       reasoning: `Single lightweight task matching solo pattern (typo fix, rename, format, or minor update). One senior developer sufficient.`,
       confidence: "high",
       suggestedAgents: ["sr-fullstack"],
+      taskAllocations: allocations,
+      totalAgents: 1,
     };
   }
 
@@ -409,12 +454,16 @@ export function classifyIntent(task: string): IntentClassification {
   const isComplex = complexitySignals.some((p) => p.test(task)) || allDomains.length >= 3;
 
   if (isComplex) {
+    const allocations = buildTaskAllocations(tasks, "hierarchy");
+    const total = allocations.reduce((sum, a) => sum + a.agents.length, 0);
     return {
       mode: "hierarchy",
       tasks,
       reasoning: `Complex single task touching ${allDomains.length} domain(s) (${allDomains.join(", ")}) with structural complexity signals. Hierarchy mode with senior → lead → CTO chain.`,
       confidence: allDomains.length >= 2 ? "high" : "medium",
       suggestedAgents,
+      taskAllocations: allocations,
+      totalAgents: total,
     };
   }
 
@@ -424,12 +473,17 @@ export function classifyIntent(task: string): IntentClassification {
     ? allocation.mode
     : allDomains.length >= 2 ? "pair" : "solo";
 
+  const allocations = buildTaskAllocations(tasks, finalMode);
+  const total = allocations.reduce((sum, a) => sum + a.agents.length, 0);
+
   return {
     mode: finalMode,
     tasks,
     reasoning: `Single task in domain(s): ${allDomains.join(", ")}. ${allocation.reasoning}`,
     confidence: "medium",
     suggestedAgents,
+    taskAllocations: allocations,
+    totalAgents: total,
   };
 }
 

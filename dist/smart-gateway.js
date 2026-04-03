@@ -1530,47 +1530,74 @@ function detectDomains(task) {
   }
   return found.length > 0 ? [...new Set(found)] : ["backend"];
 }
+function buildTaskAllocations(tasks, mode) {
+  return tasks.map((t) => {
+    const domains = detectDomains(t);
+    const techAgent = DOMAIN_TO_AGENT[domains[0]] ?? "sr-fullstack";
+    if (mode === "passthrough" || mode === "solo") {
+      return { description: t, agents: [techAgent], parallel: false };
+    }
+    if (mode === "hierarchy") {
+      return { description: t, agents: [techAgent, "pm-product", "critic-code", "tech-lead"], parallel: true };
+    }
+    return { description: t, agents: [techAgent, "critic-code"], parallel: true };
+  });
+}
 function classifyIntent(task) {
   const tasks = splitTasks(task);
   const taskCount = tasks.length;
   const weight = classifyWeight(task);
   if (weight === "passthrough") {
+    const allocations2 = buildTaskAllocations(tasks, "passthrough");
     return {
       mode: "passthrough",
       tasks,
       reasoning: "Task matches passthrough pattern (git/shell/npm command or simple acknowledgement) \u2014 no agent allocation needed.",
       confidence: "high",
-      suggestedAgents: []
+      suggestedAgents: [],
+      taskAllocations: allocations2,
+      totalAgents: 0
     };
   }
   const allDomains = [...new Set(tasks.flatMap((t) => detectDomains(t)))];
   const suggestedAgents = allDomains.map((d) => DOMAIN_TO_AGENT[d] ?? "sr-fullstack").filter((a, i, arr) => arr.indexOf(a) === i);
   if (taskCount >= 3) {
+    const allocations2 = buildTaskAllocations(tasks, "trio");
+    const total2 = allocations2.reduce((sum, a) => sum + a.agents.length, 0);
     return {
       mode: "trio",
       tasks,
-      reasoning: `Task contains ${taskCount} separable sub-tasks ("${tasks.join(" | ")}") spanning domains: ${allDomains.join(", ")}. Trio mode assigns one agent per sub-task in parallel.`,
+      reasoning: `Task contains ${taskCount} separable sub-tasks ("${tasks.join(" | ")}") spanning domains: ${allDomains.join(", ")}. ${taskCount} parallel tasks with ${total2} total agents.`,
       confidence: "high",
-      suggestedAgents
+      suggestedAgents,
+      taskAllocations: allocations2,
+      totalAgents: total2
     };
   }
   if (taskCount === 2) {
+    const allocations2 = buildTaskAllocations(tasks, "pair");
+    const total2 = allocations2.reduce((sum, a) => sum + a.agents.length, 0);
     return {
       mode: "pair",
       tasks,
       reasoning: `Task splits into 2 sub-tasks covering domains: ${allDomains.join(", ")}. Pair mode with one agent per task.`,
       confidence: "high",
-      suggestedAgents
+      suggestedAgents,
+      taskAllocations: allocations2,
+      totalAgents: total2
     };
   }
   const soloWeight = classifyWeight(task);
   if (soloWeight === "solo") {
+    const allocations2 = buildTaskAllocations(tasks, "solo");
     return {
       mode: "solo",
       tasks,
       reasoning: `Single lightweight task matching solo pattern (typo fix, rename, format, or minor update). One senior developer sufficient.`,
       confidence: "high",
-      suggestedAgents: ["sr-fullstack"]
+      suggestedAgents: ["sr-fullstack"],
+      taskAllocations: allocations2,
+      totalAgents: 1
     };
   }
   const complexitySignals = [
@@ -1583,22 +1610,30 @@ function classifyIntent(task) {
   ];
   const isComplex = complexitySignals.some((p) => p.test(task)) || allDomains.length >= 3;
   if (isComplex) {
+    const allocations2 = buildTaskAllocations(tasks, "hierarchy");
+    const total2 = allocations2.reduce((sum, a) => sum + a.agents.length, 0);
     return {
       mode: "hierarchy",
       tasks,
       reasoning: `Complex single task touching ${allDomains.length} domain(s) (${allDomains.join(", ")}) with structural complexity signals. Hierarchy mode with senior \u2192 lead \u2192 CTO chain.`,
       confidence: allDomains.length >= 2 ? "high" : "medium",
-      suggestedAgents
+      suggestedAgents,
+      taskAllocations: allocations2,
+      totalAgents: total2
     };
   }
   const allocation = autoAllocate(task, { domains: allDomains });
   const finalMode = allocation.mode === "passthrough" || allocation.mode === "solo" ? allocation.mode : allDomains.length >= 2 ? "pair" : "solo";
+  const allocations = buildTaskAllocations(tasks, finalMode);
+  const total = allocations.reduce((sum, a) => sum + a.agents.length, 0);
   return {
     mode: finalMode,
     tasks,
     reasoning: `Single task in domain(s): ${allDomains.join(", ")}. ${allocation.reasoning}`,
     confidence: "medium",
-    suggestedAgents
+    suggestedAgents,
+    taskAllocations: allocations,
+    totalAgents: total
   };
 }
 
@@ -1846,53 +1881,39 @@ Classification: ${intent.reasoning}
 Proceed directly. You are operating as a bestwork agent (bestwork:${agent}).`);
     return;
   }
-  const tasks = intent.tasks.map((t, i) => {
-    const agent = intent.suggestedAgents[i] || intent.suggestedAgents[0] || "tech-fullstack";
-    return `  ${i + 1}. ${t} \u2192 ${agent}`;
+  const allocations = intent.taskAllocations;
+  const totalAgents = intent.totalAgents;
+  const taskCount = allocations.length;
+  const taskLines = allocations.map((a, i) => {
+    return `  ${i + 1}. "${a.description}" \u2192 [${a.agents.join(", ")}]${a.parallel ? " (parallel)" : ""}`;
   }).join("\n");
   const isKo = /[가-힣]/.test(prompt);
   const isJa = /[\u3040-\u309F\u30A0-\u30FF]/.test(prompt);
-  const DESC = isKo ? {
-    trio: "\uAC1C\uBC1C\uC790\uAC00 \uAD6C\uD604 \u2192 PM\uC774 \uC694\uAD6C\uC0AC\uD56D \uCDA9\uC871 \uD655\uC778 \u2192 \uD06C\uB9AC\uD2F1\uC774 \uCF54\uB4DC \uD488\uC9C8 \uB9AC\uBDF0. \uC608: '\uB85C\uADF8\uC778 \uAE30\uB2A5 \uCD94\uAC00\uD574\uC918' \u2192 \uAD6C\uD604 + \uBCF4\uC548 \uAC80\uC99D + \uD14C\uC2A4\uD2B8 \uB9AC\uD3EC\uD2B8",
-    squad: "\uBC31\uC5D4\uB4DC+\uD504\uB860\uD2B8+QA\uAC00 \uAC01\uC790 \uC601\uC5ED \uB3D9\uC2DC\uC5D0 \uC791\uC5C5. \uC608: 'API + UI + \uD14C\uC2A4\uD2B8 \uD55C\uBC88\uC5D0' \u2192 3\uBA85\uC774 \uBCD1\uB82C\uB85C \uAC01\uAC01 \uC644\uC131",
-    hierarchy: "\uC8FC\uB2C8\uC5B4\uAC00 \uAD6C\uD604 \u2192 \uC2DC\uB2C8\uC5B4\uAC00 \uAC1C\uC120 \u2192 \uB9AC\uB4DC\uAC00 \uC544\uD0A4\uD14D\uCC98 \uD655\uC778 \u2192 CTO \uCD5C\uC885 \uC2B9\uC778. \uC608: '\uC778\uC99D \uC2DC\uC2A4\uD15C \uB9AC\uD329\uD1A0\uB9C1' \u2192 4\uB2E8\uACC4 \uAC80\uD1A0 \uAC70\uCE5C \uCF54\uB4DC",
-    pair: "2\uBA85\uC774 \uAC01\uC790 \uC601\uC5ED \uAD6C\uD604 \uD6C4 \uC11C\uB85C \uD06C\uB85C\uC2A4 \uB9AC\uBDF0. \uC608: 'API \uCD94\uAC00\uD558\uACE0 \uD504\uB860\uD2B8\uB3C4' \u2192 \uBC31\uC5D4\uB4DC+\uD504\uB860\uD2B8 \uB3D9\uC2DC\uC5D0, \uC0C1\uD638 \uAC80\uC99D",
-    solo: "\uC804\uBB38\uAC00 1\uBA85\uC774 \uBC14\uB85C \uC791\uC5C5. \uC608: '\uBC84\uADF8 \uC218\uC815\uD574\uC918' \u2192 \uC989\uC2DC \uC644\uB8CC"
-  } : isJa ? {
-    trio: "\u958B\u767A\u2192PM\u691C\u8A3C\u2192\u30AF\u30EA\u30C6\u30A3\u30C3\u30AF\u30EC\u30D3\u30E5\u30FC\u3002\u4F8B: '\u30ED\u30B0\u30A4\u30F3\u6A5F\u80FD\u8FFD\u52A0' \u2192 \u5B9F\u88C5+\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u691C\u8A3C+\u30C6\u30B9\u30C8\u30EC\u30DD\u30FC\u30C8",
-    squad: "\u5404\u5C02\u9580\u5BB6\u304C\u4E26\u5217\u4F5C\u696D\u3002\u4F8B: 'API+UI+\u30C6\u30B9\u30C8' \u2192 3\u540D\u540C\u6642\u306B\u5404\u81EA\u5B8C\u6210",
-    hierarchy: "\u30B8\u30E5\u30CB\u30A2\u5B9F\u88C5\u2192\u30B7\u30CB\u30A2\u6539\u5584\u2192\u30EA\u30FC\u30C9\u78BA\u8A8D\u2192CTO\u627F\u8A8D\u3002\u4F8B: '\u8A8D\u8A3C\u30EA\u30D5\u30A1\u30AF\u30BF' \u2192 4\u6BB5\u968E\u30EC\u30D3\u30E5\u30FC\u6E08\u307F\u30B3\u30FC\u30C9",
-    pair: "2\u540D\u304C\u5B9F\u88C5\u5F8C\u30AF\u30ED\u30B9\u30EC\u30D3\u30E5\u30FC\u3002\u4F8B: 'API\u3068\u30D5\u30ED\u30F3\u30C8' \u2192 \u540C\u6642\u5B9F\u88C5+\u76F8\u4E92\u691C\u8A3C",
-    solo: "\u5C02\u9580\u5BB61\u540D\u304C\u5373\u5EA7\u306B\u4F5C\u696D\u3002\u4F8B: '\u30D0\u30B0\u4FEE\u6B63' \u2192 \u5373\u5B8C\u4E86"
-  } : {
-    trio: "Dev implements \u2192 PM verifies requirements \u2192 Critic reviews quality. e.g. 'Add login' \u2192 code + security check + test report",
-    squad: "Specialists work their domains in parallel. e.g. 'API + UI + tests' \u2192 3 people build simultaneously",
-    hierarchy: "Junior builds \u2192 Senior improves \u2192 Lead reviews \u2192 CTO approves. e.g. 'Refactor auth' \u2192 4-stage reviewed code",
-    pair: "2 specialists build then cross-review. e.g. 'API + frontend' \u2192 parallel build + mutual verification",
-    solo: "Single expert works directly. e.g. 'Fix bug' \u2192 instant completion"
-  };
-  const qLabel = isKo ? "\uC5B4\uB5A4 \uD300 \uAD6C\uC870\uB85C \uC9C4\uD589\uD560\uAE4C\uC694?" : isJa ? "\u3069\u306E\u30C1\u30FC\u30E0\u69CB\u6210\u3067\u9032\u3081\u307E\u3059\u304B\uFF1F" : "Which team structure?";
-  const modes = ["trio", "squad", "hierarchy", "pair"];
-  const rec = intent.mode;
-  const others = modes.filter((m) => m !== rec).slice(0, 3);
-  const sorted = [rec, ...others];
-  const optionLines = sorted.map((m, i) => {
-    const label = i === 0 ? `${m.charAt(0).toUpperCase() + m.slice(1)} (Recommended)` : m.charAt(0).toUpperCase() + m.slice(1);
-    return `  ${i + 1}. label: "${label}", description: "${DESC[m]}"`;
-  }).join("\n");
+  const qLabel = isKo ? "\uC774 \uACC4\uD68D\uC73C\uB85C \uC9C4\uD589\uD560\uAE4C\uC694?" : isJa ? "\u3053\u306E\u30D7\u30E9\u30F3\u3067\u9032\u3081\u307E\u3059\u304B\uFF1F" : "Proceed with this plan?";
+  const confirmLabel = isKo ? "\uD655\uC778, \uC9C4\uD589" : isJa ? "\u78BA\u8A8D\u3001\u9032\u884C" : "Confirm plan";
+  const adjustLabel = isKo ? "\uC870\uC815\uD558\uACE0 \uC2F6\uC5B4" : isJa ? "\u8ABF\u6574\u3057\u305F\u3044" : "Adjust";
+  const soloLabel = isKo ? "\uC194\uB85C\uB85C \uD560\uAC8C" : isJa ? "\u30BD\u30ED\u3067\u3084\u308B" : "Solo instead";
   output(
-    `[BW] ${intent.tasks.length} sub-tasks detected (bestwork:${agentList})
+    `[BW] ${taskCount} task(s), ${totalAgents} agents (bestwork:${agentList})
 
-Tasks:
-${tasks}
+Plan:
+${taskLines}
 
-You MUST use AskUserQuestion tool to let the user pick the team structure:
+  Total: ${taskCount} parallel task(s), ${totalAgents} agent(s)
+  Reasoning: ${intent.reasoning}
+
+You MUST use AskUserQuestion tool to let the user confirm:
 - question: "${qLabel}"
-- header: "BW Team"
+- header: "BW Plan"
 - options:
-${optionLines}
+  1. label: "${confirmLabel}", description: "Execute ${taskCount} task(s) with ${totalAgents} agent(s) as shown above"
+  2. label: "${adjustLabel}", description: "Modify tasks or agent assignments before executing"
+  3. label: "${soloLabel}", description: "Skip team allocation, execute as single agent"
 
-After user picks, execute that mode with the tasks listed above. Print [BW] {mode} \u2014 bestwork:{agents} as first line.`
+After user picks:
+- "Confirm plan" \u2192 execute each task with its assigned agents in parallel. Print [BW] ${intent.mode} \u2014 bestwork:{agents} as first line.
+- "Adjust" \u2192 ask what to change (add/remove agents, split/merge tasks), then re-present the plan.
+- "Solo instead" \u2192 proceed with single agent (bestwork:${intent.suggestedAgents[0] || "sr-fullstack"}).`
   );
 }
 main().catch(() => process.stdout.write("{}\n"));

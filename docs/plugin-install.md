@@ -2,13 +2,17 @@
 
 ## Option 1: Claude Code Plugin (recommended)
 
-```bash
-# Add the marketplace
-claude plugin add rlaope/bestwork-agent
+Inside Claude Code session:
+```
+/plugin marketplace add https://github.com/rlaope/bestwork-agent
+/plugin install bestwork-agent
+/reload-plugins
+```
 
-# Or from settings
-claude settings
-# → Plugins → Add → rlaope/bestwork-agent
+Or from terminal:
+```bash
+claude plugin marketplace add https://github.com/rlaope/bestwork-agent
+claude plugin install bestwork-agent
 ```
 
 After install, restart Claude Code. Type `./help` to see all commands.

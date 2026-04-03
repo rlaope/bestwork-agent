@@ -8,8 +8,8 @@ Open-source harness engineering for Claude Code. Organizes AI agents into corpor
 
 Always think from the perspective of someone USING bestwork in their Claude Code session:
 
-- **Every prompt goes through the gateway**. The gateway classifies intent → assigns mode (solo/pair/trio/squad/hierarchy) → shows `[BW]` tag.
-- **Non-solo tasks present team structure options** via AskUserQuestion. User picks, then it executes. Descriptions are result-focused (what you get), not process-focused (how it works).
+- **Every prompt goes through the gateway**. The gateway classifies intent → dynamically allocates tasks+agents → shows `[BW]` tag.
+- **Non-solo tasks show a dynamic plan** (task breakdown + agents per task) via AskUserQuestion. User confirms, adjusts, or drops to solo.
 - **`.bestwork/` in project root** is auto-created on first hook run. Contains: `state/` (meeting logs), `plans/`, `logs/`, `sessions/`, `notepad/`.
 - **`~/.bestwork/`** is global: usage cache, HUD script, config. Not project-specific.
 - **Skills** are invoked via `/bestwork-agent:skillname` or natural language. Gateway routes automatically when action verbs are present (e.g. "리뷰 해줘" → review skill).
@@ -56,9 +56,13 @@ npx tsc --noEmit # typecheck
 1. `hooks.json` → `dist/smart-gateway.js` runs on UserPromptSubmit
 2. Tier 0: `./command` slash prefixes → passthrough to shell handler
 3. Tier 1: SKILL_ROUTES regex matching (action-verb required to avoid false positives)
-4. Tier 2: `classifyIntent()` → solo/pair/trio/squad/hierarchy
+4. Tier 2: `classifyIntent()` → dynamic task+agent allocation
+   - Splits prompt into 1-5 tasks, assigns 1-5 agents per task based on need
+   - Each task gets only the agents it needs: tech-only, tech+critic, tech+pm+critic, etc.
+   - Returns `taskAllocations[]` with per-task agent lists + `totalAgents` count
+   - `mode` field preserved for backward compat (solo/pair/trio/squad/hierarchy)
 5. Solo → `[BW] solo — bestwork:agent` + proceed
-6. Non-solo → AskUserQuestion with 4 team options (result-based descriptions, language-aware)
+6. Non-solo → AskUserQuestion showing task breakdown + agents, user confirms/adjusts/goes solo
 
 ### Two Install Paths
 - **npm global**: `npm install -g bestwork-agent && bestwork install`
@@ -92,7 +96,7 @@ Every response MUST start with the `[BW]` tag from the gateway's additionalConte
 
 - English only in source code. Korean allowed only in bilingual routing keywords.
 - No Co-Authored-By in commits.
-- No confirmation prompts — gateway decides scale, user only picks team structure.
+- No confirmation prompts — gateway decides scale, user confirms/adjusts dynamic plan.
 - Shell hooks use jq for JSON (no string interpolation).
 - Agent prompts live in prompts/*.md — editable without rebuild.
 - SKILL_ROUTES patterns must require action verbs to prevent false positives.

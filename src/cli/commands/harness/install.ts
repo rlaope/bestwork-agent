@@ -36,8 +36,7 @@ const HOOKS_REGISTRY: HookEntry[] = [
   { event: "PreToolUse", id: "bestwork-strict-enforce", type: "command", command: bwCmd("bestwork-strict-enforce.sh"), timeout: 3 },
   // UserPromptSubmit — slash routing (fast, just pattern match + config write)
   { event: "UserPromptSubmit", id: "bestwork-slash", type: "command", command: bwCmd("bestwork-slash.sh"), timeout: 10 },
-  // Stop — notifications (needs curl, not LLM)
-  { event: "Stop", id: "bestwork-prompt-done", type: "command", command: bwCmd("bestwork-prompt-done.sh"), timeout: 20 },
+  // Stop — handled by plugin hooks.json (not install.ts) to avoid duplicate notifications
   // SessionStart — update check
   { event: "SessionStart", id: "bestwork-update-check", type: "command", command: bwCmd("bestwork-update-check.sh"), timeout: 5 },
 
@@ -258,29 +257,15 @@ After all agents finish, write the footer:
 This file is read by the Stop hook to send rich Discord/Slack notifications with each agent's decision, code snippets, and meeting summary. If you skip this, the notification will be missing agent details.`,
   },
 
-  // Stop — platform review on completion
-  {
-    event: "Stop",
-    id: "bestwork-review-on-stop",
-    type: "agent",
-    timeout: 30,
-    prompt: `You are bestwork's platform review agent. A coding session just completed.
-Run \`git diff --stat\` to see what changed. If there are code changes:
-1. Run \`uname -s\` to get the OS
-2. Scan the diff (\`git diff\`) for platform-specific patterns that don't match this OS:
-   - Linux patterns on macOS: /proc/, cgroups, systemd, apt-get, epoll
-   - macOS patterns on Linux: launchd, NSApplication, CoreFoundation
-   - Windows patterns on Unix: HKEY_, registry, .exe, C:\\\\
-   - Wrong runtime: Deno.* without Deno, Bun.* without Bun
-3. If mismatches found, report them concisely.
-If no code changes or no mismatches, say nothing.`,
-  },
+  // Stop — platform review handled by plugin hooks.json (not install.ts) to avoid duplicate execution
 ];
 
 const DEPRECATED_IDS = [
   "bestwork-gateway", "bestwork-agents", "bestwork-harness",
   "bestwork-smart-gateway", "bestwork-validate", "bestwork-ground",
   "bestwork-session-end",
+  // Stop hooks now live exclusively in plugin hooks.json — remove from settings.json
+  "bestwork-prompt-done", "bestwork-review-on-stop",
 ];
 
 function hasHookById(hookArray: Array<Record<string, unknown>>, id: string): boolean {
