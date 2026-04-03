@@ -150,17 +150,25 @@ const PASSTHROUGH_PATTERNS = [
   /^(git |commit|push|pull|merge|rebase|checkout|branch|stash|tag|log|diff|status)/i,
   /^(ls|cd|pwd|cat|head|tail|mv|cp|rm |mkdir|touch|chmod|find|grep|sed|awk)/i,
   /^(npm |yarn |pnpm |bun |npx |node |deno |cargo |pip |go |make)/i,
-  /^(exit|quit|bye|thanks|thank|ok|yes|no|y|n)$/i,
+  /^(docker (run|build|pull|push|compose|exec|stop|rm|ps|images|logs) |kubectl (get|apply|delete|describe|logs) |terraform (plan|apply|init|destroy) |python \S+\.py|ruby \S+\.rb)/i,
+  /^(exit|quit|bye|thanks|thank|ok|yes|no|y|n|sure|sounds good|go ahead)$/i,
   /^\/\w/,  // slash commands
   /^\.\//,  // dot commands
+  // Korean passthrough commands
+  /^(커밋|푸시|풀|머지|체크아웃|빌드|테스트 돌려|배포해|실행해)$/i,
 ];
 
 // Patterns that indicate lightweight work (solo agent)
 const SOLO_PATTERNS = [
   /fix (a |the |this )?(typo|bug|error|issue|warning)/i,
+  /(버그|에러|오류|타입).*(수정|고쳐|잡아|fix)/i,
+  /(수정|고쳐|잡아).*(버그|에러|오류|타입)/i,
   /rename|delete|remove|add (a |the )?comment/i,
+  /(이름|변수).*(바꿔|변경|수정)/i,
   /update (the |a )?(version|readme|docs|changelog)/i,
+  /(버전|readme|문서).*(업데이트|올려|수정)/i,
   /format|lint|prettier|eslint/i,
+  /최적화해|정리해|깔끔하게/i,
 ];
 
 export function classifyWeight(task: string): ExecutionMode {
@@ -294,15 +302,22 @@ const DOMAIN_TO_AGENT: Record<string, string> = {
 };
 
 function splitTasks(task: string): string[] {
-  // Split by "|"
+  // Split by "|" — but only if parts look like separate tasks (each part > 5 chars)
+  // Avoids false splits on: "true | false | null", "grep foo | wc -l", "success | failure"
   if (task.includes("|")) {
-    return task.split("|").map((t) => t.trim()).filter(Boolean);
+    const parts = task.split("|").map((t) => t.trim()).filter(Boolean);
+    // Filter out trivial splits: if most parts are single words under 3 chars, it's likely
+    // a value list (true | false | null), not separate tasks
+    const looksLikeTasks = parts.length >= 2 && parts.filter((p) => p.length > 1).length >= 2;
+    if (looksLikeTasks) return parts;
   }
 
-  // Split by "and then" / Korean conjunctions / Japanese て form
-  const conjunctionPattern = /\band then\b|그리고\s|(?<=[가-힣])고\s|하고$|다음에\s|그다음\s|して|してから/i;
+  // Split by conjunctions — only when both sides look like actionable tasks (>5 chars each)
+  // "그리고" removed (too common). "하고" kept only when preceded by a verb stem.
+  const conjunctionPattern = /\band then\b|하고\s|다음에\s|그다음\s|してから/i;
   if (conjunctionPattern.test(task)) {
-    return task.split(conjunctionPattern).map((t) => t.trim()).filter(Boolean);
+    const parts = task.split(conjunctionPattern).map((t) => t.trim()).filter(Boolean);
+    if (parts.length >= 2 && parts.every((p) => p.length > 5)) return parts;
   }
 
   // Split by numbered list: "1. ... 2. ... 3. ..."

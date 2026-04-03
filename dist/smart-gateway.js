@@ -1392,17 +1392,25 @@ var PASSTHROUGH_PATTERNS = [
   /^(git |commit|push|pull|merge|rebase|checkout|branch|stash|tag|log|diff|status)/i,
   /^(ls|cd|pwd|cat|head|tail|mv|cp|rm |mkdir|touch|chmod|find|grep|sed|awk)/i,
   /^(npm |yarn |pnpm |bun |npx |node |deno |cargo |pip |go |make)/i,
-  /^(exit|quit|bye|thanks|thank|ok|yes|no|y|n)$/i,
+  /^(docker (run|build|pull|push|compose|exec|stop|rm|ps|images|logs) |kubectl (get|apply|delete|describe|logs) |terraform (plan|apply|init|destroy) |python \S+\.py|ruby \S+\.rb)/i,
+  /^(exit|quit|bye|thanks|thank|ok|yes|no|y|n|sure|sounds good|go ahead)$/i,
   /^\/\w/,
   // slash commands
-  /^\.\//
+  /^\.\//,
   // dot commands
+  // Korean passthrough commands
+  /^(커밋|푸시|풀|머지|체크아웃|빌드|테스트 돌려|배포해|실행해)$/i
 ];
 var SOLO_PATTERNS = [
   /fix (a |the |this )?(typo|bug|error|issue|warning)/i,
+  /(버그|에러|오류|타입).*(수정|고쳐|잡아|fix)/i,
+  /(수정|고쳐|잡아).*(버그|에러|오류|타입)/i,
   /rename|delete|remove|add (a |the )?comment/i,
+  /(이름|변수).*(바꿔|변경|수정)/i,
   /update (the |a )?(version|readme|docs|changelog)/i,
-  /format|lint|prettier|eslint/i
+  /(버전|readme|문서).*(업데이트|올려|수정)/i,
+  /format|lint|prettier|eslint/i,
+  /최적화해|정리해|깔끔하게/i
 ];
 function classifyWeight(task) {
   for (const pattern of PASSTHROUGH_PATTERNS) {
@@ -1495,11 +1503,14 @@ var DOMAIN_TO_AGENT = {
 };
 function splitTasks(task) {
   if (task.includes("|")) {
-    return task.split("|").map((t) => t.trim()).filter(Boolean);
+    const parts = task.split("|").map((t) => t.trim()).filter(Boolean);
+    const looksLikeTasks = parts.length >= 2 && parts.filter((p) => p.length > 1).length >= 2;
+    if (looksLikeTasks) return parts;
   }
-  const conjunctionPattern = /\band then\b|그리고\s|(?<=[가-힣])고\s|하고$|다음에\s|그다음\s|して|してから/i;
+  const conjunctionPattern = /\band then\b|하고\s|다음에\s|그다음\s|してから/i;
   if (conjunctionPattern.test(task)) {
-    return task.split(conjunctionPattern).map((t) => t.trim()).filter(Boolean);
+    const parts = task.split(conjunctionPattern).map((t) => t.trim()).filter(Boolean);
+    if (parts.length >= 2 && parts.every((p) => p.length > 5)) return parts;
   }
   const numberedMatch = task.match(/\d+\.\s+.+?(?=\s+\d+\.|$)/g);
   if (numberedMatch && numberedMatch.length > 1) {
