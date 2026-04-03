@@ -35,4 +35,18 @@ if [ -f "$CACHE" ]; then
   fi
 fi
 
+# Write session summary for next SessionStart
+SUMMARY_FILE=".bestwork/state/last-session.md"
+if [ -d ".bestwork/state" ]; then
+  DIFF_STAT=$(git diff --stat HEAD~1 2>/dev/null | tail -1)
+  SESSION_INFO=$(echo "$INPUT" | jq -r '"Session: " + (.session_id // "unknown")' 2>/dev/null)
+
+  cat > "$SUMMARY_FILE" << SUMMARY
+# Last Session Summary
+**Date**: $(date -u +%Y-%m-%dT%H:%M:%SZ)
+**Changes**: ${DIFF_STAT:-no git changes}
+**Session**: ${SESSION_INFO:-unknown}
+SUMMARY
+fi
+
 echo '{}'

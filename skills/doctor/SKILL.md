@@ -149,9 +149,37 @@ else
 fi
 ```
 
-### 8c. Webhook Validation
+### 8c. Config Validation
 
-If `~/.bestwork/config.json` exists and has webhook URLs, verify they look like valid URLs.
+Run bestwork's built-in config validator against both global and project configs. This checks field types, webhook URL formats, valid modes, and agent list types.
+
+```bash
+# Validate global config
+CONFIG="$HOME/.bestwork/config.json"
+if [ -f "$CONFIG" ]; then
+  node -e "
+    const { validateConfig, formatConfigErrors } = require('$(npm root -g)/bestwork-agent/dist/config-validator.js');
+    const config = JSON.parse(require('fs').readFileSync('$CONFIG', 'utf-8'));
+    const errors = validateConfig(config);
+    if (errors.length > 0) { console.log('WARN: global config issues:\\n' + formatConfigErrors(errors)); }
+    else { console.log('PASS: global config valid'); }
+  " 2>/dev/null || echo "INFO: could not run config validator (expected in plugin mode)"
+fi
+
+# Validate project config
+PROJECT_CONFIG=".bestwork/config.json"
+if [ -f "$PROJECT_CONFIG" ]; then
+  node -e "
+    const { validateConfig, formatConfigErrors } = require('$(npm root -g)/bestwork-agent/dist/config-validator.js');
+    const config = JSON.parse(require('fs').readFileSync('$PROJECT_CONFIG', 'utf-8'));
+    const errors = validateConfig(config);
+    if (errors.length > 0) { console.log('WARN: project config issues:\\n' + formatConfigErrors(errors)); }
+    else { console.log('PASS: project config valid'); }
+  " 2>/dev/null || echo "INFO: could not run config validator (expected in plugin mode)"
+fi
+```
+
+If the validator module is not accessible (plugin install mode), fall back to basic webhook URL checks:
 
 ```bash
 CONFIG="$HOME/.bestwork/config.json"
@@ -202,6 +230,7 @@ Print results as:
   git hooks:     {PASS|WARN}
   bw prompts:    {PASS|WARN} ({N} missing files, {N} bad frontmatter)
   bw hud cache:  {PASS|WARN} ({details})
+  bw config:     {PASS|WARN} ({N} validation errors)
   bw webhooks:   {PASS|WARN} ({details})
   bw hooks.json: {PASS|WARN} ({N} missing scripts)
   platform:      {PASS|WARN} ({details})

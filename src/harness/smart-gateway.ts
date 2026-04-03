@@ -12,7 +12,8 @@
 
 import { classifyIntent, buildExecutionPlan, formatPlan, type ExecutionMode, type TaskAllocation } from "./orchestrator.js";
 import { TEAM_PRESETS } from "./org.js";
-import { loadProjectConfig, type ProjectConfig } from "./notify.js";
+import { loadProjectConfig, loadMergedConfig, type ProjectConfig } from "./notify.js";
+import { validateConfig, formatConfigErrors } from "./config-validator.js";
 import { appendFileSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
@@ -194,6 +195,15 @@ const SKILL_ROUTES: Array<{ patterns: RegExp[]; skill: string; reason: string; h
   },
 ];
 
+function levenshtein(a: string, b: string): number {
+  const m = a.length, n = b.length;
+  const dp = Array.from({length: m + 1}, (_, i) => Array(n + 1).fill(0).map((_, j) => i === 0 ? j : j === 0 ? i : 0));
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++)
+      dp[i][j] = a[i - 1] === b[j - 1] ? dp[i - 1][j - 1] : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+  return dp[m][n];
+}
+
 function modeToTeam(mode: ExecutionMode): string | null {
   switch (mode) {
     case "trio":
@@ -257,6 +267,20 @@ async function main() {
     }
   }
 
+  // Tier 0.5: Fuzzy match — suggest correct command for typos
+  const typed = prompt.trimStart().split(/\s/)[0];
+  if (typed.startsWith("./")) {
+    const allCommands = [...SLASH_PREFIXES, ...SKILL_ROUTES.map(r => `./${r.skill}`)];
+    const closest = allCommands.reduce((best, cmd) => {
+      const d = levenshtein(typed, cmd);
+      return d < best.d ? { cmd, d } : best;
+    }, { cmd: "", d: Infinity });
+    if (closest.d > 0 && closest.d <= 2) {
+      output(`[BW] did you mean ${closest.cmd}? (typed ${typed})`);
+      return;
+    }
+  }
+
   // Tier 1: Skill routing — check if prompt matches a BW skill
   const lower = prompt.toLowerCase();
   for (const route of SKILL_ROUTES) {
@@ -290,10 +314,15 @@ async function main() {
     }
   }
 
-  // Load project-level config (merged with global)
+  // Load project-level config (merged with global) and validate
   let projectConfig: ProjectConfig | undefined;
   try {
-    projectConfig = await loadProjectConfig();
+    const merged = await loadMergedConfig();
+    const configErrors = validateConfig(merged);
+    if (configErrors.length > 0) {
+      log(`[BW config] validation warnings:\n${formatConfigErrors(configErrors)}`);
+    }
+    projectConfig = merged.project;
   } catch {
     // No config available — proceed without
   }
