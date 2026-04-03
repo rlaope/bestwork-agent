@@ -1,5 +1,5 @@
 ---
-name: ralph
+name: deliver
 description: Persistent completion mode — tasks must finish fully with verify/fix loops until done
 ---
 
@@ -8,7 +8,7 @@ When this skill is invoked, you MUST follow this exact output sequence.
 ## Step 1: Header (print IMMEDIATELY)
 
 ```
-[BW] ralph mode — persistent completion, no task left behind...
+[BW] deliver mode — persistent completion, no task left behind...
 ```
 
 ## Step 2: Task registration
@@ -16,7 +16,7 @@ When this skill is invoked, you MUST follow this exact output sequence.
 Break the user's request into discrete completion targets. Each target has a clear done-condition.
 
 ```
-[BW] ralph targets:
+[BW] deliver targets:
   [ ] 1. {target} — done when: {concrete condition}
   [ ] 2. {target} — done when: {concrete condition}
   [ ] 3. {target} — done when: {concrete condition}
@@ -27,14 +27,14 @@ Break the user's request into discrete completion targets. Each target has a cle
 For EACH target, execute in a loop until the done-condition is met:
 
 ```
-[BW] ralph: working on target 1...
+[BW] deliver: working on target 1...
 [BW] ▶ bestwork:{agent} implementing target 1
 ```
 
 After implementation, VERIFY the done-condition:
 
 ```
-[BW] ralph: verifying target 1...
+[BW] deliver: verifying target 1...
 ```
 
 Verification must use concrete checks:
@@ -51,7 +51,7 @@ If verification passes:
 If verification fails:
 ```
 [BW] ✗ target 1 failed verification: {reason}
-[BW] ↻ ralph: fixing target 1 (attempt 2)...
+[BW] ↻ deliver: fixing target 1 (attempt 2)...
 ```
 
 Fix the specific issue, then re-verify. Repeat until done.
@@ -60,7 +60,7 @@ Fix the specific issue, then re-verify. Repeat until done.
 
 After each target completes or fails, show progress:
 ```
-[BW] ralph progress:
+[BW] deliver progress:
   [✓] 1. {target}
   [→] 2. {target} (attempt 3)
   [ ] 3. {target}
@@ -70,29 +70,29 @@ After each target completes or fails, show progress:
 
 If a single target fails verification 5 times:
 ```
-[BW] ralph: target 2 stuck after 5 attempts
+[BW] deliver: target 2 stuck after 5 attempts
 [BW]   last failure: {description}
 [BW]   attempted fixes: {list}
 [BW]   options:
     a) skip and continue (mark as incomplete)
     b) simplify the approach
-    c) halt ralph mode
+    c) halt deliver mode
 ```
 
-Wait for user input. This is the ONLY time ralph asks for input.
+Wait for user input. This is the ONLY time deliver asks for input.
 
 ## Step 6: Completion
 
 ```
 [BW] ═══════════════════════════════════
-[BW] ralph complete: {N}/{M} targets done, {K} total attempts
+[BW] deliver complete: {N}/{M} targets done, {K} total attempts
 [BW]   {list completed targets}
 [BW] ═══════════════════════════════════
 ```
 
 ## State persistence
 
-Save ralph state to `.bestwork/state/ralph.json`:
+Save deliver state to `.bestwork/state/deliver.json`:
 ```json
 {
   "created": "<ISO timestamp>",
@@ -104,7 +104,7 @@ Save ralph state to `.bestwork/state/ralph.json`:
 }
 ```
 
-Resume with `./ralph` — picks up incomplete targets.
+Resume with `./deliver` — picks up incomplete targets.
 
 ## Rules
 
@@ -115,4 +115,4 @@ Resume with `./ralph` — picks up incomplete targets.
 - Each verify/fix cycle should attempt a DIFFERENT fix strategy (not the same thing repeatedly)
 - Agent selection: pick the best-fit tech specialist per target, switch agents on escalation
 - Write meeting log to `.bestwork/state/meeting.jsonl` with attempt tracking
-- ralph does NOT use PM or critic agents — the verify loop replaces them
+- deliver does NOT use PM or critic agents — the verify loop replaces them

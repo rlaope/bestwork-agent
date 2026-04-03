@@ -1,5 +1,5 @@
 ---
-name: ultrawork
+name: blitz
 description: Maximum parallelism burst — all tasks execute simultaneously with no coordination overhead
 ---
 
@@ -8,17 +8,17 @@ When this skill is invoked, you MUST follow this exact output sequence.
 ## Step 1: Header (print IMMEDIATELY)
 
 ```
-[BW] ultrawork — maximum parallelism, zero overhead...
+[BW] blitz — maximum parallelism, zero overhead...
 ```
 
 ## Step 2: Task decomposition (aggressive splitting)
 
-Split the user's request into the MAXIMUM number of independent sub-tasks. Ultrawork splits more aggressively than trio:
+Split the user's request into the MAXIMUM number of independent sub-tasks. Blitz splits more aggressively than trio:
 - Trio: 1-5 tasks with agents per task
-- Ultrawork: up to 10 tasks, 1 agent per task, all parallel
+- Blitz: up to 10 tasks, 1 agent per task, all parallel
 
 ```
-[BW] ultrawork: {N} parallel tasks identified
+[BW] blitz: {N} parallel tasks identified
   1. "{task}" → bestwork:{agent}
   2. "{task}" → bestwork:{agent}
   ...
@@ -31,11 +31,11 @@ Split the user's request into the MAXIMUM number of independent sub-tasks. Ultra
 Print each launch line, then spawn immediately. Do NOT wait between spawns:
 
 ```
-[BW] ▶ ultrawork: bestwork:{agent1} (task 1)
-[BW] ▶ ultrawork: bestwork:{agent2} (task 2)
-[BW] ▶ ultrawork: bestwork:{agent3} (task 3)
-[BW] ▶ ultrawork: bestwork:{agent4} (task 4)
-[BW] ▶ ultrawork: bestwork:{agent5} (task 5)
+[BW] ▶ blitz: bestwork:{agent1} (task 1)
+[BW] ▶ blitz: bestwork:{agent2} (task 2)
+[BW] ▶ blitz: bestwork:{agent3} (task 3)
+[BW] ▶ blitz: bestwork:{agent4} (task 4)
+[BW] ▶ blitz: bestwork:{agent5} (task 5)
 ```
 
 ALL agents use `run_in_background: true`. Every agent runs independently with no cross-communication.
@@ -54,7 +54,7 @@ ALL agents use `run_in_background: true`. Every agent runs independently with no
 
 If multiple agents edited the same file, detect and resolve:
 ```
-[BW] ultrawork: conflict detected in {file}
+[BW] blitz: conflict detected in {file}
 [BW]   task 2 wrote lines 10-20
 [BW]   task 4 wrote lines 15-25
 [BW]   resolving: merging changes (task 2 priority — completed first)
@@ -64,32 +64,32 @@ If multiple agents edited the same file, detect and resolve:
 
 Run a single verification pass over all changes:
 ```
-[BW] ultrawork verify: type check... {PASS|FAIL}
-[BW] ultrawork verify: tests... {PASS|FAIL}
+[BW] blitz verify: type check... {PASS|FAIL}
+[BW] blitz verify: tests... {PASS|FAIL}
 ```
 
-If any verify fails, fix inline (no retry loop — ultrawork is about speed).
+If any verify fails, fix inline (no retry loop — blitz is about speed).
 
 ## Step 7: Summary
 
 ```
 [BW] ═══════════════════════════════════
-[BW] ultrawork complete: {N} tasks, {M} parallel agents, {K} conflicts resolved
+[BW] blitz complete: {N} tasks, {M} parallel agents, {K} conflicts resolved
 [BW] ═══════════════════════════════════
 ```
 
-## When to use ultrawork vs trio
+## When to use blitz vs trio
 
-- **Ultrawork**: many independent changes (batch fixes, multi-file refactors, style updates, lint fixes, test additions). No coordination needed.
+- **Blitz**: many independent changes (batch fixes, multi-file refactors, style updates, lint fixes, test additions). No coordination needed.
 - **Trio**: tasks that need quality gates (PM review, critic feedback). Coordination matters.
 
 ## Rules
 
 - ONE agent per task — no PM, no critic, no lead
 - ALL agents launch simultaneously — maximum parallelism
-- NO meeting logs — ultrawork skips all ceremony
+- NO meeting logs — blitz skips all ceremony
 - NO feedback loops — if something fails, fix it once and move on
-- NO confirmation prompt — ultrawork is fire-and-forget (like autopilot)
+- NO confirmation prompt — blitz is fire-and-forget (like autopilot)
 - Conflicts resolved by completion order (first to finish wins, later merges)
 - Agent selection: tech specialists only, best-fit per task domain
 - Up to 10 parallel tasks (Claude Code agent limit)
