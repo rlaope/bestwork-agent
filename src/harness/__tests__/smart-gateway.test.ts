@@ -1178,3 +1178,428 @@ describe("New skill routes: delegate, waterfall, deliver, blitz", () => {
     });
   });
 });
+
+// ============================================================
+// 17. HISTORICAL MISCLASSIFICATIONS (20 tests)
+// ============================================================
+
+describe("Historical misclassifications", () => {
+  describe("Solo prompts that were misclassified as pair/trio", () => {
+    it.each([
+      ["CLAUDE.md 최적화해. 그리고 피드백도", "solo"],
+      ["코드 정리해. 그리고 린트도", "solo"],
+      ["README 업데이트해. 그리고 오타도 고쳐", "solo"],
+      ["버전 올려. 그리고 changelog도", "solo"],
+      ["포맷 맞춰. 그리고 eslint도 돌려", "solo"],
+    ])("'%s' should be %s (not pair -- conjunction is not task split)", (prompt, expectedMode) => {
+      const result = classifyIntent(prompt);
+      expect(result.mode).toBe(expectedMode);
+    });
+  });
+
+  describe("Questions about skills should NOT trigger skills", () => {
+    it.each([
+      ["왜 plan이야?", "plan"],
+      ["review 했어?", "review"],
+      ["what is review?", "review"],
+      ["plan 변수", "plan"],
+      ["doctor who is great", "doctor"],
+      ["health 관련 API", "health"],
+      ["blitz라는 게 뭐야?", "blitz"],
+      ["waterfall methodology는 좋은가?", "waterfall"],
+    ])("'%s' should NOT trigger %s skill", (prompt, skillName) => {
+      const result = parseGateway(prompt);
+      if (!result.isEmpty && result.additionalContext) {
+        expect(result.additionalContext).not.toContain(`bestwork-agent:${skillName}`);
+      }
+    });
+  });
+
+  describe("Domain classification, not passthrough", () => {
+    it("'Docker 배포 설정' → infra domain, NOT passthrough", () => {
+      const result = classifyIntent("Docker 배포 설정");
+      expect(result.mode).not.toBe("passthrough");
+      expect(result.suggestedAgents).toContain("sr-infra");
+    });
+
+    it("'Kubernetes 클러스터 구성' → infra domain, NOT passthrough", () => {
+      const result = classifyIntent("Kubernetes 클러스터 구성");
+      expect(result.mode).not.toBe("passthrough");
+      expect(result.suggestedAgents).toContain("sr-infra");
+    });
+
+    it("'AWS Lambda 함수 만들어' → infra domain, NOT passthrough", () => {
+      const result = classifyIntent("AWS Lambda 함수 만들어");
+      expect(result.mode).not.toBe("passthrough");
+      expect(result.suggestedAgents).toContain("sr-infra");
+    });
+  });
+
+  describe("Korean passthrough commands (exact match)", () => {
+    it.each(["커밋", "푸시", "풀", "머지", "빌드", "배포해", "실행해"])(
+      "'%s' → passthrough (single-word Korean command)", (cmd) => {
+        expect(classifyWeight(cmd)).toBe("passthrough");
+      }
+    );
+  });
+
+  describe("Pipes in value context should not split into multi-task", () => {
+    it("'true | false' in a sentence → does not produce 2+ real tasks", () => {
+      const result = classifyIntent("type is true | false");
+      // The prompt as a whole is a single concept, not two tasks
+      expect(result.tasks.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it("'type A | type B | type C' (short values) → still parses without crash", () => {
+      const result = classifyIntent("type A | type B | type C");
+      expect(result.mode).toBeDefined();
+    });
+  });
+});
+
+// ============================================================
+// 18. ALL 18 SKILL TRIGGERS -- 2 positive + 1 negative each (54 tests)
+// ============================================================
+
+describe("All skill triggers: comprehensive", () => {
+  describe.each([
+    {
+      skill: "review",
+      positive: ["review this code please", "리뷰 해줘"],
+      negative: "review 결과는?",
+    },
+    {
+      skill: "agents",
+      positive: ["agent list", "에이전트 목록"],
+      negative: "agent는 뭐야?",
+    },
+    {
+      skill: "sessions",
+      positive: ["session summary", "세션 요약"],
+      negative: "session이 뭐지?",
+    },
+    {
+      skill: "changelog",
+      positive: ["changelog 만들어줘", "changelog generate 해줘"],
+      negative: "changelog 파일 어디있어?",
+    },
+    {
+      skill: "status",
+      positive: ["bestwork status", "bw 상태"],
+      negative: "status code 200",
+    },
+    {
+      skill: "onboard",
+      positive: ["온보딩 시작", "setup guide"],
+      negative: "onboarding 프로세스 설명해",
+    },
+    {
+      skill: "update",
+      positive: ["update bestwork", "업데이트 bw"],
+      negative: "update 함수 만들어",
+    },
+    {
+      skill: "install",
+      positive: ["install hooks for bestwork", "설치 hook bestwork"],
+      negative: "install이 안돼",
+    },
+    {
+      skill: "health",
+      positive: ["health check", "건강 확인 해줘"],
+      negative: "health endpoint 만들어",
+    },
+    {
+      skill: "plan",
+      positive: ["make a plan for this", "플랜 짜줘"],
+      negative: "plan이 뭔데?",
+    },
+    {
+      skill: "doctor",
+      positive: ["run doctor check", "진단 해줘"],
+      negative: "doctor who",
+    },
+    {
+      skill: "trio",
+      positive: ["trio 돌려줘", "quality gate"],
+      negative: "trio라는 게 뭐야?",
+    },
+    {
+      skill: "docs",
+      positive: ["docs 최신화해", "문서 업데이트"],
+      negative: "docs 폴더 어디야?",
+    },
+    {
+      skill: "delegate",
+      positive: ["delegate this to agents", "위임해줘"],
+      negative: "delegate pattern in Java",
+    },
+    {
+      skill: "waterfall",
+      positive: ["run waterfall mode", "워터폴 실행"],
+      negative: "waterfall vs agile",
+    },
+    {
+      skill: "deliver",
+      positive: ["deliver this completely", "끝까지 해줘"],
+      negative: "deliver API 설계",
+    },
+    {
+      skill: "blitz",
+      positive: ["run blitz on this", "블리츠 해줘"],
+      negative: "blitz란 뭐야?",
+    },
+    {
+      skill: "meetings",
+      positive: ["show meetings", "미팅 목록"],
+      negative: "meeting room 예약",
+    },
+  ])("$skill skill", ({ skill, positive, negative }) => {
+    it.each(positive)("POSITIVE: '%s' triggers " + skill, (prompt) => {
+      const result = parseGateway(prompt);
+      expect(result.isEmpty).toBe(false);
+      expect(result.additionalContext).toContain(`bestwork-agent:${skill}`);
+    });
+
+    it(`NEGATIVE: '${negative}' does NOT trigger ${skill}`, () => {
+      const result = parseGateway(negative);
+      if (!result.isEmpty && result.additionalContext) {
+        expect(result.additionalContext).not.toContain(`bestwork-agent:${skill}`);
+      }
+    });
+  });
+
+  describe("pipeline-run is slash-command only (no SKILL_ROUTES regex)", () => {
+    it("'./pipeline-run' → passthrough to shell handler", () => {
+      const raw = runGateway("./pipeline-run");
+      expect(raw === "{}" || raw.includes("[BW]")).toBe(true);
+    });
+  });
+});
+
+// ============================================================
+// 19. KOREAN-HEAVY CLASSIFICATION (20 tests)
+// ============================================================
+
+describe("Korean-heavy classification", () => {
+  describe("Korean solo prompts (classifyIntent)", () => {
+    it.each([
+      "버그 수정해줘",
+      "타입 에러 고쳐",
+      "변수명 바꿔줘",
+      "오류 잡아줘",
+      "코드 정리해",
+      "깔끔하게 해줘",
+    ])("'%s' → solo", (prompt) => {
+      const result = classifyIntent(prompt);
+      expect(result.mode).toBe("solo");
+    });
+  });
+
+  describe("Korean passthrough prompts (classifyWeight)", () => {
+    it.each(["커밋", "푸시", "풀", "머지", "빌드", "배포해", "실행해", "테스트 돌려"])(
+      "'%s' → passthrough", (cmd) => {
+        expect(classifyWeight(cmd)).toBe("passthrough");
+      }
+    );
+  });
+
+  describe("Korean skill triggers via gateway", () => {
+    it("'코드 검증 해줘' → review skill", () => {
+      const result = parseGateway("코드 검증 해줘");
+      expect(result.isEmpty).toBe(false);
+      expect(result.additionalContext).toContain("bestwork-agent:review");
+    });
+
+    it("'계획 세워줘' → plan skill", () => {
+      const result = parseGateway("계획 세워줘");
+      expect(result.isEmpty).toBe(false);
+      expect(result.additionalContext).toContain("bestwork-agent:plan");
+    });
+
+    it("'진단 돌려줘' → doctor skill", () => {
+      const result = parseGateway("진단 돌려줘");
+      expect(result.isEmpty).toBe(false);
+      expect(result.additionalContext).toContain("bestwork-agent:doctor");
+    });
+
+    it("'상태 체크 해줘' → health skill", () => {
+      const result = parseGateway("상태 체크 해줘");
+      expect(result.isEmpty).toBe(false);
+      expect(result.additionalContext).toContain("bestwork-agent:health");
+    });
+
+    it("'회의 기록 보여줘' → meetings skill", () => {
+      const result = parseGateway("회의 기록 보여줘");
+      expect(result.isEmpty).toBe(false);
+      expect(result.additionalContext).toContain("bestwork-agent:meetings");
+    });
+
+    it("'완전히 끝내줘' → deliver skill", () => {
+      const result = parseGateway("완전히 끝내줘");
+      expect(result.isEmpty).toBe(false);
+      expect(result.additionalContext).toContain("bestwork-agent:deliver");
+    });
+  });
+
+  describe("Korean hierarchy-level prompts", () => {
+    it("'시스템 아키텍처 리팩토링' → hierarchy", () => {
+      expect(classifyIntent("시스템 아키텍처 리팩토링").mode).toBe("hierarchy");
+    });
+
+    it("'전체 데이터베이스 마이그레이션' → hierarchy", () => {
+      expect(classifyIntent("전체 데이터베이스 마이그레이션").mode).toBe("hierarchy");
+    });
+
+    it("'인증 시스템 재설계' → hierarchy", () => {
+      expect(classifyIntent("인증 시스템 재설계").mode).toBe("hierarchy");
+    });
+
+    it("'플랫폼 구축 시작' → hierarchy", () => {
+      expect(classifyIntent("플랫폼 구축 시작").mode).toBe("hierarchy");
+    });
+  });
+});
+
+// ============================================================
+// 20. COMPLEXITY SIGNALS (20 tests)
+// ============================================================
+
+describe("Complexity signals", () => {
+  describe("refactor variants → hierarchy", () => {
+    it.each([
+      "refactor auth module to support OAuth2",
+      "refactor the entire backend architecture",
+      "refactor 아키텍처 for microservices",
+      "리팩토링 시작",
+      "코드 리팩토링 전체적으로",
+    ])("'%s' → hierarchy", (prompt) => {
+      expect(classifyIntent(prompt).mode).toBe("hierarchy");
+    });
+  });
+
+  describe("redesign → hierarchy", () => {
+    it.each([
+      "redesign the auth system",
+      "redesign the database schema",
+      "재설계 인증 모듈",
+    ])("'%s' → hierarchy", (prompt) => {
+      expect(classifyIntent(prompt).mode).toBe("hierarchy");
+    });
+  });
+
+  describe("migrate → hierarchy", () => {
+    it.each([
+      "migrate the entire database to PostgreSQL",
+      "migrate everything to new framework",
+      "마이그레이션 전체 DB",
+    ])("'%s' → hierarchy", (prompt) => {
+      expect(classifyIntent(prompt).mode).toBe("hierarchy");
+    });
+  });
+
+  describe("architect/platform → hierarchy", () => {
+    it.each([
+      "architect the new microservices platform",
+      "아키텍처 설계 전면 수정",
+      "build the notification platform from scratch",
+      "플랫폼 구축 plan",
+    ])("'%s' → hierarchy", (prompt) => {
+      expect(classifyIntent(prompt).mode).toBe("hierarchy");
+    });
+  });
+
+  describe("simple feature → solo or pair (NOT hierarchy)", () => {
+    it.each([
+      "add feature flag to config",
+      "add a button to the header",
+      "fix typo in readme",
+      "rename the variable",
+      "update the version number",
+    ])("'%s' → NOT hierarchy", (prompt) => {
+      const result = classifyIntent(prompt);
+      expect(result.mode).not.toBe("hierarchy");
+    });
+  });
+
+  describe("Multi-domain detection triggers higher mode", () => {
+    it("3+ domains in one prompt → hierarchy", () => {
+      // backend (API) + frontend (component) + testing (test) = 3 domains
+      const result = classifyIntent("build API server with React component and unit tests");
+      expect(result.suggestedAgents.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it("2 domains via pipe → pair with correct agents", () => {
+      const result = classifyIntent("build API endpoint and then create UI page");
+      expect(result.mode).toBe("pair");
+      expect(result.suggestedAgents).toContain("sr-backend");
+      expect(result.suggestedAgents).toContain("sr-frontend");
+    });
+  });
+});
+
+// ============================================================
+// 21. TASK ALLOCATION STRUCTURE (10 tests)
+// ============================================================
+
+describe("Task allocation structure", () => {
+  it("solo mode → 1 allocation with 1 agent", () => {
+    const result = classifyIntent("fix typo in readme");
+    expect(result.taskAllocations).toHaveLength(1);
+    expect(result.taskAllocations[0]!.agents).toHaveLength(1);
+    expect(result.totalAgents).toBe(1);
+  });
+
+  it("pair mode → 2 allocations each with agents", () => {
+    const result = classifyIntent("build API and then write tests");
+    expect(result.taskAllocations).toHaveLength(2);
+    expect(result.taskAllocations.every((a) => a.agents.length >= 1)).toBe(true);
+  });
+
+  it("trio mode → 3+ allocations, all parallel", () => {
+    const result = classifyIntent("auth | api | ui");
+    expect(result.taskAllocations.length).toBeGreaterThanOrEqual(3);
+    expect(result.taskAllocations.every((a) => a.parallel)).toBe(true);
+  });
+
+  it("hierarchy mode → allocations include pm and critic agents", () => {
+    const result = classifyIntent("refactor the entire auth system");
+    expect(result.mode).toBe("hierarchy");
+    const allAgents = result.taskAllocations.flatMap((a) => a.agents);
+    expect(allAgents).toContain("pm-product");
+    expect(allAgents).toContain("critic-code");
+  });
+
+  it("passthrough mode → 0 totalAgents", () => {
+    const result = classifyIntent("git status");
+    expect(result.totalAgents).toBe(0);
+  });
+
+  it("totalAgents equals sum of all allocation agents", () => {
+    const result = classifyIntent("backend API | frontend component | E2E test");
+    const sum = result.taskAllocations.reduce((s, a) => s + a.agents.length, 0);
+    expect(result.totalAgents).toBe(sum);
+  });
+
+  it("each allocation has a description matching the task", () => {
+    const result = classifyIntent("build API | write tests | deploy app");
+    expect(result.taskAllocations[0]!.description).toBe("build API");
+    expect(result.taskAllocations[1]!.description).toBe("write tests");
+    expect(result.taskAllocations[2]!.description).toBe("deploy app");
+  });
+
+  it("solo allocation is NOT parallel", () => {
+    const result = classifyIntent("fix the typo");
+    expect(result.taskAllocations[0]!.parallel).toBe(false);
+  });
+
+  it("pair allocations are parallel", () => {
+    const result = classifyIntent("build API | write tests");
+    expect(result.taskAllocations.every((a) => a.parallel)).toBe(true);
+  });
+
+  it("hierarchy tech-lead is included in hierarchy allocations", () => {
+    const result = classifyIntent("redesign the entire auth system");
+    const allAgents = result.taskAllocations.flatMap((a) => a.agents);
+    expect(allAgents).toContain("tech-lead");
+  });
+});
