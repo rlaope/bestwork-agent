@@ -40,6 +40,12 @@ Print each launch line, then spawn immediately. Do NOT wait between spawns:
 
 ALL agents use `run_in_background: true`. Every agent runs independently with no cross-communication.
 
+For EACH agent, call TaskCreate so the user sees live spinners:
+```
+TaskCreate: subject="bestwork:{agent} (task N)", description="{task}", activeForm="bestwork:{agent} working..."
+```
+When done, TaskUpdate to completed.
+
 ## Step 4: Results (print as each completes, in completion order)
 
 ```

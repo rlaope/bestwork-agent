@@ -35,13 +35,15 @@ For single task:
 
 For multiple tasks:
 - Spawn all agents in parallel using `run_in_background: true`
+- For EACH agent, call TaskCreate for live progress spinner:
+  `TaskCreate: subject="bestwork:{agent} (task N)", activeForm="bestwork:{agent} working..."`
 - Print each launch:
 ```
 [BW] ▶ delegate: bestwork:{agent} (task 1)
 [BW] ▶ delegate: bestwork:{agent} (task 2)
 ```
 
-## Step 4: Results (print as each completes)
+## Step 4: Results (print as each completes, TaskUpdate to completed)
 
 ```
 [BW] ✓ bestwork:{agent} done (task 1) — {summary}

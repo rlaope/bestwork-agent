@@ -35,9 +35,20 @@ When spawning agents, print a `[BW]` line for EVERY SINGLE agent spawn. This is 
 
 Print each `[BW] ▶ launching` line IMMEDIATELY before each Agent tool call. Do NOT batch them — print one, spawn one, print next, spawn next. This creates the "rapid fire" visual effect.
 
+IMPORTANT: For EACH agent you spawn, ALSO call TaskCreate so the user sees a live progress spinner:
+```
+TaskCreate: subject="bestwork:tech-auth (task 1)", description="implementing auth endpoint", activeForm="bestwork:tech-auth working..."
+TaskCreate: subject="bestwork:critic-security (task 1)", description="reviewing security", activeForm="bestwork:critic-security reviewing..."
+TaskCreate: subject="bestwork:tech-testing (task 2)", description="writing tests", activeForm="bestwork:tech-testing writing..."
+```
+
+This shows live spinners under the prompt for each running agent. When an agent completes, update the task with TaskUpdate (status: completed).
+
 ## Step 4: Results (print as each agent completes)
 
-As each background agent completes, print:
+As each background agent completes:
+1. Call TaskUpdate to mark the task as completed
+2. Print the result line:
 ```
 [BW] ✓ bestwork:tech-auth done (task 1) — implemented auth endpoint
 [BW] ✓ bestwork:critic-security done (task 1) — APPROVE, no issues

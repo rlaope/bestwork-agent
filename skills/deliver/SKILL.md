@@ -24,7 +24,11 @@ Break the user's request into discrete completion targets. Each target has a cle
 
 ## Step 3: Execute with verify/fix loops
 
-For EACH target, execute in a loop until the done-condition is met:
+For EACH target, call TaskCreate for live progress:
+`TaskCreate: subject="target N: {target}", activeForm="delivering target N..."`
+Update with TaskUpdate as targets complete.
+
+Execute in a loop until the done-condition is met:
 
 ```
 [BW] deliver: working on target 1...

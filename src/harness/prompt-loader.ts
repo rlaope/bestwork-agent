@@ -22,25 +22,75 @@ export async function loadPrompt(role: string, name: string): Promise<string> {
   return content.trim();
 }
 
-export async function loadPromptMeta(
-  role: string,
-  name: string
-): Promise<{
+export interface PromptMeta {
   id: string;
   role: string;
   name: string;
   specialty: string;
+  costTier: "low" | "medium" | "high";
+  useWhen: string[];
+  avoidWhen: string[];
   prompt: string;
-}> {
+}
+
+/**
+ * Parse a YAML list from frontmatter lines starting after a key like "useWhen:".
+ * Supports both inline `useWhen: ["a", "b"]` and multi-line `- "a"\n- "b"` forms.
+ */
+function parseYamlList(lines: string[], startIdx: number): string[] {
+  const firstLine = lines[startIdx];
+  if (!firstLine) return [];
+  const afterColon = firstLine.split(":").slice(1).join(":").trim();
+
+  // Inline array: useWhen: ["a", "b"]
+  if (afterColon.startsWith("[")) {
+    try {
+      return JSON.parse(afterColon);
+    } catch {
+      return [];
+    }
+  }
+
+  // Multi-line list items
+  const items: string[] = [];
+  for (let i = startIdx + 1; i < lines.length; i++) {
+    const line = lines[i]!.trim();
+    if (line.startsWith("- ")) {
+      items.push(line.slice(2).replace(/^["']|["']$/g, "").trim());
+    } else {
+      break;
+    }
+  }
+  return items;
+}
+
+export async function loadPromptMeta(
+  role: string,
+  name: string
+): Promise<PromptMeta> {
   const filePath = join(getPromptsDir(), role, `${name}.md`);
   const content = await readFile(filePath, "utf-8");
   const parts = content.split("---");
 
   const meta: Record<string, string> = {};
+  let useWhen: string[] = [];
+  let avoidWhen: string[] = [];
+
   if (parts.length >= 3) {
-    for (const line of parts[1].trim().split("\n")) {
+    const fmLines = parts[1]!.trim().split("\n");
+    for (let i = 0; i < fmLines.length; i++) {
+      const line = fmLines[i]!;
       const [key, ...vals] = line.split(":");
-      if (key && vals.length) meta[key.trim()] = vals.join(":").trim();
+      const k = key?.trim();
+      if (!k) continue;
+
+      if (k === "useWhen") {
+        useWhen = parseYamlList(fmLines, i);
+      } else if (k === "avoidWhen") {
+        avoidWhen = parseYamlList(fmLines, i);
+      } else if (vals.length && !line.trim().startsWith("-")) {
+        meta[k] = vals.join(":").trim();
+      }
     }
   }
 
@@ -49,6 +99,9 @@ export async function loadPromptMeta(
     role: meta.role ?? role,
     name: meta.name ?? "",
     specialty: meta.specialty ?? "",
+    costTier: (meta.costTier as "low" | "medium" | "high") ?? "medium",
+    useWhen,
+    avoidWhen,
     prompt:
       parts.length >= 3 ? parts.slice(2).join("---").trim() : content.trim(),
   };

@@ -7,7 +7,7 @@ import { TECH_AGENTS } from "./tech/index.js";
 import { PM_AGENTS } from "./pm/index.js";
 import { CRITIC_AGENTS } from "./critic/index.js";
 import type { AgentProfile } from "./types.js";
-import { loadPrompt } from "../prompt-loader.js";
+import { loadPrompt, loadPromptMeta } from "../prompt-loader.js";
 
 export const ALL_AGENTS: AgentProfile[] = [
   ...TECH_AGENTS,
@@ -31,8 +31,14 @@ export async function getAgentWithPrompt(id: string): Promise<AgentProfile | nul
 
   try {
     const name = agent.id.replace(`${agent.role}-`, "");
-    const prompt = await loadPrompt(agent.role, name);
-    return { ...agent, systemPrompt: prompt };
+    const meta = await loadPromptMeta(agent.role, name);
+    return {
+      ...agent,
+      systemPrompt: meta.prompt,
+      costTier: meta.costTier,
+      useWhen: meta.useWhen,
+      avoidWhen: meta.avoidWhen,
+    };
   } catch {
     return agent; // fallback to hardcoded
   }

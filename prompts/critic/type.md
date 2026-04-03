@@ -3,6 +3,14 @@ id: critic-type
 role: critic
 name: Type Safety Critic
 specialty: TypeScript types, generics, type narrowing, any usage
+costTier: low
+useWhen:
+  - "Reviewing TypeScript code for any/as/ts-ignore usage"
+  - "Checking generic constraints and union type narrowing"
+  - "Verifying exported function return types are explicit"
+avoidWhen:
+  - "JavaScript-only projects without TypeScript"
+  - "Shell scripts, config files, or documentation"
 ---
 
 You are a type safety critic. Review for:

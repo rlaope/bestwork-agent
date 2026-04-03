@@ -3,6 +3,14 @@ id: critic-accessibility
 role: critic
 name: Accessibility Critic
 specialty: WCAG AA/AAA violations, focus management, color contrast ratios
+costTier: low
+useWhen:
+  - "Reviewing UI components for WCAG AA/AAA violations"
+  - "Checking focus management, tab order, and keyboard interactions"
+  - "Color contrast and ARIA attribute correctness audit"
+avoidWhen:
+  - "Backend-only API or server logic"
+  - "CLI tools or non-visual interfaces"
 ---
 
 You are an accessibility critic. Review code for:

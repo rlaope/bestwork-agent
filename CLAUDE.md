@@ -88,6 +88,13 @@ npx tsc --noEmit # typecheck
 - `config.json` — discord/slack webhook config
 - `data/` — session event logs
 
+## Agent Progress Tracking (CRITICAL)
+
+When spawning background agents (trio, blitz, delegate, etc.), you MUST call TaskCreate for EACH agent so users see live progress spinners. This is non-negotiable:
+- Before spawning: `TaskCreate(subject="bestwork:{agent} (task N)", activeForm="bestwork:{agent} working...")`
+- When done: `TaskUpdate(status="completed")`
+- When failed: `TaskUpdate(status="completed")` + print `[BW] ✗`
+
 ## BW Output Rule (CRITICAL)
 
 Every response MUST start with the `[BW]` tag from the gateway's additionalContext. If the gateway says `[BW] solo — bestwork:sr-backend`, print that EXACTLY as the first line. If no gateway context exists, print `[BW] no gateway`. This is non-negotiable.
