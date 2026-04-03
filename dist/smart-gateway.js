@@ -1960,12 +1960,23 @@ function formatConfigErrors(errors) {
 }
 
 // src/harness/smart-gateway.ts
-import { appendFileSync, mkdirSync } from "fs";
+import { appendFileSync, mkdirSync, readFileSync, existsSync } from "fs";
 import { join as join3 } from "path";
 import { homedir as homedir2 } from "os";
 import { execSync } from "child_process";
 var BW_DIR = join3(homedir2(), ".bestwork");
 var PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT || "";
+function loadProjectContext() {
+  try {
+    const ctxPath = join3(process.cwd(), ".bestwork", "context", "project-summary.md");
+    if (existsSync(ctxPath)) {
+      const content = readFileSync(ctxPath, "utf-8").trim();
+      if (content) return content;
+    }
+  } catch {
+  }
+  return "";
+}
 var SLASH_PREFIXES = [
   "./bw-install",
   "./discord",
@@ -2295,9 +2306,14 @@ ${formatConfigErrors(configErrors)}`);
   }
   if (intent.mode === "solo") {
     const agent = intent.suggestedAgents[0] || "tech-fullstack";
+    const ctx2 = loadProjectContext();
+    const ctxBlock2 = ctx2 ? `
+
+---
+${ctx2}` : "";
     output(`[BW] solo \u2014 bestwork:${agent}
 
-Classification: ${intent.reasoning}`);
+Classification: ${intent.reasoning}${ctxBlock2}`);
     return;
   }
   const allocations = intent.taskAllocations;
@@ -2306,6 +2322,11 @@ Classification: ${intent.reasoning}`);
   const taskLines = allocations.map((a, i) => {
     return `  ${i + 1}. "${a.description}" \u2192 [${a.agents.join(", ")}]${a.parallel ? " (parallel)" : ""}`;
   }).join("\n");
+  const ctx = loadProjectContext();
+  const ctxBlock = ctx ? `
+
+---
+${ctx}` : "";
   output(
     `[BW] ${taskCount} task(s), ${totalAgents} agents (bestwork:${agentList})
 
@@ -2313,7 +2334,7 @@ Plan:
 ${taskLines}
 
   Total: ${taskCount} parallel task(s), ${totalAgents} agent(s)
-  Reasoning: ${intent.reasoning}`
+  Reasoning: ${intent.reasoning}${ctxBlock}`
   );
 }
 main().catch(() => process.stdout.write("{}\n"));
