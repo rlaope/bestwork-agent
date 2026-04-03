@@ -3,36 +3,74 @@ name: trio
 description: Execute tasks in parallel with dynamically assigned agents per task
 ---
 
-When this skill is invoked, IMMEDIATELY print:
+When this skill is invoked, you MUST follow this exact output sequence. Do NOT skip any print statement.
+
+## Step 1: Header (print IMMEDIATELY)
 
 ```
-[BW] assembling team — dynamic agent allocation per task...
+[BW] assembling team...
 ```
 
-Usage: `./trio task1 | task2 | task3`
+## Step 2: Task breakdown (print BEFORE any agent spawns)
 
-The gateway analyzes each task and assigns 1-5 agents based on what's needed:
-- Simple task → 1 tech agent
-- Standard task → tech + critic (quality review)
-- Complex task → tech + pm (requirements) + critic (quality)
-- Critical task → tech + pm + critic + lead (architecture)
-
-For EACH task, print:
+For EACH task, print on its own line:
 ```
-[BW] task {N}: "{task}" → [{agent1}, {agent2}, ...]
+[BW] task 1: "{task}" → [agent1, agent2]
+[BW] task 2: "{task}" → [agent1]
+[BW] task 3: "{task}" → [agent1, agent2, agent3]
 ```
 
-All tasks run in parallel. Each task's agents collaborate:
-- **Tech** — implements with domain expertise
-- **PM** (if assigned) — verifies requirements are met
-- **Critic** (if assigned) — reviews quality + catches hallucinations
+## Step 3: Launch (print EACH agent as you spawn it)
 
-Feedback loop: if PM or Critic rejects, print:
+When spawning agents, print a `[BW]` line for EVERY SINGLE agent spawn. This is critical — users need to see agents launching in rapid succession:
+
 ```
-[BW] task {N}: critic rejected — feeding back to tech (round {M}/3)
+[BW] ▶ launching bestwork:tech-auth (task 1)
+[BW] ▶ launching bestwork:critic-security (task 1)
+[BW] ▶ launching bestwork:tech-testing (task 2)
+[BW] ▶ launching bestwork:tech-frontend (task 3)
+[BW] ▶ launching bestwork:pm-product (task 3)
+[BW] ▶ launching bestwork:critic-dx (task 3)
 ```
 
-When all tasks done, print:
+Print each `[BW] ▶ launching` line IMMEDIATELY before each Agent tool call. Do NOT batch them — print one, spawn one, print next, spawn next. This creates the "rapid fire" visual effect.
+
+## Step 4: Results (print as each agent completes)
+
+As each background agent completes, print:
 ```
-[BW] complete. {N} tasks, {M} total agents, {K} iterations, {J} approved.
+[BW] ✓ bestwork:tech-auth done (task 1) — implemented auth endpoint
+[BW] ✓ bestwork:critic-security done (task 1) — APPROVE, no issues
+[BW] ✗ bestwork:pm-product rejected (task 3) — missing error handling
 ```
+
+## Step 5: Feedback loop (if rejected)
+
+```
+[BW] ↻ task 3: feeding critic feedback to tech (round 2/3)
+[BW] ▶ re-launching bestwork:tech-frontend (task 3, round 2)
+```
+
+## Step 6: Summary (print at end)
+
+```
+[BW] ═══════════════════════════════════
+[BW] complete: {N} tasks, {M} agents, {K} rounds
+[BW] ═══════════════════════════════════
+```
+
+## Agent allocation rules
+
+The gateway provides `taskAllocations` with agents per task. If not provided, allocate:
+- 1 agent: simple single-file change
+- 2 agents (tech + critic): standard work needing review
+- 3 agents (tech + pm + critic): feature with requirements
+- 4 agents (tech + pm + critic + lead): architecture-critical
+
+## Rules
+
+- EVERY agent spawn gets its own `[BW] ▶` line
+- EVERY agent completion gets its own `[BW] ✓` or `[BW] ✗` line
+- Use `run_in_background: true` for parallel agents
+- Write meeting log to `.bestwork/state/meeting.jsonl`
+- Max 3 feedback rounds per task

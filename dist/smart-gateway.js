@@ -1911,8 +1911,13 @@ You MUST use AskUserQuestion tool to let the user confirm:
   3. label: "${soloLabel}", description: "Skip team allocation, execute as single agent"
 
 After user picks:
-- "Confirm plan" \u2192 execute each task with its assigned agents in parallel. Print [BW] ${intent.mode} \u2014 bestwork:{agents} as first line.
-- "Adjust" \u2192 ask what to change (add/remove agents, split/merge tasks), then re-present the plan.
+- "Confirm plan" \u2192 For EACH agent spawn, print a [BW] line BEFORE the Agent tool call:
+  [BW] \u25B6 launching bestwork:{agent} (task {N})
+  Then spawn the agent. Print each launch line individually, not batched.
+  After all agents complete, print results:
+  [BW] \u2713 bestwork:{agent} done (task {N}) \u2014 {summary}
+  Finally: [BW] complete: {N} tasks, {M} agents
+- "Adjust" \u2192 ask what to change, re-present the plan.
 - "Solo instead" \u2192 proceed with single agent (bestwork:${intent.suggestedAgents[0] || "sr-fullstack"}).`
   );
 }
