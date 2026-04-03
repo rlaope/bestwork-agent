@@ -2003,7 +2003,9 @@ var SLASH_PREFIXES = [
   "./delegate",
   "./waterfall",
   "./deliver",
-  "./blitz"
+  "./blitz",
+  // Meeting history
+  "./meetings"
 ];
 var SKILL_ROUTES = [
   {
@@ -2157,6 +2159,18 @@ var SKILL_ROUTES = [
     ],
     skill: "blitz",
     reason: "maximum parallelism blitz \u2014 all tasks at once"
+  },
+  {
+    patterns: [
+      /(?:show|list|search|find|view)\s+meetings?/i,
+      /meeting\s+(?:history|log|search|list)/i,
+      /미팅.*(목록|검색|이력|보여|찾아)/i,
+      /회의.*(기록|로그|검색|이력|목록)/i,
+      /past\s+meetings/i,
+      /ミーティング.*(履歴|一覧|検索)/i
+    ],
+    skill: "meetings",
+    reason: "meeting history search and browse"
   }
 ];
 function levenshtein(a, b) {

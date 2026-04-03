@@ -80,6 +80,17 @@ or if gate fails:
 [BW] ═══════════════════════════════════
 ```
 
+After writing the meeting log footer to `.bestwork/state/meeting.jsonl`, also append a decisions entry to `.bestwork/context/decisions.md`. Create the file and directory if they do not exist.
+
+Format:
+```markdown
+## {date}: {task}
+- **Mode**: waterfall ({N} stages)
+- **Verdict**: {COMPLETE/HALTED at stage N}
+- **Key agents**: {comma-separated agent list}
+- **Summary**: {1-sentence summary of what was processed}
+```
+
 ## Custom waterfalls
 
 Users can define custom stage orders:

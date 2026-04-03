@@ -70,6 +70,17 @@ As each background agent completes:
 [BW] ═══════════════════════════════════
 ```
 
+After writing the meeting log footer to `.bestwork/state/meeting.jsonl`, also append a decisions entry to `.bestwork/context/decisions.md`. Create the file and directory if they do not exist.
+
+Format:
+```markdown
+## {date}: {task}
+- **Mode**: trio ({N} agents)
+- **Verdict**: {APPROVED/REJECTED}
+- **Key agents**: {comma-separated agent list}
+- **Summary**: {1-sentence summary from the meeting}
+```
+
 ## Agent allocation rules
 
 The gateway provides `taskAllocations` with agents per task. If not provided, allocate:

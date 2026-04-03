@@ -94,6 +94,17 @@ Wait for user input. This is the ONLY time deliver asks for input.
 [BW] ═══════════════════════════════════
 ```
 
+After writing the meeting log footer to `.bestwork/state/meeting.jsonl`, also append a decisions entry to `.bestwork/context/decisions.md`. Create the file and directory if they do not exist.
+
+Format:
+```markdown
+## {date}: {task}
+- **Mode**: deliver ({N} targets, {K} attempts)
+- **Verdict**: {COMPLETE/INCOMPLETE}
+- **Key agents**: {comma-separated agent list}
+- **Summary**: {1-sentence summary of what was delivered}
+```
+
 ## State persistence
 
 Save deliver state to `.bestwork/state/deliver.json`:
