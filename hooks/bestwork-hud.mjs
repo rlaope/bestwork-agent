@@ -375,7 +375,39 @@ const MODE_LABELS = {
   review: "review",
 };
 
-// === Render ===
+// === Git state ===
+function getGitState() {
+  try {
+    const branch = execFileSync("git", ["branch", "--show-current"], { encoding: "utf-8", timeout: 2000 }).trim();
+    if (!branch) return null;
+    const status = execFileSync("git", ["status", "--porcelain"], { encoding: "utf-8", timeout: 2000 }).trim();
+    const dirty = status.length > 0;
+    let ahead = "0";
+    try { ahead = execFileSync("git", ["rev-list", "--count", `origin/${branch}..HEAD`], { encoding: "utf-8", timeout: 2000, stdio: ["pipe", "pipe", "pipe"] }).trim(); } catch {}
+    return { branch, dirty, ahead: parseInt(ahead) || 0 };
+  } catch { return null; }
+}
+
+// === Loop detection (simple: same tool+file pattern repeated) ===
+function detectLoop() {
+  try {
+    const dataDir = join(bwDir, "data");
+    if (!existsSync(dataDir)) return false;
+    const files = readdirSync(dataDir).filter(f => f.endsWith(".jsonl")).sort().reverse();
+    if (!files.length) return false;
+    const lines = readFileSync(join(dataDir, files[0]), "utf-8").split("\n").filter(Boolean).slice(-10);
+    if (lines.length < 6) return false;
+    // Check if last 6 entries repeat a 2-step pattern (e.g. Edit→Bash→Edit→Bash→Edit→Bash)
+    const tools = lines.map(l => { try { return JSON.parse(l).toolName; } catch { return ""; } });
+    const last6 = tools.slice(-6);
+    if (last6[0] === last6[2] && last6[2] === last6[4] && last6[1] === last6[3] && last6[3] === last6[5]) {
+      return true;
+    }
+    return false;
+  } catch { return false; }
+}
+
+// === Render (6 elements: git | usage | context | session | mode | alerts) ===
 async function main() {
   const [stdinData, usage, session] = await Promise.all([
     readStdin(),
@@ -383,67 +415,71 @@ async function main() {
     Promise.resolve(getSessionInfo()),
   ]);
 
-  let out = `${B}${CC}BW${R}${D}#${VERSION}${R}`;
+  let out = `${B}${CC}BW${R}`;
 
-  // Usage: show data or -- placeholder
+  // 1. Git state
+  const git = getGitState();
+  if (git) {
+    const bc = git.dirty ? CY : CG;
+    out += ` ${bc}${git.branch}${R}`;
+    if (git.ahead > 0) out += `${D}+${git.ahead}${R}`;
+    if (git.dirty) out += `${CY}*${R}`;
+  }
+
+  // 2. Usage (5h + weekly)
   if (!usage || typeof usage !== "object") {
-    out += ` ${D}|${R} ${D}5h${R} ${D}--%${R} ${D}week${R} ${D}--%${R}`;
+    out += ` ${D}|${R} ${D}5h${R}${D}--%${R} ${D}wk${R}${D}--%${R}`;
   } else {
     const c5 = pctColor(usage.fiveHour);
-    out += ` ${D}|${R} ${D}5h${R} ${c5}${usage.fiveHour}%${R}`;
+    out += ` ${D}|${R} ${D}5h${R}${c5}${usage.fiveHour}%${R}`;
     if (usage.fiveHourReset) {
       const ms = new Date(usage.fiveHourReset).getTime() - Date.now();
       if (ms > 0) out += `${D}↻${formatDuration(ms)}${R}`;
     }
     const cw = pctColor(usage.weekly);
-    out += ` ${D}week${R} ${cw}${usage.weekly}%${R}`;
+    out += ` ${D}wk${R}${cw}${usage.weekly}%${R}`;
   }
 
-  // Context window usage
+  // 3. Context window %
   const ctx = getContextPercent(stdinData);
   if (ctx != null) {
     const cc = pctColor(ctx);
-    out += ` ${D}|${R} ${D}context${R} ${cc}${ctx}%${R}`;
+    out += ` ${D}|${R} ${D}ctx${R}${cc}${ctx}%${R}`;
   }
 
-  // Session uptime + efficiency
+  // 4. Session + efficiency
   if (session) {
-    out += ` ${D}|${R} ${D}session${R} ${CW}${session.timeStr}${R}`;
-
-    // Efficiency: avg tool calls per prompt (lower = better)
+    out += ` ${D}|${R} ${CW}${session.timeStr}${R}`;
     if (session.prompts > 0) {
       const eff = Math.round(session.calls / session.prompts);
       const ec = eff <= 10 ? CG : eff <= 20 ? CY : CR;
-      out += ` ${D}efficiency${R} ${ec}⚡${eff}${R}`;
+      out += `${ec}⚡${eff}${R}`;
     }
   }
 
-  // Active bestwork mode
+  // 5. Active mode + guards
   const gwMode = getLastGatewayAction();
   if (gwMode !== "idle") {
     const label = MODE_LABELS[gwMode] || gwMode;
-    out += ` ${D}|${R} ${D}mode${R} ${CC}${label}${R}`;
+    out += ` ${CC}${label}${R}`;
   }
+  if (existsSync(join(bwDir, "scope.lock"))) out += `${D}🔒${R}`;
+  if (existsSync(join(bwDir, "strict.lock"))) out += `${D}🛡${R}`;
 
-  // Active guards
-  if (existsSync(join(bwDir, "scope.lock"))) out += ` 🔒${D}scope${R}`;
-  if (existsSync(join(bwDir, "strict.lock"))) out += ` 🛡${D}strict${R}`;
+  // 6. Alerts (right side)
+  const cfg = existsSync(join(bwDir, "config.json")) ? (() => { try { return JSON.parse(readFileSync(join(bwDir, "config.json"), "utf-8")); } catch { return {}; } })() : {};
+  const notify = [];
+  if (cfg.notify?.discord?.webhookUrl) notify.push("📨");
+  if (cfg.notify?.slack?.webhookUrl) notify.push("📨");
+  if (notify.length > 0) out += ` ${notify.join("")}`;
 
-  // Notification channels
-  const cfg = existsSync(join(bwDir, "config.json")) ? JSON.parse(readFileSync(join(bwDir, "config.json"), "utf-8")) : {};
-  const messengers = [];
-  if (cfg.notify?.discord?.webhookUrl) messengers.push("discord");
-  if (cfg.notify?.slack?.webhookUrl) messengers.push("slack");
-  if (messengers.length > 0) out += ` ${D}msg:${messengers.join(",")}${R}`;
+  // Loop warning
+  if (detectLoop()) out += ` ${CR}${B}⚠LOOP${R}`;
 
-  // Usage alert: red warning when 5h or weekly > 90%
+  // Usage limit warning
   if (usage && typeof usage === "object") {
-    if (usage.fiveHour >= 90) {
-      out += ` ${CR}${B}⚠ 5h ${usage.fiveHour}% LIMIT${R}`;
-    }
-    if (usage.weekly >= 90) {
-      out += ` ${CR}${B}⚠ WEEK ${usage.weekly}% LIMIT${R}`;
-    }
+    if (usage.fiveHour >= 90) out += ` ${CR}${B}⚠5h${usage.fiveHour}%${R}`;
+    if (usage.weekly >= 90) out += ` ${CR}${B}⚠wk${usage.weekly}%${R}`;
   }
 
   process.stdout.write(out + "\n");

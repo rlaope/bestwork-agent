@@ -91,7 +91,7 @@ describe("HUD basic output format", () => {
   it("should start with BW and version number", () => {
     const output = runHud();
     const plain = stripAnsi(output);
-    expect(plain).toMatch(/^BW#\d+\.\d+\.\d+/);
+    expect(plain).toMatch(/^BW /);
   });
 
   it("should contain ANSI color codes in raw output", () => {
@@ -155,13 +155,13 @@ describe("HUD usage display", () => {
     const plain = stripAnsi(output);
     // Without any cache or credentials, usage section may be absent entirely
     // or show dashes — either way it should NOT show a real percentage
-    const hasFakePercent = /\d+%\(5h\)/.test(plain);
+    const hasFakePercent = /5h\d+%/.test(plain);
     if (hasFakePercent) {
       // If there's OMC cache we can't control, that's fine — just verify format
-      expect(plain).toMatch(/\d+%\(5h\)/);
+      expect(plain).toMatch(/5h\d+%/);
     }
     // The output should still start correctly
-    expect(plain).toMatch(/^BW#/);
+    expect(plain).toMatch(/^BW /);
   });
 
   it("should show stale data when rate limited with previous success", () => {
@@ -195,7 +195,7 @@ describe("HUD usage display", () => {
     const output = runHud();
     const plain = stripAnsi(output);
     // Should contain the reset countdown (↻ followed by duration)
-    expect(plain).toMatch(/5h 80%↻\d+h?\d*m?/);
+    expect(plain).toMatch(/5h80%↻\d+h?\d*m?/);
   });
 
   it("should color-code usage based on percentage thresholds", () => {
@@ -233,18 +233,18 @@ describe("HUD session info", () => {
       expect(plain).toMatch(/\d+[smh]/);
     }
     // Always valid output regardless
-    expect(plain).toMatch(/^BW#/);
+    expect(plain).toMatch(/^BW /);
   });
 
   it("should show efficiency score when session has prompts", () => {
     const output = runHud();
     const plain = stripAnsi(output);
-    // If efficiency is displayed, it's in the format ⚡Nc/p
-    const hasEfficiency = /⚡\d+c\/p/.test(plain);
+    // If efficiency is displayed, it's in the format ⚡N
+    const hasEfficiency = /⚡\d+/.test(plain);
     if (hasEfficiency) {
-      expect(plain).toMatch(/⚡\d+c\/p/);
+      expect(plain).toMatch(/⚡\d+/);
     }
-    expect(plain).toMatch(/^BW#/);
+    expect(plain).toMatch(/^BW /);
   });
 });
 
@@ -259,7 +259,7 @@ describe("HUD context percentage", () => {
     });
     const output = runHud(input);
     const plain = stripAnsi(output);
-    expect(plain).toContain("context 25%");
+    expect(plain).toContain("ctx25%");
   });
 
   it("should show context % with tokenCount/contextWindow fallback fields", () => {
@@ -269,13 +269,13 @@ describe("HUD context percentage", () => {
     });
     const output = runHud(input);
     const plain = stripAnsi(output);
-    expect(plain).toContain("context 50%");
+    expect(plain).toContain("ctx50%");
   });
 
   it("should not show context when no token data in stdin", () => {
     const output = runHud("{}");
     const plain = stripAnsi(output);
-    expect(plain).not.toContain("context");
+    expect(plain).not.toContain("ctx");
   });
 
   it("should color context green when below 50%", () => {
@@ -316,7 +316,7 @@ describe("HUD context percentage", () => {
     const output = runHud(input);
     const plain = stripAnsi(output);
     // 33333/200000 = 16.6665 → rounds to 17%
-    expect(plain).toContain("context 17%");
+    expect(plain).toContain("ctx17%");
   });
 });
 
@@ -372,10 +372,10 @@ describe("HUD notifications", () => {
 
     const output = runHud();
     const plain = stripAnsi(output);
-    expect(plain).toContain("msg:discord");
+    expect(plain).toContain("📨");
   });
 
-  it("should show msg:slack when slack webhook configured", () => {
+  it("should show notification emoji when slack webhook configured", () => {
     const config = {
       notify: { slack: { webhookUrl: "https://hooks.slack.com/test" } },
     };
@@ -383,10 +383,10 @@ describe("HUD notifications", () => {
 
     const output = runHud();
     const plain = stripAnsi(output);
-    expect(plain).toContain("msg:slack");
+    expect(plain).toContain("📨");
   });
 
-  it("should show msg:discord,slack when both configured", () => {
+  it("should show two notification emojis when both configured", () => {
     const config = {
       notify: {
         discord: { webhookUrl: "https://discord.com/api/webhooks/test" },
@@ -397,25 +397,25 @@ describe("HUD notifications", () => {
 
     const output = runHud();
     const plain = stripAnsi(output);
-    expect(plain).toContain("msg:discord,slack");
+    expect(plain).toContain("📨📨");
   });
 
-  it("should not show msg: when no notifications configured", () => {
+  it("should not show notification emoji when no notifications configured", () => {
     const config = {};
     createTestFile(join(bwDir, "config.json"), JSON.stringify(config));
 
     const output = runHud();
     const plain = stripAnsi(output);
-    expect(plain).not.toContain("msg:");
+    expect(plain).not.toContain("📨");
   });
 
-  it("should not show msg: when notify exists but no webhook URLs", () => {
+  it("should not show notification emoji when notify exists but no webhook URLs", () => {
     const config = { notify: { discord: {}, slack: {} } };
     createTestFile(join(bwDir, "config.json"), JSON.stringify(config));
 
     const output = runHud();
     const plain = stripAnsi(output);
-    expect(plain).not.toContain("msg:");
+    expect(plain).not.toContain("📨");
   });
 });
 
@@ -509,7 +509,7 @@ describe("HUD error resilience", () => {
       timeout: 15000,
     });
     const plain = stripAnsi(output);
-    expect(plain).toMatch(/^BW#\d+\.\d+\.\d+/);
+    expect(plain).toMatch(/^BW /);
   });
 
   it("should handle empty stdin gracefully", () => {
@@ -519,7 +519,7 @@ describe("HUD error resilience", () => {
       timeout: 15000,
     });
     const plain = stripAnsi(output);
-    expect(plain).toMatch(/^BW#\d+\.\d+\.\d+/);
+    expect(plain).toMatch(/^BW /);
   });
 
   it("should handle malformed config.json gracefully", () => {
@@ -528,7 +528,7 @@ describe("HUD error resilience", () => {
     // Should not crash — the catch block falls back to fallback line
     const output = runHud();
     const plain = stripAnsi(output);
-    expect(plain).toMatch(/^BW#/);
+    expect(plain).toMatch(/^BW /);
   });
 
   it("should handle malformed gateway.log gracefully", () => {
@@ -536,7 +536,7 @@ describe("HUD error resilience", () => {
 
     const output = runHud();
     const plain = stripAnsi(output);
-    expect(plain).toMatch(/^BW#/);
+    expect(plain).toMatch(/^BW /);
     // Should not show any gateway mode
     expect(plain).not.toContain("trio");
   });
