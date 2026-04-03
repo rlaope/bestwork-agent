@@ -1509,7 +1509,7 @@ function splitTasks(task) {
     const looksLikeTasks = parts.length >= 2 && parts.filter((p) => p.length > 1).length >= 2;
     if (looksLikeTasks) return parts;
   }
-  const conjunctionPattern = /\band then\b|하고\s|다음에\s|그다음\s|してから/i;
+  const conjunctionPattern = /\band then\b|다음에\s|그다음\s|してから/i;
   if (conjunctionPattern.test(task)) {
     const parts = task.split(conjunctionPattern).map((t) => t.trim()).filter(Boolean);
     if (parts.length >= 2 && parts.every((p) => p.length > 5)) return parts;

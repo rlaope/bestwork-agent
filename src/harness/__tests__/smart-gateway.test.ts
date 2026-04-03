@@ -260,8 +260,8 @@ describe("SOLO mode", () => {
 // ============================================================
 
 describe("PAIR mode", () => {
-  it("Korean conjunction: 'API 추가하고 테스트 작성해'", () => {
-    const result = classifyIntent("API 추가하고 테스트 작성해");
+  it("Korean explicit sequential: 'API 추가 다음에 테스트 작성해'", () => {
+    const result = classifyIntent("API 추가 다음에 테스트 작성해");
     expect(result.mode).toBe("pair");
     expect(result.tasks).toHaveLength(2);
   });
@@ -461,8 +461,8 @@ describe("Edge cases", () => {
     expect(result.mode).toBeDefined();
   });
 
-  it("mixed language: 'review 하고 test 작성해' → pair with 2 tasks", () => {
-    const result = classifyIntent("review 하고 test 작성해");
+  it("mixed language: 'review 다음에 test 작성해' → pair with 2 tasks", () => {
+    const result = classifyIntent("review 다음에 test 작성해");
     expect(result.tasks).toHaveLength(2);
     expect(result.mode).toBe("pair");
   });

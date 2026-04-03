@@ -323,9 +323,9 @@ function splitTasks(task: string): string[] {
     if (looksLikeTasks) return parts;
   }
 
-  // Split by conjunctions — only when both sides look like actionable tasks (>5 chars each)
-  // "그리고" removed (too common). "하고" kept only when preceded by a verb stem.
-  const conjunctionPattern = /\band then\b|하고\s|다음에\s|그다음\s|してから/i;
+  // Split by explicit sequential conjunctions only
+  // "그리고" and "하고" removed — too common in Korean, causes false splits
+  const conjunctionPattern = /\band then\b|다음에\s|그다음\s|してから/i;
   if (conjunctionPattern.test(task)) {
     const parts = task.split(conjunctionPattern).map((t) => t.trim()).filter(Boolean);
     if (parts.length >= 2 && parts.every((p) => p.length > 5)) return parts;
