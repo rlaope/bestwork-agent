@@ -35,6 +35,8 @@ const SLASH_PREFIXES = [
   "./trio", "./update",
   // New execution mode skills
   "./delegate", "./waterfall", "./deliver", "./blitz",
+  // Meeting history
+  "./meetings",
 ];
 
 // Skill keyword map — natural language to skill name
@@ -192,6 +194,18 @@ const SKILL_ROUTES: Array<{ patterns: RegExp[]; skill: string; reason: string; h
     ],
     skill: "blitz",
     reason: "maximum parallelism blitz — all tasks at once",
+  },
+  {
+    patterns: [
+      /(?:show|list|search|find|view)\s+meetings?/i,
+      /meeting\s+(?:history|log|search|list)/i,
+      /미팅.*(목록|검색|이력|보여|찾아)/i,
+      /회의.*(기록|로그|검색|이력|목록)/i,
+      /past\s+meetings/i,
+      /ミーティング.*(履歴|一覧|検索)/i,
+    ],
+    skill: "meetings",
+    reason: "meeting history search and browse",
   },
 ];
 
