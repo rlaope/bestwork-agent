@@ -128,25 +128,14 @@ npm install -g bestwork-agent
 bestwork install
 ```
 
-### Option 3: Inside Claude Code
-
-```
-./bw-install
-./bw-install --discord <webhook_url> --lang ko
-./bw-install --strict
-```
-
 ### Notifications
 
-Connect your team's channel to receive rich alerts after every prompt:
+After install, connect notifications:
 
-| Platform | Command |
-|----------|---------|
-| Discord | `./discord <webhook_url> --lang ko` |
-| Slack | `./slack <webhook_url> --lang en` |
-| Telegram | `bestwork notify setup --telegram-token <token> --telegram-chat <id>` |
-
-Supported languages: `en` (default), `ko`, `ja`
+```
+./discord <webhook_url>
+./slack <webhook_url>
+```
 
 Each notification includes: team composition, agent decisions, code snippets, git diff, platform review, and session health — color-coded green/yellow/red.
 

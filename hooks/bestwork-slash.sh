@@ -57,8 +57,17 @@ fi
 
 # ./bw-install — full setup
 if echo "$PROMPT" | grep -qE '^\./bw-install'; then
-  # Run base install
-  INSTALL_RESULT=$(bestwork install 2>&1)
+  # Run base install — try npm global first, fallback to plugin cache
+  if command -v bestwork &>/dev/null; then
+    INSTALL_RESULT=$(bestwork install 2>&1)
+  else
+    BW_DIST=$(ls -d ~/.claude/plugins/cache/bestwork-tools/bestwork-agent/*/dist/index.js 2>/dev/null | sort -V | tail -1)
+    if [ -n "$BW_DIST" ]; then
+      INSTALL_RESULT=$(node "$BW_DIST" install 2>&1)
+    else
+      INSTALL_RESULT="[BW] install failed: bestwork CLI not found. Use /bestwork-agent:install skill instead."
+    fi
+  fi
 
   # Parse optional flags
   EXTRA=""

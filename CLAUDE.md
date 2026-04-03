@@ -28,7 +28,7 @@ Cloned at the same level for pattern reference only. Do NOT copy code.
 - TypeScript, Node.js 18+, ESM
 - Ink (React for CLI) — TUI components
 - tsup — bundler
-- vitest — testing (343 tests)
+- vitest — testing (470+ tests)
 - commander — CLI parser
 
 ## Key Directories
@@ -38,7 +38,7 @@ Cloned at the same level for pattern reference only. Do NOT copy code.
 - `src/observe/` — session analytics, heatmap, loop detection, replay
 - `hooks/` — Claude Code hooks (shell + agent type)
 - `hooks/bestwork-hud.mjs` — HUD statusline (usage API with 90s poll, exponential backoff, file locking)
-- `skills/` — 13 plugin slash commands (trio, plan, docs, doctor, review, update, etc.)
+- `skills/` — 17 plugin slash commands (trio, plan, docs, doctor, review, update, delegate, waterfall, deliver, blitz, etc.)
 - `prompts/` — editable agent system prompts (49 .md files)
 - `scripts/sync-plugin.mjs` — auto-syncs build to plugin cache/marketplace on `npm run build`
 
@@ -46,7 +46,7 @@ Cloned at the same level for pattern reference only. Do NOT copy code.
 
 ```bash
 npm run build    # tsup + auto-sync to plugin paths
-npm test         # vitest (343 tests)
+npm test         # vitest (470+ tests)
 npx tsc --noEmit # typecheck
 ```
 
