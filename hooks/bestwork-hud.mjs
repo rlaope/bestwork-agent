@@ -7,7 +7,7 @@
  * Shows: version | 5h usage(reset) | weekly | context% | session | efficiency
  */
 
-import { readFileSync, existsSync, readdirSync, statSync, mkdirSync, writeFileSync, unlinkSync } from "node:fs";
+import { readFileSync, existsSync, readdirSync, statSync, mkdirSync, writeFileSync, unlinkSync, openSync, closeSync, writeSync, constants as fsConstants } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { join } from "node:path";
 import { homedir } from "node:os";
@@ -52,11 +52,11 @@ async function readStdin() {
 }
 
 // === Caching constants (OMC-aligned) ===
-const POLL_INTERVAL_MS = 90_000;       // 90s between successful API calls
+const POLL_INTERVAL_MS = 90_000;       // 90s between successful API calls (OMC-aligned)
 const CACHE_TTL_FAILURE_MS = 15_000;   // 15s for non-transient errors
 const CACHE_TTL_NETWORK_MS = 120_000;  // 2min for network errors
-const MAX_BACKOFF_MS = 300_000;        // 5min cap for 429 backoff
-const NO_DATA_BACKOFF_MS = 300_000;    // 5min backoff when we have zero data (match MAX_BACKOFF)
+const MAX_BACKOFF_MS = 300_000;        // 5min cap for 429 backoff (OMC-aligned)
+const NO_DATA_BACKOFF_MS = 300_000;    // 5min backoff when we have zero data
 const MAX_STALE_MS = 900_000;          // 15min stale data cutoff
 const API_TIMEOUT_MS = 5_000;          // 5s API timeout
 const LOCK_TIMEOUT_MS = 15_000;        // 15s lock staleness
@@ -64,26 +64,38 @@ const LOCK_TIMEOUT_MS = 15_000;        // 15s lock staleness
 const CACHE_PATH = join(bwDir, ".usage-cache.json");
 const LOCK_PATH = join(bwDir, ".usage-cache.lock");
 
-// === File locking — prevent concurrent API calls ===
-// Uses O_EXCL (wx flag) for atomic lock creation — no race condition
+// === File locking — fd-based (matches OMC pattern) ===
+// Uses O_CREAT|O_EXCL via openSync to hold fd for duration.
+// Process crash auto-releases. PID-based stale detection.
+let lockFd = null;
+
+function isProcessAlive(pid) {
+  try { process.kill(pid, 0); return true; } catch { return false; }
+}
+
 function acquireLock() {
   try {
     mkdirSync(bwDir, { recursive: true });
-    // Check for stale lock first
+    // Check stale lock (held by dead process)
     if (existsSync(LOCK_PATH)) {
       try {
         const lock = JSON.parse(readFileSync(LOCK_PATH, "utf-8"));
-        if (Date.now() - lock.ts < LOCK_TIMEOUT_MS) return false; // lock is fresh, someone else has it
-        unlinkSync(LOCK_PATH); // stale lock, remove
+        if (lock.pid && isProcessAlive(lock.pid) && Date.now() - lock.ts < LOCK_TIMEOUT_MS) {
+          return false; // lock is fresh AND holder is alive
+        }
+        unlinkSync(LOCK_PATH); // stale: holder dead or timeout
       } catch { try { unlinkSync(LOCK_PATH); } catch {} }
     }
-    // Atomic create — fails if another process created it between our check and write
-    writeFileSync(LOCK_PATH, JSON.stringify({ ts: Date.now(), pid: process.pid }), { flag: "wx" });
+    // Atomic create with O_EXCL — kernel guarantees only one process succeeds
+    lockFd = openSync(LOCK_PATH, fsConstants.O_CREAT | fsConstants.O_EXCL | fsConstants.O_WRONLY, 0o600);
+    const payload = JSON.stringify({ ts: Date.now(), pid: process.pid });
+    writeSync(lockFd, payload, null, "utf-8");
     return true;
-  } catch { return false; } // wx fails if file exists = another process won the race
+  } catch { return false; }
 }
 
 function releaseLock() {
+  if (lockFd !== null) { try { closeSync(lockFd); } catch {} lockFd = null; }
   try { unlinkSync(LOCK_PATH); } catch {}
 }
 
