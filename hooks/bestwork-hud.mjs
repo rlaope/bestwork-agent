@@ -436,6 +436,16 @@ async function main() {
   if (cfg.notify?.slack?.webhookUrl) messengers.push("slack");
   if (messengers.length > 0) out += ` ${D}msg:${messengers.join(",")}${R}`;
 
+  // Usage alert: red warning when 5h or weekly > 90%
+  if (usage && typeof usage === "object") {
+    if (usage.fiveHour >= 90) {
+      out += ` ${CR}${B}⚠ 5h ${usage.fiveHour}% LIMIT${R}`;
+    }
+    if (usage.weekly >= 90) {
+      out += ` ${CR}${B}⚠ WEEK ${usage.weekly}% LIMIT${R}`;
+    }
+  }
+
   process.stdout.write(out + "\n");
 }
 
