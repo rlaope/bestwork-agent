@@ -13,5 +13,5 @@ Then run `bestwork agents` and display the output.
 
 After output, print:
 ```
-[BW] 46 agents ready. use ./trio to deploy them.
+[BW] 49 agents ready. use ./trio to deploy them.
 ```

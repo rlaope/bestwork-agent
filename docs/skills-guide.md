@@ -149,7 +149,7 @@ Version check and upgrade flow.
     │
     └─ newer → [BW] update available: 1.0.0 → 1.0.1
                [BW] upgrading... hang tight
-               /plugin update bestwork-agent@bestwork-tools
+               npm install -g bestwork-agent@latest
                [BW] done! restart to apply
 ```
 
@@ -359,6 +359,119 @@ Auto-generate changelog from git history.
     v
   CHANGELOG.md updated (or created)
 ```
+
+---
+
+## /bestwork-agent:blitz
+
+Maximum parallelism burst -- all tasks execute simultaneously with no coordination.
+
+```
+./blitz fix all lint errors across src/
+    |
+    v
+[BW] blitz -- maximum parallelism, zero overhead...
+[BW] blitz: 6 parallel tasks identified
+  1. "fix lint in auth/"      -> bestwork:tech-auth
+  2. "fix lint in api/"       -> bestwork:tech-api
+  3. "fix lint in db/"        -> bestwork:tech-database
+  4. "fix lint in cli/"       -> bestwork:tech-cli
+  5. "fix lint in hooks/"     -> bestwork:tech-config
+  6. "fix lint in observe/"   -> bestwork:tech-performance
+[BW] launching all...
+    |
+    v (all parallel, 1 agent per task, no PM/critic)
+    |
+[BW] blitz complete: 6 tasks, 6 agents, 0 conflicts
+```
+
+vs trio: blitz skips PM/critic gates. Use for independent batch changes.
+
+---
+
+## /bestwork-agent:delegate
+
+Autonomous execution -- classify, allocate, and execute without confirmation.
+
+```
+./delegate refactor the config loader
+    |
+    v
+[BW] delegate engaged -- executing autonomously...
+[BW] delegate plan:
+  1. "refactor config loader" -> bestwork:tech-config
+[BW] executing...
+    |
+    v (no confirmation, no PM/critic, self-verify only)
+    |
+[BW] delegate verify: PASS
+[BW] delegate complete: 1 task, 1 agent
+```
+
+vs trio: delegate never asks for confirmation. Tech agents only + self-verify.
+
+---
+
+## /bestwork-agent:deliver
+
+Persistent completion -- tasks must finish fully with verify/fix loops.
+
+```
+./deliver migrate all API routes to v2
+    |
+    v
+[BW] deliver mode -- persistent completion, no task left behind...
+[BW] deliver targets:
+  [ ] 1. Migrate /users routes    -- done when: tests pass
+  [ ] 2. Migrate /auth routes     -- done when: tests pass
+  [ ] 3. Update client references -- done when: no v1 imports
+    |
+    v (execute each, verify, retry until done)
+    |
+[BW] deliver progress:
+  [+] 1. Migrate /users routes
+  [->] 2. Migrate /auth routes (attempt 2)
+  [ ] 3. Update client references
+    |
+    v (stuck after 5 attempts? ask user)
+    |
+[BW] deliver complete: 3/3 targets done, 5 total attempts
+```
+
+vs trio: deliver retries until done. No target left incomplete.
+
+---
+
+## /bestwork-agent:waterfall
+
+Sequential staged processing -- each stage must pass before the next begins.
+
+```
+./waterfall implement new payment module
+    |
+    v
+[BW] waterfall mode -- sequential stages with gates...
+[BW] waterfall stages:
+  1. analyze    -> gate: scope documented
+  2. implement  -> gate: all files written
+  3. verify     -> gate: type check + tests pass
+  4. integrate  -> gate: no broken imports
+  5. finalize   -> gate: formatted, no warnings
+    |
+    v (sequential, gate must pass to proceed)
+    |
+[BW] +-- stage 1: analyze -- PASS
+[BW] +-- stage 2: implement -- FAIL (attempt 1/3)
+[BW]     retrying stage 2...
+[BW] +-- stage 2: implement -- PASS
+[BW] +-- stage 3: verify -- PASS
+[BW] +-- stage 4: integrate -- PASS
+[BW] +-- stage 5: finalize -- PASS
+    |
+[BW] waterfall complete: 5 stages, all gates passed
+```
+
+Custom orders: `./waterfall test-first`, `./waterfall security`, `./waterfall docs`.
 
 ---
 
