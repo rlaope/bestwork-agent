@@ -1844,9 +1844,119 @@ async function loadMergedConfig(cwd) {
     }
   };
 }
-async function loadProjectConfig(cwd) {
-  const merged = await loadMergedConfig(cwd);
-  return merged.project ?? {};
+
+// src/harness/config-validator.ts
+var VALID_MODES = ["solo", "pair", "trio", "squad", "hierarchy"];
+function validateConfig(config) {
+  const errors = [];
+  if (!config || typeof config !== "object") {
+    return errors;
+  }
+  const c = config;
+  if (c.notify !== void 0) {
+    if (typeof c.notify !== "object" || c.notify === null) {
+      errors.push({ field: "notify", message: "Must be an object" });
+    } else {
+      const n = c.notify;
+      if (n.discord !== void 0) {
+        if (typeof n.discord !== "object" || n.discord === null) {
+          errors.push({ field: "notify.discord", message: "Must be an object" });
+        } else {
+          const url = n.discord.webhookUrl;
+          if (url !== void 0) {
+            if (typeof url !== "string") {
+              errors.push({ field: "notify.discord.webhookUrl", message: "Must be a string" });
+            } else if (url && !url.startsWith("https://discord.com/api/webhooks/")) {
+              errors.push({
+                field: "notify.discord.webhookUrl",
+                message: "Must start with https://discord.com/api/webhooks/"
+              });
+            }
+          }
+        }
+      }
+      if (n.slack !== void 0) {
+        if (typeof n.slack !== "object" || n.slack === null) {
+          errors.push({ field: "notify.slack", message: "Must be an object" });
+        } else {
+          const url = n.slack.webhookUrl;
+          if (url !== void 0) {
+            if (typeof url !== "string") {
+              errors.push({ field: "notify.slack.webhookUrl", message: "Must be a string" });
+            } else if (url && !url.startsWith("https://hooks.slack.com/")) {
+              errors.push({
+                field: "notify.slack.webhookUrl",
+                message: "Must start with https://hooks.slack.com/"
+              });
+            }
+          }
+        }
+      }
+      if (n.telegram !== void 0) {
+        if (typeof n.telegram !== "object" || n.telegram === null) {
+          errors.push({ field: "notify.telegram", message: "Must be an object" });
+        } else {
+          const t = n.telegram;
+          if (t.botToken !== void 0 && typeof t.botToken !== "string") {
+            errors.push({ field: "notify.telegram.botToken", message: "Must be a string" });
+          }
+          if (t.chatId !== void 0 && typeof t.chatId !== "string") {
+            errors.push({ field: "notify.telegram.chatId", message: "Must be a string" });
+          }
+        }
+      }
+    }
+  }
+  if (c.defaultMode !== void 0) {
+    if (typeof c.defaultMode !== "string" || !VALID_MODES.includes(c.defaultMode)) {
+      errors.push({
+        field: "defaultMode",
+        message: `Invalid mode: ${c.defaultMode}. Must be solo|pair|trio|squad|hierarchy`
+      });
+    }
+  }
+  if (c.preferredAgents !== void 0) {
+    if (!Array.isArray(c.preferredAgents)) {
+      errors.push({ field: "preferredAgents", message: "Must be an array of agent IDs" });
+    } else {
+      for (let i = 0; i < c.preferredAgents.length; i++) {
+        if (typeof c.preferredAgents[i] !== "string") {
+          errors.push({ field: `preferredAgents[${i}]`, message: "Each agent ID must be a string" });
+        }
+      }
+    }
+  }
+  if (c.disabledAgents !== void 0) {
+    if (!Array.isArray(c.disabledAgents)) {
+      errors.push({ field: "disabledAgents", message: "Must be an array of agent IDs" });
+    } else {
+      for (let i = 0; i < c.disabledAgents.length; i++) {
+        if (typeof c.disabledAgents[i] !== "string") {
+          errors.push({ field: `disabledAgents[${i}]`, message: "Each agent ID must be a string" });
+        }
+      }
+    }
+  }
+  if (c.testCommand !== void 0 && typeof c.testCommand !== "string") {
+    errors.push({ field: "testCommand", message: "Must be a string" });
+  }
+  if (c.buildCommand !== void 0 && typeof c.buildCommand !== "string") {
+    errors.push({ field: "buildCommand", message: "Must be a string" });
+  }
+  if (c.project !== void 0) {
+    if (typeof c.project !== "object" || c.project === null) {
+      errors.push({ field: "project", message: "Must be an object" });
+    } else {
+      const nested = validateConfig(c.project);
+      for (const err of nested) {
+        errors.push({ field: `project.${err.field}`, message: err.message });
+      }
+    }
+  }
+  return errors;
+}
+function formatConfigErrors(errors) {
+  return errors.map((e) => `  - ${e.field}: ${e.message}`).join("\n");
 }
 
 // src/harness/smart-gateway.ts
@@ -2049,6 +2159,14 @@ var SKILL_ROUTES = [
     reason: "maximum parallelism blitz \u2014 all tasks at once"
   }
 ];
+function levenshtein(a, b) {
+  const m = a.length, n = b.length;
+  const dp = Array.from({ length: m + 1 }, (_, i) => Array(n + 1).fill(0).map((_2, j) => i === 0 ? j : j === 0 ? i : 0));
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++)
+      dp[i][j] = a[i - 1] === b[j - 1] ? dp[i - 1][j - 1] : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+  return dp[m][n];
+}
 async function readStdin() {
   return new Promise((resolve) => {
     let data = "";
@@ -2100,6 +2218,18 @@ async function main() {
       return;
     }
   }
+  const typed = prompt.trimStart().split(/\s/)[0];
+  if (typed.startsWith("./")) {
+    const allCommands = [...SLASH_PREFIXES, ...SKILL_ROUTES.map((r) => `./${r.skill}`)];
+    const closest = allCommands.reduce((best, cmd) => {
+      const d = levenshtein(typed, cmd);
+      return d < best.d ? { cmd, d } : best;
+    }, { cmd: "", d: Infinity });
+    if (closest.d > 0 && closest.d <= 2) {
+      output(`[BW] did you mean ${closest.cmd}? (typed ${typed})`);
+      return;
+    }
+  }
   const lower = prompt.toLowerCase();
   for (const route of SKILL_ROUTES) {
     if (route.patterns.some((p) => p.test(lower))) {
@@ -2134,7 +2264,13 @@ IMPORTANT: Do NOT skip this. Invoke the Skill tool with skill="bestwork-agent:${
   }
   let projectConfig;
   try {
-    projectConfig = await loadProjectConfig();
+    const merged = await loadMergedConfig();
+    const configErrors = validateConfig(merged);
+    if (configErrors.length > 0) {
+      log(`[BW config] validation warnings:
+${formatConfigErrors(configErrors)}`);
+    }
+    projectConfig = merged.project;
   } catch {
   }
   const intent = classifyIntent(prompt, projectConfig);
