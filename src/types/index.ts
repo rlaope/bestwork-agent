@@ -90,3 +90,26 @@ export interface ContextEntry {
 export interface ContextIndex {
   entries: ContextEntry[];
 }
+
+// ============================================================
+// Agent Scoring Types
+// ============================================================
+
+export interface AgentRun {
+  agent: string;
+  task: string;
+  duration: number;
+  success: boolean;
+  retries: number;
+  timestamp: string;
+}
+
+export interface AgentScore {
+  agent: string;
+  totalRuns: number;
+  successRate: number;
+  avgDuration: number;
+  avgRetries: number;
+  lastRun: string;
+  effectiveness: number;
+}
