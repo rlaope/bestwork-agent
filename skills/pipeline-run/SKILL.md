@@ -284,6 +284,24 @@ Update state: `status: "skipped"` or `status: "draft"` with `error: "{reason}"`
 [BW] ═══════════════════════════════════
 ```
 
+After printing the summary block, call `report-writer` (`src/observe/report-writer.ts`) to save detailed output:
+
+```
+writeReport("pipeline-run", {
+  total: {total issues},
+  done: {merged issues},
+  agents: [all agents used across all issues],
+  tasks: [issue titles with status, e.g. "#17 merged (attempt 1)"],
+  durationMs: {elapsed ms},
+  decisions: [skipped issues with reasons, escalation choices]
+}, projectRoot)
+```
+
+Then call `summarize` (`src/observe/result-summarizer.ts`) and print the 1-liner:
+```
+[BW] ✓ {merged}/{total} done — details: .bestwork/reports/pipeline-run-{timestamp}.md
+```
+
 Update state: `completedAt: "<ISO timestamp>"`
 
 ## Step 7: Decisions log + meeting footer
