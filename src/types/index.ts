@@ -113,3 +113,35 @@ export interface AgentScore {
   lastRun: string;
   effectiveness: number;
 }
+
+// ============================================================
+// Token ROI Types
+// ============================================================
+
+export interface TokenUsage {
+  skill: string;
+  agent: string;
+  tokens: number;
+  tasksCompleted: number;
+  timestamp: string;
+}
+
+export interface TokenStats {
+  skill: string;
+  totalTokens: number;
+  totalTasks: number;
+  avgTokensPerTask: number;
+}
+
+export interface AgentTokenStats {
+  agent: string;
+  totalTokens: number;
+  totalTasks: number;
+  avgTokensPerTask: number;
+}
+
+export interface ROIResult {
+  skill: string;
+  tokensPerTask: number;
+  roi: number;
+}
