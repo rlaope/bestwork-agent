@@ -145,3 +145,23 @@ export interface ROIResult {
   tokensPerTask: number;
   roi: number;
 }
+
+// ============================================================
+// Optimization Types
+// ============================================================
+
+export interface AllocationOutcome {
+  domain: string;
+  agent: string;
+  mode: string;
+  success: boolean;
+  duration: number;
+  timestamp: string;
+}
+
+export interface OptimizationStatus {
+  totalAllocations: number;
+  domainsTracked: number;
+  topAgentPerDomain: Record<string, { agent: string; successRate: number }>;
+  hasEnoughData: boolean;
+}
