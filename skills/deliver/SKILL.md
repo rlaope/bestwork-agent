@@ -94,6 +94,26 @@ Wait for user input. This is the ONLY time deliver asks for input.
 [BW] ═══════════════════════════════════
 ```
 
+## Step 6.5: Summary Report
+
+After printing the completion block, call `report-writer` (`src/observe/report-writer.ts`) to save detailed output:
+
+```
+writeReport("deliver", {
+  total: {M},
+  done: {N},
+  agents: [list of all agents used],
+  tasks: [list of target descriptions with attempt counts],
+  durationMs: {elapsed ms},
+  decisions: [escalation decisions, fix strategies tried]
+}, projectRoot)
+```
+
+Then call `summarize` (`src/observe/result-summarizer.ts`) and print the 1-liner:
+```
+[BW] ✓ {N}/{M} done — details: .bestwork/reports/deliver-{timestamp}.md
+```
+
 After writing the meeting log footer to `.bestwork/state/meeting.jsonl`, also append a decisions entry to `.bestwork/context/decisions.md`. Create the file and directory if they do not exist.
 
 Format:

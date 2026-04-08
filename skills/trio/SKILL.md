@@ -70,6 +70,26 @@ As each background agent completes:
 [BW] ═══════════════════════════════════
 ```
 
+## Step 7: Summary Report
+
+After printing the summary line, call `report-writer` (`src/observe/report-writer.ts`) to save detailed output:
+
+```
+writeReport("trio", {
+  total: {N},
+  done: {M},
+  agents: [list of all agents used],
+  tasks: [list of task descriptions],
+  durationMs: {elapsed ms},
+  decisions: [key decisions from meeting log]
+}, projectRoot)
+```
+
+Then call `summarize` (`src/observe/result-summarizer.ts`) and print the 1-liner:
+```
+[BW] ✓ {M}/{N} done — details: .bestwork/reports/trio-{timestamp}.md
+```
+
 After writing the meeting log footer to `.bestwork/state/meeting.jsonl`, also append a decisions entry to `.bestwork/context/decisions.md`. Create the file and directory if they do not exist.
 
 Format:

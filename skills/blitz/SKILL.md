@@ -84,6 +84,26 @@ If any verify fails, fix inline (no retry loop — blitz is about speed).
 [BW] ═══════════════════════════════════
 ```
 
+## Step 8: Summary Report
+
+After printing the summary line, call `report-writer` (`src/observe/report-writer.ts`) to save detailed output:
+
+```
+writeReport("blitz", {
+  total: {N},
+  done: {M},
+  agents: [list of all agents used],
+  tasks: [list of task descriptions],
+  durationMs: {elapsed ms},
+  decisions: [conflict resolutions and key choices]
+}, projectRoot)
+```
+
+Then call `summarize` (`src/observe/result-summarizer.ts`) and print the 1-liner:
+```
+[BW] ✓ {M}/{N} done — details: .bestwork/reports/blitz-{timestamp}.md
+```
+
 ## When to use blitz vs trio
 
 - **Blitz**: many independent changes (batch fixes, multi-file refactors, style updates, lint fixes, test additions). No coordination needed.
