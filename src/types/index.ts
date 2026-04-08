@@ -66,3 +66,27 @@ export interface DailySummary {
   topToolCount: number;
   toolRanking: ToolRank[];
 }
+
+// ============================================================
+// Context Accumulation Types
+// ============================================================
+
+export interface Decision {
+  title: string;
+  text: string;
+  reason: string;
+  impact: string;
+  date?: string;
+}
+
+export interface ContextEntry {
+  date: string;
+  title: string;
+  keywords: string[];
+  file: string;
+  line: number;
+}
+
+export interface ContextIndex {
+  entries: ContextEntry[];
+}
