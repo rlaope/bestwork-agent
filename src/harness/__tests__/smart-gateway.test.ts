@@ -1078,10 +1078,10 @@ describe("Domain detection: comprehensive", () => {
 });
 
 // ============================================================
-// 16. NEW SKILL ROUTES (15 tests)
+// 16. NEW SKILL ROUTES (30 tests)
 // ============================================================
 
-describe("New skill routes: delegate, waterfall, deliver, blitz", () => {
+describe("New skill routes: delegate, waterfall, deliver, blitz, superthinking, clarify", () => {
   describe("delegate triggers", () => {
     it("'delegate this to agents' → delegate skill", () => {
       const result = parseGateway("delegate this to agents");
@@ -1155,6 +1155,50 @@ describe("New skill routes: delegate, waterfall, deliver, blitz", () => {
     });
   });
 
+  describe("superthinking triggers", () => {
+    it("'start superthinking about AI agents' → superthinking skill", () => {
+      const result = parseGateway("start superthinking about AI agents");
+      expect(result.additionalContext).toContain("bestwork-agent:superthinking");
+    });
+
+    it("'슈퍼씽킹 실행' → superthinking skill", () => {
+      const result = parseGateway("슈퍼씽킹 실행");
+      expect(result.additionalContext).toContain("bestwork-agent:superthinking");
+    });
+
+    it("'1000번 반복 사고 해줘' → superthinking skill", () => {
+      const result = parseGateway("1000번 반복 사고 해줘");
+      expect(result.additionalContext).toContain("bestwork-agent:superthinking");
+    });
+
+    it("'극한 사고 모드' → superthinking skill", () => {
+      const result = parseGateway("극한 사고 모드");
+      expect(result.additionalContext).toContain("bestwork-agent:superthinking");
+    });
+  });
+
+  describe("clarify triggers", () => {
+    it("'run clarify before starting' → clarify skill", () => {
+      const result = parseGateway("run clarify before starting");
+      expect(result.additionalContext).toContain("bestwork-agent:clarify");
+    });
+
+    it("'요구사항 확인해줘' → clarify skill", () => {
+      const result = parseGateway("요구사항 확인해줘");
+      expect(result.additionalContext).toContain("bestwork-agent:clarify");
+    });
+
+    it("'놓친 부분 없는지 질문해줘' → clarify skill", () => {
+      const result = parseGateway("놓친 부분 없는지 질문해줘");
+      expect(result.additionalContext).toContain("bestwork-agent:clarify");
+    });
+
+    it("'clarify the requirements' → clarify skill", () => {
+      const result = parseGateway("clarify the requirements");
+      expect(result.additionalContext).toContain("bestwork-agent:clarify");
+    });
+  });
+
   describe("False positives for new skills", () => {
     it("'delegate in Python means...' does NOT trigger delegate", () => {
       const result = parseGateway("delegate in Python means something different");
@@ -1174,6 +1218,20 @@ describe("New skill routes: delegate, waterfall, deliver, blitz", () => {
       const result = parseGateway("deliver pizza API endpoint");
       if (!result.isEmpty && result.additionalContext) {
         expect(result.additionalContext).not.toContain("bestwork-agent:deliver");
+      }
+    });
+
+    it("'superthinking is an interesting concept' does NOT trigger superthinking", () => {
+      const result = parseGateway("superthinking is an interesting concept");
+      if (!result.isEmpty && result.additionalContext) {
+        expect(result.additionalContext).not.toContain("bestwork-agent:superthinking");
+      }
+    });
+
+    it("'clarify 변수 이름' does NOT trigger clarify", () => {
+      const result = parseGateway("clarify 변수 이름");
+      if (!result.isEmpty && result.additionalContext) {
+        expect(result.additionalContext).not.toContain("bestwork-agent:clarify");
       }
     });
   });
@@ -1207,6 +1265,8 @@ describe("Historical misclassifications", () => {
       ["health 관련 API", "health"],
       ["blitz라는 게 뭐야?", "blitz"],
       ["waterfall methodology는 좋은가?", "waterfall"],
+      ["superthinking이란 뭐야?", "superthinking"],
+      ["clarify가 뭐야?", "clarify"],
     ])("'%s' should NOT trigger %s skill", (prompt, skillName) => {
       const result = parseGateway(prompt);
       if (!result.isEmpty && result.additionalContext) {
@@ -1352,6 +1412,16 @@ describe("All skill triggers: comprehensive", () => {
       skill: "meetings",
       positive: ["show meetings", "미팅 목록"],
       negative: "meeting room 예약",
+    },
+    {
+      skill: "superthinking",
+      positive: ["run superthinking", "슈퍼씽킹 해줘", "スーパーシンキング モード"],
+      negative: "superthinking이란 뭐야?",
+    },
+    {
+      skill: "clarify",
+      positive: ["run clarify", "요구사항 확인해줘"],
+      negative: "clarify 변수 이름",
     },
   ])("$skill skill", ({ skill, positive, negative }) => {
     it.each(positive)("POSITIVE: '%s' triggers " + skill, (prompt) => {

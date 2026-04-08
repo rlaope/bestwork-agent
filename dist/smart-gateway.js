@@ -2015,6 +2015,8 @@ var SLASH_PREFIXES = [
   "./waterfall",
   "./deliver",
   "./blitz",
+  "./superthinking",
+  "./clarify",
   // Meeting history
   "./meetings"
 ];
@@ -2182,6 +2184,30 @@ var SKILL_ROUTES = [
     ],
     skill: "meetings",
     reason: "meeting history search and browse"
+  },
+  {
+    patterns: [
+      /(?:run|start|do)\s+superthinking/i,
+      /superthinking\s+(?:this|the|mode|on|about)/i,
+      /슈퍼씽킹.*(돌려|해줘|해|하자|실행|시작)/i,
+      /1000.*(번|회|round).*(사고|생각|기획|반복)/i,
+      /극한.*사고|무한.*반복.*기획/i,
+      /超思考|スーパーシンキング/i
+    ],
+    skill: "superthinking",
+    reason: "1000-iteration thought simulation loop"
+  },
+  {
+    patterns: [
+      /(?:clarify|명확히|확인).*(요구|요건|requirement|spec|스펙)/i,
+      /(?:요구사항|요건).*(질문|확인|검증|체크|명확)/i,
+      /(?:빠진|놓친|누락).*(거|것|부분|요구|요건).*(없|확인|체크|질문)/i,
+      /(?:before|먼저).*(?:clarif|질문|확인).*(?:start|실행|시작)/i,
+      /(?:run|start|do)\s+clarify/i,
+      /clarify\s+(?:this|the|requirements?|before)/i
+    ],
+    skill: "clarify",
+    reason: "clarify requirements before execution \u2014 ask targeted questions"
   }
 ];
 function levenshtein(a, b) {
