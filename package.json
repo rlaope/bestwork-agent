@@ -38,7 +38,7 @@
     "url": "https://github.com/rlaope/bestwork-agent"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "dependencies": {
     "chokidar": "^4.0.3",
