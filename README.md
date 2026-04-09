@@ -1,6 +1,6 @@
 # bestwork-agent
 
-Best harness engineering for Claude Code. Work like a corporation team, not just a club.
+Harness engineering for Claude Code. Your agent types one line — the harness catches everything else.
 
 <p align="center">
   <img src="https://img.shields.io/npm/v/bestwork-agent?color=cyan" alt="npm version" />
@@ -14,103 +14,52 @@ Best harness engineering for Claude Code. Work like a corporation team, not just
 
 ---
 
-## What is bestwork-agent?
+## The problem
 
-Your AI agent works alone — it hallucinates, loops, misses requirements, and you find out too late.
+AI coding agents hallucinate, loop, miss requirements, and ship security flaws. 45% of AI-generated code contains vulnerabilities (Veracode). Vibe-coded apps fail because nobody validated the idea before building.
 
-**bestwork-agent** organizes your AI agent the way top unicorn companies organize their engineering teams. It analyzes your request, decides whether it needs a **hierarchical team** (waterfall, top-down authority) or a **squad** (agile, flat, fast) — and dispatches the right specialists automatically.
+**bestwork-agent** adds the quality gates that professional engineering teams use — without changing how you work.
 
-```
-You: "Refactor the auth module to support OAuth2"
-
-bestwork analyzes → large scope, architecture decision, security-sensitive
-bestwork selects → Hierarchy: Security Team
-
-┌─────────────────────────────────────────────────────┐
-│  CISO                                               │
-│  "Attack surface acceptable. Approve with           │
-│   condition: rotate existing JWT secrets on deploy." │
-│          ▲ final decision                           │
-│  Tech Lead                                          │
-│  "OAuth2 PKCE flow is correct. Consolidate the      │
-│   two token refresh paths into one."                │
-│          ▲ architecture review                      │
-│  Sr. Security Engineer                              │
-│  "Implementation secure. Added CSRF protection.     │
-│   Input validation on redirect_uri."                │
-│          ▲ implementation + hardening               │
-│  Jr. QA Engineer                                    │
-│  "Found: /callback doesn't handle expired state     │
-│   param. Added test for token replay attack."       │
-│          ▲ fresh eyes + edge cases                  │
-└─────────────────────────────────────────────────────┘
-```
+## Benchmark: harness ON vs OFF
 
 ```
-You: "Add a dark mode toggle to the settings page"
+═══════════════════════════════════
+  HARNESS EFFECTIVENESS BENCHMARK
+═══════════════════════════════════
 
-bestwork analyzes → single feature, localized scope, fast feedback needed
-bestwork selects → Squad: Feature Squad
+  Scenarios:      10
+  Accuracy:       100.0%
 
-┌──────────────────────────────────────────────────────┐
-│                  Feature Squad (parallel)             │
-│                                                      │
-│  Sr. Backend         Sr. Frontend       Product Lead │
-│  "API endpoint       "Toggle component  "Matches     │
-│   for user prefs     with CSS vars,     user story.  │
-│   ready. Tests        accessible."      Ship it."    │
-│   passing."                                          │
-│                         QA Lead                      │
-│                    "Tested light/dark                 │
-│                     + system pref.                    │
-│                     All green."                       │
-│                                                      │
-│  Verdict: all APPROVE → merged                       │
-└──────────────────────────────────────────────────────┘
+  Harness ON:
+    Catch rate:   100% (9/9)
+    False pos:    0
+
+  Harness OFF (vanilla):
+    Catch rate:   0% (0/9)
+
+  Categories:
+    hallucination    3/4 caught
+    platform         4/4 caught
+    deprecated       1/1 caught
+    security         1/1 caught
+═══════════════════════════════════
 ```
 
-```
-You: "Why did my last session struggle?"
+Run it yourself: `npm run benchmark`
 
-bestwork analyzes → observability request, not coding
-bestwork selects → data analysis
+## What the harness does
 
-  Session Outcome — b322dc3e  ✗ struggling
+| Gate | When | What it catches |
+|------|------|-----------------|
+| **Grounding** | PreToolUse (Edit/Write) | Editing files the agent hasn't read |
+| **Scope lock** | PreToolUse | Edits outside the locked directory |
+| **Strict mode** | PreToolUse | `rm -rf`, `git push --force` |
+| **Type check** | PostToolUse (Edit/Write) | TypeScript errors after every change |
+| **Review** | On demand / PostToolUse | Fake imports, hallucinated methods, platform mismatch, deprecated APIs, type safety bypass |
+| **Requirement check** | PostToolUse (Edit/Write) | Unmet requirements from clarify/validate sessions |
+| **Validate** | Before building | Evidence-based go/no-go — is this feature worth building? |
 
-  Duration:     45m
-  Calls/Prompt: 38 (high — avg is 12)
-  Loop detected: Edit → Bash(test fail) → Edit × 6 on auth.ts
-
-  Root cause: missing import caused test failure loop.
-  Recommendation: use ./strict to force read-before-edit.
-```
-
-## How it works
-
-bestwork-agent mirrors how the best engineering organizations operate:
-
-**Hierarchy mode** — for decisions that need authority levels
-```
-CTO → Tech Lead → Sr. Engineer → Jr. Engineer
-```
-Junior implements first (fresh perspective catches obvious issues), seniors refine, leads review architecture, C-level makes final strategic calls. Each level can send work back down.
-
-**Squad mode** — for tasks that need speed and collaboration
-```
-Backend + Frontend + Product + QA (all equal)
-```
-Everyone works in parallel. No single authority. Consensus-driven. Fast.
-
-**The gateway picks automatically** based on task signals:
-- Simple fix / rename / format → solo (one agent, no overhead)
-- Two related sub-tasks → pair (one agent per task + critic)
-- Multiple sub-tasks → trio (tech + PM + critic per task, parallel)
-- Large scope / cross-directory / architecture → hierarchy (CTO → Lead → Senior → Junior)
-- Single feature / bugfix / localized → squad (flat, consensus-driven)
-- Security-sensitive files → security team
-- Infra / CI/CD files → infra squad
-
-For non-solo work, the gateway shows you the plan (tasks + agents) and asks you to confirm, adjust, or drop to solo.
+All gates run automatically. You just type your prompt.
 
 ## Install
 
@@ -128,77 +77,37 @@ npm install -g bestwork-agent
 bestwork install
 ```
 
-### Notifications
-
-After install, connect notifications:
+## How it works
 
 ```
-./discord <webhook_url>
-./slack <webhook_url>
+You: "Refactor the auth module to support OAuth2"
+                    │
+                    ▼
+            ┌──────────────┐
+            │ Smart Gateway │  classifies intent, allocates agents
+            └──────┬───────┘
+                   │
+         ┌─────────┼──────────┐
+         ▼         ▼          ▼
+     PreToolUse  Execution  PostToolUse
+     ┌─────────┐           ┌──────────┐
+     │Grounding│           │Type check│
+     │Scope    │           │Review    │
+     │Strict   │           │Req check │
+     └─────────┘           └──────────┘
 ```
 
-Each notification includes: team composition, agent decisions, code snippets, git diff, platform review, and session health — color-coded green/yellow/red.
+The gateway analyzes your prompt and picks the right scale:
 
-### Verify
+- **Solo** — simple fix, rename, format (1 agent)
+- **Pair** — two related sub-tasks (2 agents + critic)
+- **Trio** — multiple sub-tasks with quality gates (tech + PM + critic per task)
+- **Hierarchy** — large scope, architecture decisions (CTO → Lead → Senior → Junior)
+- **Squad** — localized feature, fast consensus (flat, parallel)
 
-```bash
-bestwork doctor    # check installation health
-bestwork update    # check for updates
-```
+For non-solo work, the gateway shows you the plan and asks to confirm.
 
----
-
-## Organization Chart
-
-```bash
-bestwork org    # full org chart
-```
-
-### 14 Roles × 4 Levels
-
-| Level | Roles | Perspective |
-|-------|-------|-------------|
-| C-Level | CTO, CPO, CISO | Strategic — architecture, product direction, security posture |
-| Lead | Tech Lead, EM, QA Lead, Product Lead | Tactical — code quality, delivery, test strategy, requirements |
-| Senior | Backend, Frontend, Fullstack, Infra, Security | Deep implementation with mentoring |
-| Junior | Engineer, QA | Fresh eyes — questioning assumptions, finding edge cases |
-
-### 8 Team Presets
-
-| Mode | Team | Composition |
-|------|------|-------------|
-| Hierarchy | Full Team | CTO → Tech Lead → Sr. Fullstack → Jr. Engineer |
-| Hierarchy | Backend Team | CTO → Tech Lead → Sr. Backend → Jr. Engineer |
-| Hierarchy | Frontend Team | CPO → Product Lead → Sr. Frontend → Jr. Engineer |
-| Hierarchy | Security Team | CISO → Tech Lead → Sr. Security → Jr. QA |
-| Squad | Feature Squad | Sr. Backend + Sr. Frontend + Product Lead + QA Lead |
-| Squad | Infra Squad | Sr. Infra + Sr. Security + Tech Lead |
-| Review | Code Review Board | Tech Lead + Sr. Security + QA Lead (2/3 approval) |
-| Advisory | Architecture Review | CTO + Tech Lead + EM (direction only, no code) |
-
-### Commands
-
-The smart gateway analyzes your prompt and picks the right mode automatically. No commands to memorize:
-
-```
-"Refactor the auth module"       → hierarchy (complex, cross-cutting)
-"Add dark mode toggle"           → squad (localized feature)
-"Fix the typo in readme"         → solo (simple task)
-```
-
-Or use explicit commands:
-
-```
-./trio implement auth | add tests | update docs    # parallel trio execution
-./review                                           # hallucination scan
-./plan refactor auth module                        # scope analysis first
-```
-
----
-
-## Domain Specialists
-
-On top of the org structure, **49 domain-specific agents** provide deep expertise:
+## 49 Domain Specialists
 
 ```bash
 bestwork agents    # full catalog
@@ -212,7 +121,37 @@ bestwork agents    # full catalog
 
 Agent prompts live in `prompts/` — edit without rebuilding.
 
----
+## 22 Skills
+
+Natural language or slash command — the gateway routes automatically.
+
+| Skill | What it does |
+|-------|-------------|
+| `validate` | Evidence-based feature validation before building |
+| `clarify` | Targeted requirement questions before execution |
+| `review` | Hallucination and platform mismatch scan |
+| `trio` | Parallel execution with quality gates |
+| `plan` | Scope analysis and team recommendation |
+| `delegate` | Autonomous execution without confirmation |
+| `deliver` | Persistent completion — retry until done |
+| `waterfall` | Sequential staged processing with gates |
+| `blitz` | Maximum parallelism burst |
+| `doctor` | Deploy config vs code integrity check |
+| `pipeline-run` | Queue and auto-process multiple GitHub issues |
+| `superthinking` | 1000-iteration thought simulation |
+
+And 10 more: agents, changelog, docs, health, install, meetings, onboard, sessions, status, update.
+
+## vs. other tools
+
+| | bestwork-agent | CrewAI | MetaGPT | Vanilla Claude Code |
+|---|---|---|---|---|
+| **Target** | Claude Code users | General Python | General Python | Everyone |
+| **Integration** | Native hooks (zero config) | Separate runtime | Separate runtime | Built-in |
+| **Hallucination catch** | 100% (9/9 benchmark) | No built-in | No built-in | 0% |
+| **Overhead** | ~0 (shell hooks) | 3x tokens | 2-5x tokens | 0 |
+| **Feature validation** | Built-in (validate skill) | None | None | None |
+| **Requirement tracking** | Auto (clarify → PostToolUse) | Manual | Manual | None |
 
 ## Harness Controls
 
@@ -222,56 +161,30 @@ Agent prompts live in `prompts/` — edit without rebuilding.
 ./strict                Block rm -rf, force read-before-edit
 ./relax                 Disable strict
 ./tdd add user auth     Test-driven development flow
-./context [files]       Preload files into context
-./recover               Reset approach when stuck
-./review                Platform/runtime hallucination check
+./review                Hallucination scan
+./validate              Is this feature worth building?
+./clarify               Requirement deep-check before execution
 ```
 
-### Anti-Hallucination (automatic)
+## Observability
 
-- **Grounding** — warns when editing unread files
-- **Validation** — TypeScript typecheck after every code change
-- **Platform review** — detects OS/runtime mismatches (Linux code on macOS, etc.)
-- **Scope enforcement** — blocks edits outside locked path
-- **Strict enforcement** — blocks `rm -rf`, `git push --force`
+```bash
+bestwork                  # TUI dashboard
+bestwork sessions         # Session list
+bestwork heatmap          # 365-day activity grid
+bestwork loops            # Loop detection
+bestwork replay <id>      # Session playback
+bestwork effectiveness    # Prompt efficiency trend
+```
 
-### Notifications
+## Notifications
 
 ```
 ./discord <webhook_url>
 ./slack <webhook_url>
 ```
 
-Rich notifications per prompt: summary, git diff, platform review, session health. Color-coded green/yellow/red.
-
----
-
-## Observability
-
-```bash
-bestwork                  # TUI dashboard
-bestwork sessions         # Session list (CWD, last prompt, usage %)
-bestwork session <id>     # Tool breakdown, agent tree
-bestwork summary -w       # Weekly overview
-bestwork heatmap          # 365-day activity grid
-bestwork loops            # Agent loop detection
-bestwork replay <id>      # Step-by-step session playback
-bestwork effectiveness    # Prompt efficiency trend
-bestwork outcome <id>     # Productivity verdict
-bestwork export -f csv    # Export data
-```
-
-### Data-Driven Agents
-
-```
-./autopsy [id]         Session post-mortem — why did it struggle?
-./learn                Extract prompting rules from your history
-./predict <task>       Estimate complexity from past sessions
-./guard                Current session health check
-./compare <id1> <id2>  Side-by-side session comparison
-```
-
----
+Rich notifications per prompt: summary, git diff, review results, session health. Color-coded green/yellow/red.
 
 ## Security
 

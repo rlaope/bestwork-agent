@@ -1,6 +1,6 @@
 # bestwork-agent
 
-Claude Codeのための最高のハーネスエンジニアリング。サークルではなく企業のように働く。
+Claude Codeのためのハーネスエンジニアリング。プロンプト一行で十分 — 残りはハーネスがキャッチします。
 
 <p align="center">
   <a href="README.md">English</a> · <a href="README.ko.md">한국어</a> · <a href="README.ja.md">日本語</a>
@@ -8,15 +8,58 @@ Claude Codeのための最高のハーネスエンジニアリング。サーク
 
 ---
 
-AIエージェントは一人で作業します。ハルシネーション、ループ、要件の見落とし — 終わってから気づきます。
+## 問題
 
-**bestwork-agent**はエージェントをチームに変えます。すべてのタスクに**Tech**（エンジニア）+ **PM**（プロダクトマネージャー）+ **Critic**（品質レビュアー）が割り当てられます。49の専門エージェント。自動選択。並列実行。フィードバックループ。リアルタイム通知。
+AIコーディングエージェントはハルシネーション、ループ、要件漏れ、セキュリティ欠陥を生み出します。AI生成コードの45%に脆弱性が含まれています（Veracode）。バイブコーディングアプリはアイデア検証なしで作られ、失敗します。
+
+**bestwork-agent**はプロのエンジニアリングチームが使う品質ゲートを追加します — 作業方法は変えずに。
+
+## ベンチマーク：ハーネスON vs OFF
+
+```
+═══════════════════════════════════
+  HARNESS EFFECTIVENESS BENCHMARK
+═══════════════════════════════════
+
+  シナリオ:      10
+  精度:          100.0%
+
+  ハーネスON:
+    キャッチ率:   100% (9/9)
+    誤検出:       0
+
+  ハーネスOFF (バニラ):
+    キャッチ率:   0% (0/9)
+
+  カテゴリ:
+    ハルシネーション 3/4 キャッチ
+    プラットフォーム 4/4 キャッチ
+    非推奨         1/1 キャッチ
+    セキュリティ    1/1 キャッチ
+═══════════════════════════════════
+```
+
+自分で実行: `npm run benchmark`
+
+## ハーネスの機能
+
+| ゲート | タイミング | キャッチ対象 |
+|--------|-----------|-------------|
+| **グラウンディング** | PreToolUse (Edit/Write) | 未読ファイルの編集 |
+| **スコープロック** | PreToolUse | ロックディレクトリ外の編集 |
+| **ストリクト** | PreToolUse | `rm -rf`、`git push --force` |
+| **タイプチェック** | PostToolUse (Edit/Write) | 変更後のTypeScriptエラー |
+| **レビュー** | オンデマンド / PostToolUse | 偽import、ハルシネーションメソッド、プラットフォーム不一致 |
+| **要件チェック** | PostToolUse (Edit/Write) | clarify/validateセッションの未達要件 |
+| **検証** | ビルド前 | エビデンスベースのgo/no-go — この機能は作る価値があるか？ |
+
+すべてのゲートは自動実行されます。プロンプトを入力するだけです。
 
 ## インストール
 
 ### 方法1: Claude Codeプラグイン（推奨）
 
-```
+```bash
 /plugin marketplace add https://github.com/rlaope/bestwork-agent
 /plugin install bestwork-agent
 ```
@@ -28,104 +71,68 @@ npm install -g bestwork-agent
 bestwork install
 ```
 
-Claude Codeを再起動後、`./help`を入力。
+## 仕組み
 
----
+ゲートウェイがプロンプトを分析し、適切なスケールを選択します：
 
-## ハーネス
+- **Solo** — 簡単な修正（エージェント1名）
+- **Pair** — 関連する2タスク（エージェント2名 + クリティック）
+- **Trio** — 品質ゲート付き複数タスク（タスクごとにtech + PM + critic）
+- **Hierarchy** — 大規模、アーキテクチャ決定（CTO → Lead → Senior → Junior）
+- **Squad** — ローカル機能、高速コンセンサス（フラット、並列）
 
-### トリオ実行 — AI企業
+## 49ドメインスペシャリスト
 
-```
-./trio implement auth API | add rate limiting | write integration tests
-```
+**25 Tech** · **10 PM** · **14 Critic**
 
-各タスクにドメイン専門家トリオを自動マッチング：
+エージェントプロンプトは`prompts/`にあり、ビルドなしで編集可能。
 
-- **Tech** — ドメイン専門知識で実装
-- **PM** — 要件充足を検証
-- **Critic** — 品質レビュー + ハルシネーション検出
-- 却下？フィードバックループ → Tech修正 → 再レビュー（最大3回）
+## 22スキル
 
-### 49の専門エージェント
+自然言語またはスラッシュコマンド — ゲートウェイが自動ルーティング。
 
-```bash
-bestwork agents    # フルカタログ
-```
+| スキル | 機能 |
+|--------|------|
+| `validate` | ビルド前のエビデンスベース機能検証 |
+| `clarify` | 実行前の要件質問 |
+| `review` | ハルシネーション + プラットフォーム不一致スキャン |
+| `trio` | 品質ゲート付き並列実行 |
+| `plan` | スコープ分析 + チーム推薦 |
+| `delegate` | 確認なしの自律実行 |
+| `deliver` | 完了まで繰り返し実行 |
+| `blitz` | 最大並列バースト |
+| `pipeline-run` | GitHub Issue一括自動処理 |
 
-**25 Tech**: backend, frontend, fullstack, infra, database, API, mobile, testing, security, performance, devops, data, ML, CLI, realtime, auth, migration, config, agent-engineer, plugin, accessibility, i18n, graphql, monorepo, writer
+他10スキル: agents, changelog, docs, doctor, health, install, meetings, onboard, sessions, status, superthinking, update, waterfall.
 
-**10 PM**: product, API, platform, data, infra, migration, security, growth, compliance, DX
-
-**14 Critic**: performance, scalability, security, consistency, reliability, testing, hallucination, DX, type safety, cost, accessibility, devsecops, i18n, agent
-
-### 開発コントロール
-
-| コマンド | 説明 |
-|----------|------|
-| `./scope src/auth/` | ディレクトリへの編集をロック |
-| `./unlock` | スコープロック解除 |
-| `./strict` | 全ガードレール有効化 |
-| `./relax` | ストリクトモード無効化 |
-| `./tdd add auth` | TDD（テスト駆動開発）フロー |
-| `./context [files]` | ファイルコンテキストプリロード |
-| `./recover` | 行き詰まり？アプローチリセット |
-| `./review` | プラットフォーム/ランタイムのハルシネーションチェック |
-
-### スマートゲートウェイ
-
-コマンドの暗記不要。自然言語で入力：
+## ハーネスコントロール
 
 ```
-"review my code"           → ./review
-"run in parallel"          → ./trio
-"why did it fail"          → ./autopsy
-"improve my prompts"       → ./learn
+./scope src/auth/       ディレクトリロック
+./unlock                ロック解除
+./strict                rm -rf ブロック、読み取り強制
+./relax                 ストリクト解除
+./review                ハルシネーションスキャン
+./validate              この機能は作る価値があるか？
+./clarify               要件確認
 ```
-
-### 通知
-
-```
-./discord <webhook_url>
-./slack <webhook_url>
-```
-
-### ハルシネーション防止（自動）
-
-- **グラウンディング** — 未読ファイルの編集時に警告
-- **バリデーション** — コード変更ごとに自動タイプチェック
-- **プラットフォームレビュー** — セッション終了時にOS/ランタイム不一致を検出
-- **スコープ強制** — ロックされたパス外の編集をブロック
-- **ストリクト強制** — `rm -rf`、`git push --force` をブロック
-
----
 
 ## オブザーバビリティ
 
 ```bash
 bestwork                  # TUIダッシュボード
 bestwork sessions         # セッション一覧
-bestwork session <id>     # ツール使用分布、エージェントツリー
-bestwork summary -w       # 週間概要
 bestwork heatmap          # 365日アクティビティグリッド
-bestwork loops            # エージェントループ検出
+bestwork loops            # ループ検出
 bestwork replay <id>      # セッションリプレイ
-bestwork effectiveness    # プロンプト効率トレンド
-bestwork outcome <id>     # 生産性判定
-bestwork export -f csv    # データエクスポート
 ```
 
-### データ駆動エージェント
+## 通知
 
 ```
-./autopsy [id]         セッション事後分析 — なぜ苦戦したか？
-./learn                プロンプティングルール抽出
-./predict <task>       過去セッションから複雑度を推定
-./guard                現在のセッション健全性チェック
-./compare <id1> <id2>  セッション比較
+./discord <webhook_url>
+./slack <webhook_url>
 ```
-
----
 
 ## セキュリティ
 
