@@ -6,7 +6,7 @@
 INPUT=$(cat)
 TOOL=$(echo "$INPUT" | jq -r '.tool_name // ""')
 
-# Only check Write and Edit
+# Defensive: hooks.json matcher already filters, but guard here too
 case "$TOOL" in
   Edit|Write) ;;
   *) echo '{}'; exit 0 ;;
@@ -16,12 +16,15 @@ PROJECT_ROOT=$(pwd)
 BESTWORK_STATE="${PROJECT_ROOT}/.bestwork/state"
 STATS_FILE="${BESTWORK_STATE}/harness-stats.json"
 
-# Initialize stats file if missing
-if [ ! -f "$STATS_FILE" ]; then
+# Initialize stats file if missing or malformed
+if [ ! -f "$STATS_FILE" ] || ! jq empty "$STATS_FILE" 2>/dev/null; then
   mkdir -p "$BESTWORK_STATE"
   echo '{"checksRun":0,"warningsIssued":0,"requirementsMet":0,"requirementsMissed":0,"lastUpdated":""}' > "$STATS_FILE"
 fi
 
+# NOTE: increment_stat uses read-modify-write without locking.
+# Stats are informational (not gating), so occasional lost increments
+# under concurrent Write/Edit are accepted. flock is not portable to macOS.
 increment_stat() {
   local key="$1"
   local val
@@ -44,10 +47,9 @@ CLARIFY_FILE="${BESTWORK_STATE}/clarify.json"
 if [ -f "$CLARIFY_FILE" ]; then
   STATUS=$(jq -r '.status // ""' "$CLARIFY_FILE" 2>/dev/null)
   if [ "$STATUS" = "complete" ]; then
-    OVERALL=$(jq -r '.overallScore // 0' "$CLARIFY_FILE" 2>/dev/null)
-    OPEN_GAPS=$(jq -r '.openGaps | length // 0' "$CLARIFY_FILE" 2>/dev/null)
+    OPEN_GAPS=$(jq -r '(.openGaps // []) | length' "$CLARIFY_FILE" 2>/dev/null)
     if [ "$OPEN_GAPS" -gt 0 ] 2>/dev/null; then
-      GAP_LIST=$(jq -r '.openGaps | join(", ")' "$CLARIFY_FILE" 2>/dev/null)
+      GAP_LIST=$(jq -r '(.openGaps // []) | join(", ")' "$CLARIFY_FILE" 2>/dev/null)
       WARNINGS="${WARNINGS}[BW gate] clarify: ${OPEN_GAPS} open gap(s) remaining — ${GAP_LIST}\n"
       increment_stat "requirementsMissed"
     else
@@ -62,7 +64,7 @@ if [ -f "$VALIDATE_FILE" ]; then
   STATUS=$(jq -r '.status // ""' "$VALIDATE_FILE" 2>/dev/null)
   if [ "$STATUS" = "complete" ]; then
     VERDICT=$(jq -r '.verdict // ""' "$VALIDATE_FILE" 2>/dev/null)
-    OVERALL=$(jq -r '.scores.overall // 0' "$VALIDATE_FILE" 2>/dev/null)
+    OVERALL=$(jq -r '(.scores.overall // 0)' "$VALIDATE_FILE" 2>/dev/null)
     case "$VERDICT" in
       REJECTED)
         WARNINGS="${WARNINGS}[BW gate] validate: REJECTED (${OVERALL}%) — building a feature that failed validation\n"
@@ -86,7 +88,7 @@ fi
 # === Output ===
 if [ -n "$WARNINGS" ]; then
   increment_stat "warningsIssued"
-  CONTEXT=$(echo -e "$WARNINGS" | sed 's/\\n$//')
+  CONTEXT=$(printf '%s' "$WARNINGS" | sed '/^$/d')
   jq -n --arg ctx "$CONTEXT" \
     '{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":$ctx}}'
 else
