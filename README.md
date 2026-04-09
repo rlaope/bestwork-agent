@@ -27,15 +27,15 @@ AI coding agents hallucinate, loop, miss requirements, and ship security flaws. 
   HARNESS EFFECTIVENESS BENCHMARK
 ═══════════════════════════════════
 
-  Scenarios:      10
+  Scenarios:      13
   Accuracy:       100.0%
 
   Harness ON:
-    Catch rate:   100% (9/9)
+    Catch rate:   100% (10/10)
     False pos:    0
 
   Harness OFF (vanilla):
-    Catch rate:   0% (0/9)
+    Catch rate:   0% (0/10)
 
   Categories:
     hallucination    3/4 caught
@@ -148,7 +148,7 @@ And 10 more: agents, changelog, docs, health, install, meetings, onboard, sessio
 |---|---|---|---|---|
 | **Target** | Claude Code users | General Python | General Python | Everyone |
 | **Integration** | Native hooks (zero config) | Separate runtime | Separate runtime | Built-in |
-| **Hallucination catch** | 100% (9/9 benchmark) | No built-in | No built-in | 0% |
+| **Hallucination catch** | 100% (10/10 benchmark) | No built-in | No built-in | 0% |
 | **Overhead** | ~0 (shell hooks) | 3x tokens | 2-5x tokens | 0 |
 | **Feature validation** | Built-in (validate skill) | None | None | None |
 | **Requirement tracking** | Auto (clarify → PostToolUse) | Manual | Manual | None |

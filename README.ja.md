@@ -21,15 +21,15 @@ AIコーディングエージェントはハルシネーション、ループ、
   HARNESS EFFECTIVENESS BENCHMARK
 ═══════════════════════════════════
 
-  シナリオ:      10
+  シナリオ:      13
   精度:          100.0%
 
   ハーネスON:
-    キャッチ率:   100% (9/9)
+    キャッチ率:   100% (10/10)
     誤検出:       0
 
   ハーネスOFF (バニラ):
-    キャッチ率:   0% (0/9)
+    キャッチ率:   0% (0/10)
 
   カテゴリ:
     ハルシネーション 3/4 キャッチ
@@ -101,9 +101,12 @@ bestwork install
 | `delegate` | 確認なしの自律実行 |
 | `deliver` | 完了まで繰り返し実行 |
 | `blitz` | 最大並列バースト |
+| `doctor` | デプロイ設定 vs コード整合性チェック |
 | `pipeline-run` | GitHub Issue一括自動処理 |
+| `superthinking` | 1000回反復思考シミュレーション |
+| `waterfall` | ゲート付き順次ステージ処理 |
 
-他10スキル: agents, changelog, docs, doctor, health, install, meetings, onboard, sessions, status, superthinking, update, waterfall.
+他10スキル: agents, changelog, docs, health, install, meetings, onboard, sessions, status, update.
 
 ## ハーネスコントロール
 
@@ -112,6 +115,7 @@ bestwork install
 ./unlock                ロック解除
 ./strict                rm -rf ブロック、読み取り強制
 ./relax                 ストリクト解除
+./tdd add user auth     TDD（テスト駆動開発）フロー
 ./review                ハルシネーションスキャン
 ./validate              この機能は作る価値があるか？
 ./clarify               要件確認
