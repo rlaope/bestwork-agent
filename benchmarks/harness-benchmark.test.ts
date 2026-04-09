@@ -4,14 +4,12 @@
  * Measures bestwork harness gates against known-bad scenarios.
  * Compares: bestwork ON (harness active) vs OFF (vanilla, no gates).
  *
- * Run: npx vitest run benchmarks/harness-benchmark.ts
+ * Run: npm run benchmark
  */
 
 import { describe, it, expect } from "vitest";
-import { execSync } from "node:child_process";
-import { writeFileSync, mkdirSync, existsSync, rmSync, readFileSync } from "node:fs";
+import { writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
-import { tmpdir } from "node:os";
 
 // ─── Scenario types ───
 
@@ -142,6 +140,39 @@ const SCENARIOS: Scenario[] = [
     shouldCatch: true,
     gate: "review",
   },
+  // 11. Relative import to missing file
+  {
+    name: "missing-file: relative import to nonexistent module",
+    category: "hallucination",
+    diffLines: [
+      '+import { helper } from "../utils/nonexistent-helper-xyz.js";',
+      "+helper();",
+    ],
+    shouldCatch: true,
+    gate: "review",
+  },
+  // 12. False-positive: valid scoped package
+  {
+    name: "false-positive: valid scoped package @types/node",
+    category: "security",
+    diffLines: [
+      '+import type { IncomingMessage } from "node:http";',
+      "+const req: IncomingMessage = {} as IncomingMessage;",
+    ],
+    shouldCatch: false,
+    gate: "review",
+  },
+  // 13. False-positive: legitimate platform-conditional code
+  {
+    name: "false-positive: guarded platform check",
+    category: "platform",
+    diffLines: [
+      "+const isLinux = process.platform === 'linux';",
+      "+const configPath = isLinux ? '/etc/config' : '/usr/local/etc/config';",
+    ],
+    shouldCatch: false,
+    gate: "review",
+  },
 ];
 
 // ─── Review hook simulator ───
@@ -164,7 +195,22 @@ function simulateReviewHook(diffLines: string[]): { warnings: string[]; caught: 
     }
   }
 
-  // 2. Hallucinated methods
+  // 2. Nonexistent relative file imports
+  for (const line of added) {
+    const match = line.match(/from\s+["'](\.\.?\/[^"']+)["']/);
+    if (match) {
+      const rel = match[1];
+      const base = rel.replace(/\.[jt]sx?$/, "");
+      const found = [".ts", ".tsx", ".js", ".jsx", "/index.ts", "/index.js", ""].some(
+        (ext) => existsSync(join(process.cwd(), base + ext)),
+      );
+      if (!found) {
+        warnings.push(`missing-file: relative import '${rel}' — file not found`);
+      }
+    }
+  }
+
+  // 3. Hallucinated methods
   const suspicious =
     /\.(toJSON|toObject|toPlainObject|toSnakeCase|toCamelCase)\(|Array\.from\(.*\.entries\(\)\.map|console\.(success|fail|complete)\(/;
   for (const line of added) {
@@ -308,12 +354,17 @@ describe("Harness Effectiveness Benchmark", () => {
       byCategory: Object.entries(
         results.reduce(
           (acc, r) => {
-            if (!acc[r.category]) acc[r.category] = { total: 0, caught: 0 };
-            acc[r.category].total++;
-            if (r.shouldCatch && r.harnessOn.caught) acc[r.category].caught++;
+            if (!acc[r.category]) acc[r.category] = { catchable: 0, caught: 0, negatives: 0, falsePositives: 0 };
+            if (r.shouldCatch) {
+              acc[r.category].catchable++;
+              if (r.harnessOn.caught) acc[r.category].caught++;
+            } else {
+              acc[r.category].negatives++;
+              if (r.harnessOn.caught) acc[r.category].falsePositives++;
+            }
             return acc;
           },
-          {} as Record<string, { total: number; caught: number }>,
+          {} as Record<string, { catchable: number; caught: number; negatives: number; falsePositives: number }>,
         ),
       ).map(([cat, data]) => ({ category: cat, ...data })),
       scenarios: results.map((r) => ({
@@ -349,7 +400,7 @@ describe("Harness Effectiveness Benchmark", () => {
     console.log("");
     console.log("  By category:");
     for (const cat of report.byCategory) {
-      console.log(`    ${cat.category.padEnd(16)} ${cat.caught}/${cat.total} caught`);
+      console.log(`    ${cat.category.padEnd(16)} ${cat.caught}/${cat.catchable} caught${cat.falsePositives ? `, ${cat.falsePositives} false pos` : ""}`);
     }
     console.log("\n═══════════════════════════════════\n");
 
