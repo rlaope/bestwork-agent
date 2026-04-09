@@ -1,0 +1,151 @@
+{
+  "timestamp": "2026-04-09T02:02:39.605Z",
+  "summary": {
+    "totalScenarios": 10,
+    "correctClassifications": 10,
+    "accuracy": "100.0%",
+    "harnessOn": {
+      "catchRate": "100.0%",
+      "caught": 9,
+      "total": 9,
+      "falsePositives": 0
+    },
+    "harnessOff": {
+      "catchRate": "0.0%",
+      "caught": 0,
+      "total": 9,
+      "falsePositives": 0
+    }
+  },
+  "byCategory": [
+    {
+      "category": "hallucination",
+      "total": 4,
+      "caught": 3
+    },
+    {
+      "category": "platform",
+      "total": 4,
+      "caught": 4
+    },
+    {
+      "category": "deprecated",
+      "total": 1,
+      "caught": 1
+    },
+    {
+      "category": "security",
+      "total": 1,
+      "caught": 1
+    }
+  ],
+  "scenarios": [
+    {
+      "name": "fake-import: nonexistent npm package",
+      "category": "hallucination",
+      "shouldCatch": true,
+      "harnessOnCaught": true,
+      "harnessOnWarnings": [
+        "fake-import: 'super-nonexistent-pkg-xyz' not in dependencies"
+      ],
+      "correct": true
+    },
+    {
+      "name": "hallucinated-method: console.success()",
+      "category": "hallucination",
+      "shouldCatch": true,
+      "harnessOnCaught": true,
+      "harnessOnWarnings": [
+        "hallucinated-method: console.success('done');",
+        "hallucinated-method: const arr = Array.from(map.entries().map(x => x));"
+      ],
+      "correct": true
+    },
+    {
+      "name": "platform-mismatch: Linux /proc/ on macOS",
+      "category": "platform",
+      "shouldCatch": true,
+      "harnessOnCaught": true,
+      "harnessOnWarnings": [
+        "platform-mismatch: Linux-specific on darwin",
+        "platform-mismatch: Linux-specific on darwin"
+      ],
+      "correct": true
+    },
+    {
+      "name": "wrong-runtime: Deno API without Deno installed",
+      "category": "platform",
+      "shouldCatch": true,
+      "harnessOnCaught": true,
+      "harnessOnWarnings": [
+        "wrong-runtime: Deno API without Deno",
+        "wrong-runtime: Deno API without Deno"
+      ],
+      "correct": true
+    },
+    {
+      "name": "deprecated: new Buffer() usage",
+      "category": "deprecated",
+      "shouldCatch": true,
+      "harnessOnCaught": true,
+      "harnessOnWarnings": [
+        "deprecated: const buf = new Buffer('hello');",
+        "deprecated: const exists = fs.exists('./file');"
+      ],
+      "correct": true
+    },
+    {
+      "name": "type-bypass: as any and ts-ignore",
+      "category": "security",
+      "shouldCatch": true,
+      "harnessOnCaught": true,
+      "harnessOnWarnings": [
+        "type-bypass: const data = response as any;",
+        "type-bypass: // @ts-ignore",
+        "type-bypass: const user = getUser() as unknown as Admin;"
+      ],
+      "correct": true
+    },
+    {
+      "name": "clean-code: valid TypeScript with real imports",
+      "category": "hallucination",
+      "shouldCatch": false,
+      "harnessOnCaught": false,
+      "harnessOnWarnings": [],
+      "correct": true
+    },
+    {
+      "name": "platform-mismatch: Windows registry on macOS",
+      "category": "platform",
+      "shouldCatch": true,
+      "harnessOnCaught": true,
+      "harnessOnWarnings": [
+        "platform-mismatch: Windows-specific on darwin",
+        "platform-mismatch: Windows-specific on darwin"
+      ],
+      "correct": true
+    },
+    {
+      "name": "wrong-runtime: Bun API without Bun installed",
+      "category": "platform",
+      "shouldCatch": true,
+      "harnessOnCaught": true,
+      "harnessOnWarnings": [
+        "fake-import: 'bun' not in dependencies",
+        "wrong-runtime: Bun API without Bun",
+        "wrong-runtime: Bun API without Bun"
+      ],
+      "correct": true
+    },
+    {
+      "name": "mixed: valid import + hallucinated method",
+      "category": "hallucination",
+      "shouldCatch": true,
+      "harnessOnCaught": true,
+      "harnessOnWarnings": [
+        "hallucinated-method: console.success('loaded data');"
+      ],
+      "correct": true
+    }
+  ]
+}
