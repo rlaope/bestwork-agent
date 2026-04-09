@@ -49,14 +49,20 @@ const SCENARIOS: Scenario[] = [
     shouldCatch: true,
     gate: "review",
   },
-  // 3. Platform mismatch — Linux paths on macOS
+  // 3. Platform mismatch — always uses the "other" OS patterns
+  //    On Linux CI: catches macOS patterns. On macOS: catches Linux patterns.
   {
-    name: "platform-mismatch: Linux /proc/ on macOS",
+    name: "platform-mismatch: wrong OS patterns",
     category: "platform",
-    diffLines: [
-      "+const cpuInfo = readFileSync('/proc/cpuinfo', 'utf-8');",
-      "+const cgroups = readFileSync('/proc/cgroups', 'utf-8');",
-    ],
+    diffLines: process.platform === "linux"
+      ? [
+          "+const app = NSApplication.sharedApplication();",
+          "+const plist = readFileSync('/Library/Preferences/com.apple.finder.plist');",
+        ]
+      : [
+          "+const cpuInfo = readFileSync('/proc/cpuinfo', 'utf-8');",
+          "+const cgroups = readFileSync('/proc/cgroups', 'utf-8');",
+        ],
     shouldCatch: true,
     gate: "review",
   },
