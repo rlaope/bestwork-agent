@@ -1199,6 +1199,38 @@ describe("New skill routes: delegate, waterfall, deliver, blitz, superthinking, 
     });
   });
 
+  describe("validate triggers", () => {
+    it("'run validate before building' → validate skill", () => {
+      const result = parseGateway("run validate before building");
+      expect(result.additionalContext).toContain("bestwork-agent:validate");
+    });
+
+    it("'이거 진짜 필요한 기능이야?' → validate skill", () => {
+      const result = parseGateway("이거 진짜 필요한 기능이야?");
+      expect(result.additionalContext).toContain("bestwork-agent:validate");
+    });
+
+    it("'validate this feature idea' → validate skill", () => {
+      const result = parseGateway("validate this feature idea");
+      expect(result.additionalContext).toContain("bestwork-agent:validate");
+    });
+
+    it("'is this worth building?' → validate skill", () => {
+      const result = parseGateway("is this worth building?");
+      expect(result.additionalContext).toContain("bestwork-agent:validate");
+    });
+
+    it("'시장 조사 해줘' → validate skill", () => {
+      const result = parseGateway("시장 조사 해줘");
+      expect(result.additionalContext).toContain("bestwork-agent:validate");
+    });
+
+    it("'유저가 진짜 원하는 기능인지 확인' → validate skill", () => {
+      const result = parseGateway("이거 진짜 필요한 기능인가");
+      expect(result.additionalContext).toContain("bestwork-agent:validate");
+    });
+  });
+
   describe("False positives for new skills", () => {
     it("'delegate in Python means...' does NOT trigger delegate", () => {
       const result = parseGateway("delegate in Python means something different");

@@ -488,6 +488,127 @@ Real-time status bar at bottom of Claude Code.
 
 ---
 
+## /bestwork-agent:validate
+
+Feature validation gate — evidence-based go/no-go before building.
+
+```
+./validate add AI-powered search to the app
+    |
+    v
+[BW] validate — is this really worth building?
+
+[BW] hypothesis:
+  Feature:  AI-powered search
+  Assumed problem: users can't find what they need
+  Assumed user: end users of the app
+    |
+    v (3 parallel research agents)
+    |
+    +-> Pain search: real user complaints from Reddit, HN, GitHub
+    +-> Alternative scan: existing solutions and their gaps
+    +-> Anti-evidence: reasons this might NOT be needed
+    |
+    v
+[BW] evidence report
+  Real pain: 12 signals found (strong)
+  Alternatives: 3 exist, all lack X
+  Anti-evidence: 2 counter-arguments
+    |
+    v
+[BW] validate — purpose check
+  1. PHILOSOPHY: Why does this deserve to exist?
+  2. EXPERIENCE: What relief/delight does the user feel?
+  3. MEASURE: How will you know this succeeded?
+    |
+    v
+[BW] validation scorecard:
+  Pain evidence:  75%
+  Gap:            80%
+  Purpose:        70%
+  Anti-evidence:  60%
+  Feasibility:    90%
+  Overall:        75% → CONDITIONAL
+    |
+    v
+[BW] next:
+  a) build — proceed with narrowed scope
+  b) research more — dig deeper
+  c) pivot — reframe the problem
+  d) drop — not worth building
+```
+
+Verdicts: VALIDATED (80%+), CONDITIONAL (60-79%), WEAK (40-59%), REJECTED (<40%).
+
+---
+
+## /bestwork-agent:clarify
+
+Ask targeted clarifying questions before execution.
+
+```
+./clarify implement user auth
+    |
+    v
+[BW] clarity assessment:
+  Goal:     60% — auth type unclear
+  Scope:    40% — which endpoints?
+  Criteria: 50% — no acceptance criteria
+  Risk:     30% — security implications unknown
+  Overall:  48%
+    |
+    v (question loop, max 5 rounds)
+    |
+[BW] clarify round 1/5 — targeting: Risk (30%)
+  "Should auth support OAuth2, JWT, or session-based?
+   The codebase currently has no auth middleware."
+    |
+    v (user answers, scores update)
+    |
+[BW] clarify complete — 3 rounds, 82% clarity
+  Requirements: [confirmed list]
+  Decisions: [from Q&A]
+  Recommended: trio with tech-auth + pm-security
+```
+
+---
+
+## /bestwork-agent:superthinking
+
+1000-iteration thought simulation loop.
+
+```
+./superthinking design the plugin architecture
+    |
+    v
+[BW] superthinking — 1000 iterations of plan/build/validate/critique...
+    |
+    v (deep reasoning cycles)
+    |
+[BW] superthinking complete
+  Key insights: [...]
+  Recommended approach: [...]
+```
+
+---
+
+## /bestwork-agent:pipeline-run
+
+Queue and auto-process multiple GitHub issues.
+
+```
+./pipeline-run #12 #15 #18
+    |
+    v
+[BW] pipeline: 3 issues queued
+  #12 → branch: fix/issue-12 → team assigned → PR created
+  #15 → branch: feat/issue-15 → team assigned → PR created
+  #18 → branch: fix/issue-18 → team assigned → PR created
+[BW] pipeline complete: 3/3 merged
+```
+
+---
+
 ## Smart Gateway Decision Flow
 
 ```
