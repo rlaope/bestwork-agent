@@ -17,6 +17,11 @@
             "type": "agent",
             "prompt": "You are bestwork's validation agent. A file was just modified via $ARGUMENTS.\nCheck for:\n1. TypeScript errors: run `npx tsc --noEmit` and report any errors in the changed file\n2. If the file imports modules, verify the imports actually exist (grep for them)\nDo NOT fix anything. Only report issues concisely (under 3 lines). If no issues, say nothing.",
             "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/bestwork-requirement-check.sh\"",
+            "timeout": 5
           }
         ]
       }
