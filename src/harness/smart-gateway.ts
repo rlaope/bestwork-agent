@@ -46,7 +46,7 @@ const SLASH_PREFIXES = [
   "./onboard", "./plan", "./review", "./sessions", "./status",
   "./trio", "./update",
   // New execution mode skills
-  "./delegate", "./waterfall", "./deliver", "./blitz", "./superthinking", "./clarify",
+  "./delegate", "./waterfall", "./deliver", "./blitz", "./superthinking", "./clarify", "./validate",
   // Meeting history
   "./meetings",
 ];
@@ -242,6 +242,20 @@ const SKILL_ROUTES: Array<{ patterns: RegExp[]; skill: string; reason: string; h
     ],
     skill: "clarify",
     reason: "clarify requirements before execution — ask targeted questions",
+  },
+  {
+    patterns: [
+      /(?:validate|검증).*(기능|feature|아이디어|idea|필요|need)/i,
+      /(?:이거|이게)\s*(?:진짜|정말)\s*(?:필요|쓸모|가치)/i,
+      /(?:시장|market)\s*(?:조사|research|검증|validation)/i,
+      /(?:build|만들)\s*(?:worth|가치|필요)/i,
+      /(?:run|start|do)\s+validate/i,
+      /validate\s+(?:this|the|feature|idea|before)/i,
+      /(?:worth)\s+(?:building|making|creating)/i,
+      /유저.*(?:진짜|정말).*(?:원하|필요|want|need)/i,
+    ],
+    skill: "validate",
+    reason: "feature validation gate — evidence-based go/no-go before building",
   },
 ];
 
