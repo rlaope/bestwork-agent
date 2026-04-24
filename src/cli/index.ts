@@ -21,12 +21,30 @@ import { updateCommand } from "./commands/harness/update.js";
 import { doctorCommand } from "./commands/harness/doctor.js";
 import { welcomeCommand } from "./commands/harness/welcome.js";
 import { recoverSessionCommand } from "./commands/harness/recover-session.js";
+import { skillsCommand } from "./commands/harness/skills.js";
 
 const program = new Command();
+
+const DEBUG = process.argv.includes("--debug") || process.env.BW_DEBUG === "1";
+
+function reportError(label: string, err: unknown): void {
+  const msg = err instanceof Error ? err.message : String(err);
+  process.stderr.write(`\n  ✗ bestwork ${label}: ${msg}\n`);
+  if (DEBUG && err instanceof Error && err.stack) {
+    process.stderr.write(`\n${err.stack}\n`);
+  } else if (!DEBUG) {
+    process.stderr.write(`  (re-run with --debug or BW_DEBUG=1 for a stack trace)\n`);
+  }
+  process.exitCode = 1;
+}
+
+process.on("unhandledRejection", (reason) => reportError("unhandled rejection", reason));
+process.on("uncaughtException", (err) => reportError("uncaught exception", err));
 
 program
   .name("bestwork")
   .description("bestwork-agent — harness engineering for Claude Code")
+  .option("--debug", "Show full stack traces on error")
   .version("0.9.0");
 
 program
@@ -158,5 +176,12 @@ notifyCmd
   .requiredOption("--title <title>", "Notification title")
   .requiredOption("--body <body>", "Notification body")
   .action(notifySendCommand);
+
+program
+  .command("skills")
+  .description("List all available skills (bundled + user + project)")
+  .option("-s, --search <term>", "Filter skills by name or description")
+  .option("--json", "Output as JSON")
+  .action(skillsCommand);
 
 program.parse();

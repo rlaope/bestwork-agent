@@ -380,10 +380,23 @@ async function main() {
     }
   }
 
-  // Tier 1: Skill routing — check if prompt matches a BW skill
+  // Tier 1: Skill routing — first-match-wins with overlap telemetry.
+  // When the prompt matches more than one route we still pick the first (preserves
+  // historical behavior and lets SKILL_ROUTES order encode precedence), but log
+  // the overlap so ambiguous patterns are diagnosable from gateway.log.
   const lower = prompt.toLowerCase();
-  for (const route of SKILL_ROUTES) {
-    if (route.patterns.some((p) => p.test(lower))) {
+  const matchedRoutes = SKILL_ROUTES.filter((r) => r.patterns.some((p) => p.test(lower)));
+  if (matchedRoutes.length > 1) {
+    const names = matchedRoutes.map((r) => r.skill).join(",");
+    logger.warn(
+      "routing",
+      `skill overlap: ${matchedRoutes.length} routes matched [${names}] — first wins (${matchedRoutes[0]!.skill}). ` +
+        `Prompt="${prompt.slice(0, 80).replace(/\n/g, " ")}"`,
+    );
+  }
+  if (matchedRoutes[0]) {
+    const route = matchedRoutes[0];
+    {
       // If skill has a shell hook, execute it directly (same as ./command)
       if (route.hook && PLUGIN_ROOT) {
         try {

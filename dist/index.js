@@ -4126,9 +4126,144 @@ async function recoverSessionCommand(id) {
   }
 }
 
+// src/cli/commands/harness/skills.ts
+import { readFileSync, readdirSync, existsSync as existsSync2, statSync } from "fs";
+import { join as join10, dirname as dirname3 } from "path";
+import { fileURLToPath as fileURLToPath3 } from "url";
+import { homedir as homedir8 } from "os";
+function parseFrontmatter(content) {
+  const m = content.match(/^---\n([\s\S]*?)\n---/);
+  if (!m) return null;
+  const fm = m[1];
+  const name = fm.match(/^name:\s*(.+)$/m)?.[1]?.trim();
+  const description = fm.match(/^description:\s*(.+)$/m)?.[1]?.trim() ?? "";
+  if (!name) return null;
+  return { name, description };
+}
+function scanSkillsDir(dir, source) {
+  if (!existsSync2(dir)) return [];
+  const entries = [];
+  let subdirs;
+  try {
+    subdirs = readdirSync(dir);
+  } catch {
+    return [];
+  }
+  for (const sub of subdirs) {
+    const full = join10(dir, sub);
+    let isDir = false;
+    try {
+      isDir = statSync(full).isDirectory();
+    } catch {
+      continue;
+    }
+    if (!isDir) continue;
+    const skillMd = join10(full, "SKILL.md");
+    if (!existsSync2(skillMd)) continue;
+    try {
+      const content = readFileSync(skillMd, "utf-8");
+      const parsed = parseFrontmatter(content);
+      if (parsed) {
+        entries.push({ ...parsed, source, path: skillMd });
+      }
+    } catch {
+    }
+  }
+  return entries;
+}
+function resolveBundledSkillsDir() {
+  if (process.env.CLAUDE_PLUGIN_ROOT) {
+    const p = join10(process.env.CLAUDE_PLUGIN_ROOT, "skills");
+    if (existsSync2(p)) return p;
+  }
+  try {
+    const here = fileURLToPath3(import.meta.url);
+    const candidates = [
+      join10(dirname3(here), "..", "..", "..", "..", "skills"),
+      join10(dirname3(here), "..", "..", "..", "skills")
+    ];
+    for (const c of candidates) {
+      if (existsSync2(c)) return c;
+    }
+  } catch {
+  }
+  const cwdSkills = join10(process.cwd(), "skills");
+  if (existsSync2(cwdSkills)) return cwdSkills;
+  return null;
+}
+function collectSkills() {
+  const bundled = resolveBundledSkillsDir();
+  const userDir = join10(homedir8(), ".bestwork", "skills");
+  const projectDir = join10(process.cwd(), ".bestwork", "skills");
+  const all = [
+    ...bundled ? scanSkillsDir(bundled, "bundled") : [],
+    ...scanSkillsDir(userDir, "user"),
+    ...scanSkillsDir(projectDir, "project")
+  ];
+  const dedup = /* @__PURE__ */ new Map();
+  const priority = { bundled: 0, user: 1, project: 2 };
+  for (const s of all) {
+    const prev = dedup.get(s.name);
+    if (!prev || priority[s.source] > priority[prev.source]) {
+      dedup.set(s.name, s);
+    }
+  }
+  return [...dedup.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+function skillsCommand(options = {}) {
+  const all = collectSkills();
+  const needle = options.search?.toLowerCase();
+  const filtered = needle ? all.filter(
+    (s) => s.name.toLowerCase().includes(needle) || s.description.toLowerCase().includes(needle)
+  ) : all;
+  if (options.json) {
+    process.stdout.write(JSON.stringify(filtered, null, 2) + "\n");
+    return;
+  }
+  if (filtered.length === 0) {
+    const msg = needle ? `  No skills match "${options.search}".
+` : `  No skills found. Run \`bestwork install\` if you installed via npm.
+`;
+    process.stdout.write("\n" + msg + "\n");
+    return;
+  }
+  const maxName = Math.max(4, ...filtered.map((s) => s.name.length));
+  const maxSrc = Math.max(6, ...filtered.map((s) => s.source.length));
+  process.stdout.write(
+    `
+  ${filtered.length} skill(s)${needle ? ` matching "${options.search}"` : ""}
+
+`
+  );
+  for (const s of filtered) {
+    const pad = (v, n) => v + " ".repeat(Math.max(0, n - v.length));
+    process.stdout.write(`  ${pad(s.name, maxName)}  ${pad(s.source, maxSrc)}  ${s.description}
+`);
+  }
+  process.stdout.write("\n");
+}
+
 // src/cli/index.ts
 var program = new Command();
-program.name("bestwork").description("bestwork-agent \u2014 harness engineering for Claude Code").version("0.9.0");
+var DEBUG = process.argv.includes("--debug") || process.env.BW_DEBUG === "1";
+function reportError(label, err) {
+  const msg = err instanceof Error ? err.message : String(err);
+  process.stderr.write(`
+  \u2717 bestwork ${label}: ${msg}
+`);
+  if (DEBUG && err instanceof Error && err.stack) {
+    process.stderr.write(`
+${err.stack}
+`);
+  } else if (!DEBUG) {
+    process.stderr.write(`  (re-run with --debug or BW_DEBUG=1 for a stack trace)
+`);
+  }
+  process.exitCode = 1;
+}
+process.on("unhandledRejection", (reason) => reportError("unhandled rejection", reason));
+process.on("uncaughtException", (err) => reportError("uncaught exception", err));
+program.name("bestwork").description("bestwork-agent \u2014 harness engineering for Claude Code").option("--debug", "Show full stack traces on error").version("0.9.0");
 program.command("sessions").description("List all sessions").option("-n, --limit <number>", "Number of sessions to show", "10").action(sessionsCommand);
 program.command("session <id>").description("Show session detail").action(sessionCommand);
 program.command("summary").description("Show today's summary").option("-w, --weekly", "Show weekly summary").action(summaryCommand);
@@ -4153,5 +4288,6 @@ program.command("recover [id]").description("Recover a team/trio/squad session (
 var notifyCmd = program.command("notify").description("Notification settings");
 notifyCmd.command("setup").description("Configure Discord/Slack/Telegram notifications").option("--discord <url>", "Discord webhook URL").option("--slack <url>", "Slack webhook URL").option("--telegram-token <token>", "Telegram bot token").option("--telegram-chat <id>", "Telegram chat ID").option("--test", "Send a test notification").action(notifyConfigCommand);
 notifyCmd.command("send").description("Send a notification manually").requiredOption("--title <title>", "Notification title").requiredOption("--body <body>", "Notification body").action(notifySendCommand);
+program.command("skills").description("List all available skills (bundled + user + project)").option("-s, --search <term>", "Filter skills by name or description").option("--json", "Output as JSON").action(skillsCommand);
 program.parse();
 //# sourceMappingURL=index.js.map

@@ -2487,8 +2487,17 @@ async function main() {
     }
   }
   const lower = prompt.toLowerCase();
-  for (const route of SKILL_ROUTES) {
-    if (route.patterns.some((p) => p.test(lower))) {
+  const matchedRoutes = SKILL_ROUTES.filter((r) => r.patterns.some((p) => p.test(lower)));
+  if (matchedRoutes.length > 1) {
+    const names = matchedRoutes.map((r) => r.skill).join(",");
+    logger.warn(
+      "routing",
+      `skill overlap: ${matchedRoutes.length} routes matched [${names}] \u2014 first wins (${matchedRoutes[0].skill}). Prompt="${prompt.slice(0, 80).replace(/\n/g, " ")}"`
+    );
+  }
+  if (matchedRoutes[0]) {
+    const route = matchedRoutes[0];
+    {
       if (route.hook && PLUGIN_ROOT) {
         try {
           const hookInput = JSON.stringify({ prompt, session_id: input.session_id ?? "" });
