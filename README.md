@@ -1,6 +1,6 @@
 # bestwork-agent
 
-Harness engineering for Claude Code. Your agent types one line — the harness catches everything else.
+Work like a corporation team, not just a club. Your AI agent gets the org chart, the quality gates, and the team reviews that real engineering orgs use.
 
 <p align="center">
   <img src="https://img.shields.io/npm/v/bestwork-agent?color=cyan" alt="npm version" />
@@ -16,11 +16,124 @@ Harness engineering for Claude Code. Your agent types one line — the harness c
 
 ## The problem
 
-AI coding agents hallucinate, loop, miss requirements, and ship security flaws. 45% of AI-generated code contains vulnerabilities (Veracode). Vibe-coded apps fail because nobody validated the idea before building.
+Your AI agent works alone. It hallucinates, loops, misses requirements, and you find out too late. 45% of AI-generated code contains vulnerabilities (Veracode). Vibe-coded apps fail because nobody validated the idea before building.
 
-**bestwork-agent** adds the quality gates that professional engineering teams use — without changing how you work.
+**bestwork-agent** organizes your AI agent the way top unicorn companies organize their engineering teams — and bolts on the quality gates those teams rely on, so the work that ships is actually trustworthy.
 
-## Benchmark: harness ON vs OFF
+## How the team forms itself
+
+bestwork analyzes every prompt and picks the right team shape before any code is written.
+
+```
+You: "Refactor the auth module to support OAuth2"
+
+bestwork analyzes → large scope, architecture decision, security-sensitive
+bestwork selects → Hierarchy: Security Team
+
+┌─────────────────────────────────────────────────────┐
+│  CISO                                               │
+│  "Attack surface acceptable. Approve with           │
+│   condition: rotate existing JWT secrets on deploy." │
+│          ▲ final decision                           │
+│  Tech Lead                                          │
+│  "OAuth2 PKCE flow is correct. Consolidate the      │
+│   two token refresh paths into one."                │
+│          ▲ architecture review                      │
+│  Sr. Security Engineer                              │
+│  "Implementation secure. Added CSRF protection.     │
+│   Input validation on redirect_uri."                │
+│          ▲ implementation + hardening               │
+│  Jr. QA Engineer                                    │
+│  "Found: /callback doesn't handle expired state     │
+│   param. Added test for token replay attack."       │
+│          ▲ fresh eyes + edge cases                  │
+└─────────────────────────────────────────────────────┘
+```
+
+```
+You: "Add a dark mode toggle to the settings page"
+
+bestwork analyzes → single feature, localized scope, fast feedback needed
+bestwork selects → Squad: Feature Squad
+
+┌──────────────────────────────────────────────────────┐
+│                  Feature Squad (parallel)             │
+│                                                       │
+│  Sr. Backend         Sr. Frontend        Product Lead │
+│  "API endpoint       "Toggle component   "Matches    │
+│   for user prefs     with CSS vars,      user story. │
+│   ready. Tests       accessible."        Ship it."   │
+│   passing."                                          │
+│                          QA Lead                      │
+│                    "Tested light/dark                 │
+│                     + system pref.                    │
+│                     All green."                       │
+│                                                       │
+│  Verdict: all APPROVE → merged                        │
+└──────────────────────────────────────────────────────┘
+```
+
+```
+You: "Why did my last session struggle?"
+
+bestwork analyzes → observability request, not coding
+bestwork selects → data analysis
+
+  Session Outcome — b322dc3e  ✗ struggling
+
+  Duration:     45m
+  Calls/Prompt: 38 (high — avg is 12)
+  Loop detected: Edit → Bash(test fail) → Edit × 6 on auth.ts
+
+  Root cause: missing import caused test failure loop.
+  Recommendation: use ./strict to force read-before-edit.
+```
+
+## How the team picks its shape
+
+bestwork mirrors how the best engineering organizations operate.
+
+**Hierarchy** — for decisions that need authority levels
+```
+CTO → Tech Lead → Sr. Engineer → Jr. Engineer
+```
+Junior implements first (fresh perspective catches obvious issues), seniors refine, leads review architecture, C-level makes final strategic calls. Each level can send work back down.
+
+**Squad** — for tasks that need speed and collaboration
+```
+Backend + Frontend + Product + QA (all equal)
+```
+Everyone works in parallel. No single authority. Consensus-driven. Fast.
+
+**The gateway picks automatically** from task signals:
+- Simple fix / rename / format → **solo** (one agent, no overhead)
+- Two related sub-tasks → **pair** (one agent per task + critic)
+- Multiple sub-tasks → **trio** (tech + PM + critic per task, parallel)
+- Large scope / cross-directory / architecture → **hierarchy** (CTO → Lead → Senior → Junior)
+- Single feature / bugfix / localized → **squad** (flat, consensus-driven)
+- Security-sensitive files → security team
+- Infra / CI/CD files → infra squad
+
+For non-solo work, the gateway shows you the plan and lets you confirm, adjust, or drop to solo.
+
+## The quality gates the team runs on
+
+Team structure alone isn't enough — AI agents still hallucinate. Every action routes through quality gates that real engineering teams rely on.
+
+| Gate | When | What it catches |
+|------|------|-----------------|
+| **Grounding** | PreToolUse (Edit/Write) | Editing files the agent hasn't read |
+| **Scope lock** | PreToolUse | Edits outside the locked directory |
+| **Strict mode** | PreToolUse | `rm -rf`, `git push --force` |
+| **Type check** | PostToolUse (Edit/Write) | TypeScript errors after every change |
+| **Review** | On demand / PostToolUse | Fake imports, hallucinated methods, platform mismatch, deprecated APIs |
+| **Requirement check** | PostToolUse (Edit/Write) | Unmet requirements from clarify/validate sessions |
+| **Verifier** | After author's pass | Separate-pass completion check with fresh evidence table |
+| **Validate** | Before building | Evidence-based go/no-go — is this feature worth building? |
+
+All gates run automatically. You just type your prompt.
+
+## Proof: harness ON vs OFF
 
 ```
 ═══════════════════════════════════
@@ -47,20 +160,6 @@ AI coding agents hallucinate, loop, miss requirements, and ship security flaws. 
 
 Run it yourself: `npm run benchmark`
 
-## What the harness does
-
-| Gate | When | What it catches |
-|------|------|-----------------|
-| **Grounding** | PreToolUse (Edit/Write) | Editing files the agent hasn't read |
-| **Scope lock** | PreToolUse | Edits outside the locked directory |
-| **Strict mode** | PreToolUse | `rm -rf`, `git push --force` |
-| **Type check** | PostToolUse (Edit/Write) | TypeScript errors after every change |
-| **Review** | On demand / PostToolUse | Fake imports, hallucinated methods, platform mismatch, deprecated APIs, type safety bypass |
-| **Requirement check** | PostToolUse (Edit/Write) | Unmet requirements from clarify/validate sessions |
-| **Validate** | Before building | Evidence-based go/no-go — is this feature worth building? |
-
-All gates run automatically. You just type your prompt.
-
 ## Install
 
 ### Option 1: Claude Code Plugin (recommended)
@@ -77,37 +176,7 @@ npm install -g bestwork-agent
 bestwork install
 ```
 
-## How it works
-
-```
-You: "Refactor the auth module to support OAuth2"
-                    │
-                    ▼
-            ┌──────────────┐
-            │ Smart Gateway │  classifies intent, allocates agents
-            └──────┬───────┘
-                   │
-         ┌─────────┼──────────┐
-         ▼         ▼          ▼
-     PreToolUse  Execution  PostToolUse
-     ┌─────────┐           ┌──────────┐
-     │Grounding│           │Type check│
-     │Scope    │           │Review    │
-     │Strict   │           │Req check │
-     └─────────┘           └──────────┘
-```
-
-The gateway analyzes your prompt and picks the right scale:
-
-- **Solo** — simple fix, rename, format (1 agent)
-- **Pair** — two related sub-tasks (2 agents + critic)
-- **Trio** — multiple sub-tasks with quality gates (tech + PM + critic per task)
-- **Hierarchy** — large scope, architecture decisions (CTO → Lead → Senior → Junior)
-- **Squad** — localized feature, fast consensus (flat, parallel)
-
-For non-solo work, the gateway shows you the plan and asks to confirm.
-
-## 49 Domain Specialists
+## 50 Domain Specialists
 
 ```bash
 bestwork agents    # full catalog
@@ -117,7 +186,7 @@ bestwork agents    # full catalog
 
 **10 PM**: product, API, platform, data, infra, migration, security, growth, compliance, DX
 
-**14 Critic**: performance, scalability, security, consistency, reliability, testing, hallucination, DX, type safety, cost, accessibility, devsecops, i18n, agent
+**15 Critic**: performance, scalability, security, consistency, reliability, testing, hallucination, DX, type safety, cost, accessibility, devsecops, i18n, agent, verifier
 
 Agent prompts live in `prompts/` — edit without rebuilding.
 
@@ -148,6 +217,7 @@ And 10 more: agents, changelog, docs, health, install, meetings, onboard, sessio
 |---|---|---|---|---|
 | **Target** | Claude Code users | General Python | General Python | Everyone |
 | **Integration** | Native hooks (zero config) | Separate runtime | Separate runtime | Built-in |
+| **Team structure** | Auto (hierarchy/squad/trio/pair/solo) | Manual | Manual | None |
 | **Hallucination catch** | 100% (10/10 benchmark) | No built-in | No built-in | 0% |
 | **Overhead** | ~0 (shell hooks) | 3x tokens | 2-5x tokens | 0 |
 | **Feature validation** | Built-in (validate skill) | None | None | None |
