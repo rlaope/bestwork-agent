@@ -209,4 +209,27 @@ describe("classifyIntent", () => {
     const result = classifyIntent("implement auth API | add tests | update docs");
     expect(result.suggestedAgents.length).toBeGreaterThan(0);
   });
+
+  it("exposes confidenceScore and signals for telemetry", () => {
+    const result = classifyIntent("refactor the authentication middleware across backend and frontend");
+    expect(typeof result.confidenceScore).toBe("number");
+    expect(result.confidenceScore).toBeGreaterThanOrEqual(0);
+    expect(result.confidenceScore).toBeLessThanOrEqual(100);
+    expect(result.signals).toBeDefined();
+    expect(Array.isArray(result.signals.domains)).toBe(true);
+    expect(typeof result.signals.taskCount).toBe("number");
+    expect(result.signals.complexitySignals).toContain("refactor");
+  });
+
+  it("passthrough earns top confidence score", () => {
+    const result = classifyIntent("git status");
+    expect(result.mode).toBe("passthrough");
+    expect(result.confidenceScore).toBeGreaterThanOrEqual(90);
+  });
+
+  it("vague single-domain fallback earns lower score than complex multi-domain", () => {
+    const vague = classifyIntent("do something");
+    const rich = classifyIntent("refactor authentication across backend and infra");
+    expect(rich.confidenceScore).toBeGreaterThan(vague.confidenceScore);
+  });
 });

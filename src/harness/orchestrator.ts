@@ -276,11 +276,30 @@ export interface TaskAllocation {
   parallel: boolean;
 }
 
+export interface RoutingSignals {
+  /** Number of sub-tasks detected from splitTasks */
+  taskCount: number;
+  /** Domains detected across all sub-tasks */
+  domains: string[];
+  /** Total keyword matches across domains (higher = stronger domain signal) */
+  domainMatchCount: number;
+  /** Which weight classifier fired: passthrough / solo / standard */
+  weight: "passthrough" | "solo" | "standard";
+  /** Which complexity regexes fired (refactor, migrate, etc.) */
+  complexitySignals: string[];
+  /** Whether project config overrode the default mode */
+  configOverride: boolean;
+}
+
 export interface IntentClassification {
   mode: ExecutionMode;
   tasks: string[];
   reasoning: string;
   confidence: "high" | "medium" | "low";
+  /** Numeric 0-100 confidence score derived from signals */
+  confidenceScore: number;
+  /** Raw signals that produced the decision — useful for telemetry/debugging */
+  signals: RoutingSignals;
   suggestedAgents: string[];
   /** Dynamic task+agent breakdown — replaces fixed team structures */
   taskAllocations: TaskAllocation[];
@@ -342,14 +361,61 @@ function splitTasks(task: string): string[] {
 }
 
 function detectDomains(task: string): string[] {
+  const { domains } = detectDomainsWithScore(task);
+  return domains;
+}
+
+function detectDomainsWithScore(task: string): { domains: string[]; matchCount: number } {
   const lower = task.toLowerCase();
   const found: string[] = [];
+  let matchCount = 0;
   for (const [domain, keywords] of Object.entries(DOMAIN_KEYWORDS)) {
-    if (keywords.some((kw) => lower.includes(kw))) {
-      found.push(domain);
+    let hit = false;
+    for (const kw of keywords) {
+      if (lower.includes(kw)) {
+        matchCount++;
+        hit = true;
+      }
     }
+    if (hit) found.push(domain);
   }
-  return found.length > 0 ? [...new Set(found)] : ["backend"];
+  if (found.length === 0) {
+    return { domains: ["backend"], matchCount: 0 };
+  }
+  return { domains: [...new Set(found)], matchCount };
+}
+
+const COMPLEXITY_SIGNAL_DEFS: Array<{ name: string; pattern: RegExp }> = [
+  { name: "refactor", pattern: /refactor|리팩토링|リファクタ/i },
+  { name: "redesign", pattern: /redesign|재설계|再設計/i },
+  { name: "migrate", pattern: /migrate|마이그레이션|マイグレーション/i },
+  { name: "architect", pattern: /architect|아키텍처|アーキテクチャ/i },
+  { name: "implement-system", pattern: /implement.*system|시스템.*구현/i },
+  { name: "build-platform", pattern: /build.*platform|플랫폼.*구축/i },
+];
+
+function detectComplexitySignals(task: string): string[] {
+  return COMPLEXITY_SIGNAL_DEFS.filter((s) => s.pattern.test(task)).map((s) => s.name);
+}
+
+/**
+ * Score routing confidence 0-100 from raw signals.
+ * Numeric counterpart to the categorical confidence level — never used to
+ * pick the mode, only to surface how strong the signal was for telemetry.
+ */
+function scoreConfidence(signals: RoutingSignals): number {
+  if (signals.weight === "passthrough") return 95;
+  let score = 40; // baseline
+  if (signals.taskCount >= 3) score += 30;
+  else if (signals.taskCount === 2) score += 20;
+  if (signals.domainMatchCount >= 3) score += 20;
+  else if (signals.domainMatchCount >= 1) score += 10;
+  if (signals.complexitySignals.length > 0) score += 15;
+  if (signals.domains.length >= 2) score += 10;
+  if (signals.weight === "solo") score += 10;
+  if (signals.configOverride) score += 5;
+  if (score > 100) score = 100;
+  return score;
 }
 
 /**
@@ -410,29 +476,47 @@ function buildTaskAllocations(tasks: string[], mode: ExecutionMode, config?: Pro
 export function classifyIntent(task: string, config?: ProjectConfig): IntentClassification {
   const tasks = splitTasks(task);
   const taskCount = tasks.length;
+  const weight = classifyWeight(task);
+
+  // Build a reusable signals object incrementally; final score computed per branch
+  const complexitySignals = detectComplexitySignals(task);
+  const { domains: allDomains, matchCount: domainMatchCount } = (() => {
+    const perTask = tasks.map((t) => detectDomainsWithScore(t));
+    const merged = [...new Set(perTask.flatMap((p) => p.domains))];
+    const total = perTask.reduce((s, p) => s + p.matchCount, 0);
+    return { domains: merged, matchCount: total };
+  })();
+
+  const baseSignals = (mode: IntentClassification["mode"]): RoutingSignals => ({
+    taskCount,
+    domains: allDomains,
+    domainMatchCount,
+    weight: weight === "passthrough" ? "passthrough" : weight === "solo" ? "solo" : "standard",
+    complexitySignals,
+    configOverride: Boolean(config?.defaultMode && mode === config.defaultMode),
+  });
 
   // Check passthrough first
-  const weight = classifyWeight(task);
   if (weight === "passthrough") {
+    const signals = baseSignals("passthrough");
     const allocations = buildTaskAllocations(tasks, "passthrough", config);
     return {
       mode: "passthrough",
       tasks,
       reasoning: "Task matches passthrough pattern (git/shell/npm command or simple acknowledgement) — no agent allocation needed.",
       confidence: "high",
+      confidenceScore: scoreConfidence(signals),
+      signals,
       suggestedAgents: [],
       taskAllocations: allocations,
       totalAgents: 0,
     };
   }
 
-  // Detect domains across all sub-tasks
-  const allDomains = [...new Set(tasks.flatMap((t) => detectDomains(t)))];
+  // Suggested agents from detected domains
   let suggestedAgents = allDomains
     .map((d) => DOMAIN_TO_AGENT[d] ?? "sr-fullstack")
     .filter((a, i, arr) => arr.indexOf(a) === i);
-
-  // Apply project config: filter disabled, boost preferred
   suggestedAgents = applyAgentConfig(suggestedAgents, config);
 
   // Multi-task path
@@ -440,11 +524,14 @@ export function classifyIntent(task: string, config?: ProjectConfig): IntentClas
     const mode = config?.defaultMode ?? "trio";
     const allocations = buildTaskAllocations(tasks, mode, config);
     const total = allocations.reduce((sum, a) => sum + a.agents.length, 0);
+    const signals = baseSignals(mode);
     return {
       mode,
       tasks,
       reasoning: `Task contains ${taskCount} separable sub-tasks ("${tasks.join(" | ")}") spanning domains: ${allDomains.join(", ")}. ${taskCount} parallel tasks with ${total} total agents.`,
       confidence: "high",
+      confidenceScore: scoreConfidence(signals),
+      signals,
       suggestedAgents,
       taskAllocations: allocations,
       totalAgents: total,
@@ -455,11 +542,14 @@ export function classifyIntent(task: string, config?: ProjectConfig): IntentClas
     const mode = config?.defaultMode ?? "pair";
     const allocations = buildTaskAllocations(tasks, mode, config);
     const total = allocations.reduce((sum, a) => sum + a.agents.length, 0);
+    const signals = baseSignals(mode);
     return {
       mode,
       tasks,
       reasoning: `Task splits into 2 sub-tasks covering domains: ${allDomains.join(", ")}. Pair mode with one agent per task.`,
       confidence: "high",
+      confidenceScore: scoreConfidence(signals),
+      signals,
       suggestedAgents,
       taskAllocations: allocations,
       totalAgents: total,
@@ -467,14 +557,16 @@ export function classifyIntent(task: string, config?: ProjectConfig): IntentClas
   }
 
   // Single task — use autoAllocate signals
-  const soloWeight = classifyWeight(task);
-  if (soloWeight === "solo" && !config?.defaultMode) {
+  if (weight === "solo" && !config?.defaultMode) {
     const allocations = buildTaskAllocations(tasks, "solo", config);
+    const signals = baseSignals("solo");
     return {
       mode: "solo",
       tasks,
       reasoning: `Single lightweight task matching solo pattern (typo fix, rename, format, or minor update). One senior developer sufficient.`,
       confidence: "high",
+      confidenceScore: scoreConfidence(signals),
+      signals,
       suggestedAgents: applyAgentConfig(["sr-fullstack"], config),
       taskAllocations: allocations,
       totalAgents: 1,
@@ -482,25 +574,20 @@ export function classifyIntent(task: string, config?: ProjectConfig): IntentClas
   }
 
   // Infer complexity from domain count + keywords
-  const complexitySignals = [
-    /refactor|리팩토링|リファクタ/i,
-    /redesign|재설계|再設計/i,
-    /migrate|마이그레이션|マイグレーション/i,
-    /architect|아키텍처|アーキテクチャ/i,
-    /implement.*system|시스템.*구현/i,
-    /build.*platform|플랫폼.*구축/i,
-  ];
-  const isComplex = complexitySignals.some((p) => p.test(task)) || allDomains.length >= 3;
+  const isComplex = complexitySignals.length > 0 || allDomains.length >= 3;
 
   if (isComplex) {
     const mode = config?.defaultMode ?? "hierarchy";
     const allocations = buildTaskAllocations(tasks, mode, config);
     const total = allocations.reduce((sum, a) => sum + a.agents.length, 0);
+    const signals = baseSignals(mode);
     return {
       mode,
       tasks,
       reasoning: `Complex single task touching ${allDomains.length} domain(s) (${allDomains.join(", ")}) with structural complexity signals. Hierarchy mode with senior → lead → CTO chain.`,
       confidence: allDomains.length >= 2 ? "high" : "medium",
+      confidenceScore: scoreConfidence(signals),
+      signals,
       suggestedAgents,
       taskAllocations: allocations,
       totalAgents: total,
@@ -520,12 +607,15 @@ export function classifyIntent(task: string, config?: ProjectConfig): IntentClas
 
   const allocations = buildTaskAllocations(tasks, finalMode, config);
   const total = allocations.reduce((sum, a) => sum + a.agents.length, 0);
+  const signals = baseSignals(finalMode);
 
   return {
     mode: finalMode,
     tasks,
     reasoning: `Single task in domain(s): ${allDomains.join(", ")}. ${allocation.reasoning}`,
     confidence: "medium",
+    confidenceScore: scoreConfidence(signals),
+    signals,
     suggestedAgents,
     taskAllocations: allocations,
     totalAgents: total,

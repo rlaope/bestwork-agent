@@ -459,6 +459,20 @@ async function main() {
   // Tier 2: Task classification — analyze prompt and determine execution mode
   const intent = classifyIntent(prompt, projectConfig);
 
+  // Routing telemetry — every classification logs its signals + score so
+  // misrouted prompts are diagnosable from ~/.bestwork/gateway.log alone.
+  const s = intent.signals;
+  const telemetryLine =
+    `routing mode=${intent.mode} conf=${intent.confidenceScore}/${intent.confidence} ` +
+    `tasks=${s.taskCount} domains=[${s.domains.join(",")}] matches=${s.domainMatchCount} ` +
+    `weight=${s.weight} complexity=[${s.complexitySignals.join(",")}] ` +
+    `override=${s.configOverride} prompt="${prompt.slice(0, 80).replace(/\n/g, " ")}"`;
+  if (intent.confidence === "low" || intent.confidenceScore < 50) {
+    logger.warn("routing", telemetryLine);
+  } else {
+    logger.info("routing", telemetryLine);
+  }
+
   const agentList = intent.suggestedAgents.join(", ");
 
   // Command hook: LOG ONLY. Agent hook (bestwork-smart-agent) handles execution.

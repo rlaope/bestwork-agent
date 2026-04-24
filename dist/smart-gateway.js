@@ -1766,14 +1766,52 @@ function splitTasks(task) {
   return [task.trim()];
 }
 function detectDomains(task) {
+  const { domains } = detectDomainsWithScore(task);
+  return domains;
+}
+function detectDomainsWithScore(task) {
   const lower = task.toLowerCase();
   const found = [];
+  let matchCount = 0;
   for (const [domain, keywords] of Object.entries(DOMAIN_KEYWORDS)) {
-    if (keywords.some((kw) => lower.includes(kw))) {
-      found.push(domain);
+    let hit = false;
+    for (const kw of keywords) {
+      if (lower.includes(kw)) {
+        matchCount++;
+        hit = true;
+      }
     }
+    if (hit) found.push(domain);
   }
-  return found.length > 0 ? [...new Set(found)] : ["backend"];
+  if (found.length === 0) {
+    return { domains: ["backend"], matchCount: 0 };
+  }
+  return { domains: [...new Set(found)], matchCount };
+}
+var COMPLEXITY_SIGNAL_DEFS = [
+  { name: "refactor", pattern: /refactor|리팩토링|リファクタ/i },
+  { name: "redesign", pattern: /redesign|재설계|再設計/i },
+  { name: "migrate", pattern: /migrate|마이그레이션|マイグレーション/i },
+  { name: "architect", pattern: /architect|아키텍처|アーキテクチャ/i },
+  { name: "implement-system", pattern: /implement.*system|시스템.*구현/i },
+  { name: "build-platform", pattern: /build.*platform|플랫폼.*구축/i }
+];
+function detectComplexitySignals(task) {
+  return COMPLEXITY_SIGNAL_DEFS.filter((s) => s.pattern.test(task)).map((s) => s.name);
+}
+function scoreConfidence(signals) {
+  if (signals.weight === "passthrough") return 95;
+  let score = 40;
+  if (signals.taskCount >= 3) score += 30;
+  else if (signals.taskCount === 2) score += 20;
+  if (signals.domainMatchCount >= 3) score += 20;
+  else if (signals.domainMatchCount >= 1) score += 10;
+  if (signals.complexitySignals.length > 0) score += 15;
+  if (signals.domains.length >= 2) score += 10;
+  if (signals.weight === "solo") score += 10;
+  if (signals.configOverride) score += 5;
+  if (score > 100) score = 100;
+  return score;
 }
 function resolveAgent(agentId, config) {
   if (config?.disabledAgents?.includes(agentId)) return null;
@@ -1810,30 +1848,50 @@ function classifyIntent(task, config) {
   const tasks = splitTasks(task);
   const taskCount = tasks.length;
   const weight = classifyWeight(task);
+  const complexitySignals = detectComplexitySignals(task);
+  const { domains: allDomains, matchCount: domainMatchCount } = (() => {
+    const perTask = tasks.map((t) => detectDomainsWithScore(t));
+    const merged = [...new Set(perTask.flatMap((p) => p.domains))];
+    const total2 = perTask.reduce((s, p) => s + p.matchCount, 0);
+    return { domains: merged, matchCount: total2 };
+  })();
+  const baseSignals = (mode) => ({
+    taskCount,
+    domains: allDomains,
+    domainMatchCount,
+    weight: weight === "passthrough" ? "passthrough" : weight === "solo" ? "solo" : "standard",
+    complexitySignals,
+    configOverride: Boolean(config?.defaultMode && mode === config.defaultMode)
+  });
   if (weight === "passthrough") {
+    const signals2 = baseSignals("passthrough");
     const allocations2 = buildTaskAllocations(tasks, "passthrough", config);
     return {
       mode: "passthrough",
       tasks,
       reasoning: "Task matches passthrough pattern (git/shell/npm command or simple acknowledgement) \u2014 no agent allocation needed.",
       confidence: "high",
+      confidenceScore: scoreConfidence(signals2),
+      signals: signals2,
       suggestedAgents: [],
       taskAllocations: allocations2,
       totalAgents: 0
     };
   }
-  const allDomains = [...new Set(tasks.flatMap((t) => detectDomains(t)))];
   let suggestedAgents = allDomains.map((d) => DOMAIN_TO_AGENT[d] ?? "sr-fullstack").filter((a, i, arr) => arr.indexOf(a) === i);
   suggestedAgents = applyAgentConfig(suggestedAgents, config);
   if (taskCount >= 3) {
     const mode = config?.defaultMode ?? "trio";
     const allocations2 = buildTaskAllocations(tasks, mode, config);
     const total2 = allocations2.reduce((sum, a) => sum + a.agents.length, 0);
+    const signals2 = baseSignals(mode);
     return {
       mode,
       tasks,
       reasoning: `Task contains ${taskCount} separable sub-tasks ("${tasks.join(" | ")}") spanning domains: ${allDomains.join(", ")}. ${taskCount} parallel tasks with ${total2} total agents.`,
       confidence: "high",
+      confidenceScore: scoreConfidence(signals2),
+      signals: signals2,
       suggestedAgents,
       taskAllocations: allocations2,
       totalAgents: total2
@@ -1843,47 +1901,47 @@ function classifyIntent(task, config) {
     const mode = config?.defaultMode ?? "pair";
     const allocations2 = buildTaskAllocations(tasks, mode, config);
     const total2 = allocations2.reduce((sum, a) => sum + a.agents.length, 0);
+    const signals2 = baseSignals(mode);
     return {
       mode,
       tasks,
       reasoning: `Task splits into 2 sub-tasks covering domains: ${allDomains.join(", ")}. Pair mode with one agent per task.`,
       confidence: "high",
+      confidenceScore: scoreConfidence(signals2),
+      signals: signals2,
       suggestedAgents,
       taskAllocations: allocations2,
       totalAgents: total2
     };
   }
-  const soloWeight = classifyWeight(task);
-  if (soloWeight === "solo" && !config?.defaultMode) {
+  if (weight === "solo" && !config?.defaultMode) {
     const allocations2 = buildTaskAllocations(tasks, "solo", config);
+    const signals2 = baseSignals("solo");
     return {
       mode: "solo",
       tasks,
       reasoning: `Single lightweight task matching solo pattern (typo fix, rename, format, or minor update). One senior developer sufficient.`,
       confidence: "high",
+      confidenceScore: scoreConfidence(signals2),
+      signals: signals2,
       suggestedAgents: applyAgentConfig(["sr-fullstack"], config),
       taskAllocations: allocations2,
       totalAgents: 1
     };
   }
-  const complexitySignals = [
-    /refactor|리팩토링|リファクタ/i,
-    /redesign|재설계|再設計/i,
-    /migrate|마이그레이션|マイグレーション/i,
-    /architect|아키텍처|アーキテクチャ/i,
-    /implement.*system|시스템.*구현/i,
-    /build.*platform|플랫폼.*구축/i
-  ];
-  const isComplex = complexitySignals.some((p) => p.test(task)) || allDomains.length >= 3;
+  const isComplex = complexitySignals.length > 0 || allDomains.length >= 3;
   if (isComplex) {
     const mode = config?.defaultMode ?? "hierarchy";
     const allocations2 = buildTaskAllocations(tasks, mode, config);
     const total2 = allocations2.reduce((sum, a) => sum + a.agents.length, 0);
+    const signals2 = baseSignals(mode);
     return {
       mode,
       tasks,
       reasoning: `Complex single task touching ${allDomains.length} domain(s) (${allDomains.join(", ")}) with structural complexity signals. Hierarchy mode with senior \u2192 lead \u2192 CTO chain.`,
       confidence: allDomains.length >= 2 ? "high" : "medium",
+      confidenceScore: scoreConfidence(signals2),
+      signals: signals2,
       suggestedAgents,
       taskAllocations: allocations2,
       totalAgents: total2
@@ -1896,11 +1954,14 @@ function classifyIntent(task, config) {
   }
   const allocations = buildTaskAllocations(tasks, finalMode, config);
   const total = allocations.reduce((sum, a) => sum + a.agents.length, 0);
+  const signals = baseSignals(finalMode);
   return {
     mode: finalMode,
     tasks,
     reasoning: `Single task in domain(s): ${allDomains.join(", ")}. ${allocation.reasoning}`,
     confidence: "medium",
+    confidenceScore: scoreConfidence(signals),
+    signals,
     suggestedAgents,
     taskAllocations: allocations,
     totalAgents: total
@@ -2496,6 +2557,13 @@ Description: ${skill.description}`
     }
   }
   const intent = classifyIntent(prompt, projectConfig);
+  const s = intent.signals;
+  const telemetryLine = `routing mode=${intent.mode} conf=${intent.confidenceScore}/${intent.confidence} tasks=${s.taskCount} domains=[${s.domains.join(",")}] matches=${s.domainMatchCount} weight=${s.weight} complexity=[${s.complexitySignals.join(",")}] override=${s.configOverride} prompt="${prompt.slice(0, 80).replace(/\n/g, " ")}"`;
+  if (intent.confidence === "low" || intent.confidenceScore < 50) {
+    logger.warn("routing", telemetryLine);
+  } else {
+    logger.info("routing", telemetryLine);
+  }
   const agentList = intent.suggestedAgents.join(", ");
   if (intent.mode === "passthrough") {
     output(`[BW] direct execution`);
