@@ -13,6 +13,7 @@ import { devsecopsAgent } from "./devsecops.js";
 import { accessibilityCriticAgent } from "./accessibility.js";
 import { i18nCriticAgent } from "./i18n.js";
 import { agentCriticAgent } from "./agent.js";
+import { verifierCriticAgent } from "./verifier.js";
 
 export const CRITIC_AGENTS: AgentProfile[] = [
   perfCriticAgent,
@@ -29,6 +30,7 @@ export const CRITIC_AGENTS: AgentProfile[] = [
   accessibilityCriticAgent,
   i18nCriticAgent,
   agentCriticAgent,
+  verifierCriticAgent,
 ];
 
 export {
@@ -46,4 +48,5 @@ export {
   accessibilityCriticAgent,
   i18nCriticAgent,
   agentCriticAgent,
+  verifierCriticAgent,
 };

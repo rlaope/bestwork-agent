@@ -399,8 +399,8 @@ function buildTaskAllocations(tasks: string[], mode: ExecutionMode, config?: Pro
       return { description: t, agents: applyAgentConfig([techAgent], config), parallel: false };
     }
     if (mode === "hierarchy") {
-      // Complex: tech + pm + critic + lead
-      return { description: t, agents: applyAgentConfig([techAgent, "pm-product", "critic-code", "tech-lead"], config), parallel: true };
+      // Complex: tech + pm + critic + lead + verifier (post-completion pass)
+      return { description: t, agents: applyAgentConfig([techAgent, "pm-product", "critic-code", "tech-lead", "critic-verifier"], config), parallel: true };
     }
     // pair/trio/squad: tech + critic per task
     return { description: t, agents: applyAgentConfig([techAgent, "critic-code"], config), parallel: true };

@@ -14,10 +14,11 @@ import { classifyIntent, buildExecutionPlan, formatPlan, type ExecutionMode, typ
 import { TEAM_PRESETS } from "./org.js";
 import { loadProjectConfig, loadMergedConfig, type ProjectConfig } from "./notify.js";
 import { validateConfig, formatConfigErrors } from "./config-validator.js";
+import { logger } from "./logger.js";
 import { appendFileSync, mkdirSync, readFileSync, existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
-import { execSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 
 const BW_DIR = join(homedir(), ".bestwork");
 const PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT || "";
@@ -30,7 +31,9 @@ function loadProjectContext(): string {
       const content = readFileSync(ctxPath, "utf-8").trim();
       if (content) return content;
     }
-  } catch {}
+  } catch (err) {
+    logger.warn("gateway", "failed to load project context", err);
+  }
   return "";
 }
 
@@ -289,9 +292,13 @@ function discoverUserSkills(): Array<{ name: string; description: string; path: 
             const desc = fmMatch[1].match(/description:\s*(.+)/)?.[1]?.trim() || "";
             skills.push({ name, description: desc, path: skillMd });
           }
-        } catch {}
+        } catch (err) {
+          logger.warn("skills", `failed to parse ${skillMd}`, err);
+        }
       }
-    } catch {}
+    } catch (err) {
+      logger.debug("skills", `failed to scan ${dir}`, err);
+    }
   }
   return skills;
 }
@@ -381,17 +388,34 @@ async function main() {
       if (route.hook && PLUGIN_ROOT) {
         try {
           const hookInput = JSON.stringify({ prompt, session_id: input.session_id ?? "" });
-          const envPrefix = route.env ? `${route.env} ` : "";
-          const result = execSync(
-            `echo '${hookInput.replace(/'/g, "'\\''")}' | ${envPrefix}bash "${PLUGIN_ROOT}/hooks/${route.hook}"`,
-            { encoding: "utf-8", timeout: 10000 }
-          ).trim();
-          if (result && result !== "{}") {
-            log(`[BW gateway → ${route.skill}] ${route.reason}`);
-            process.stdout.write(result + "\n");
-            return;
+          const hookPath = join(PLUGIN_ROOT, "hooks", route.hook);
+          const env = { ...process.env };
+          if (route.env) {
+            // route.env is of the form "KEY=value" — parse and merge into env safely
+            const eq = route.env.indexOf("=");
+            if (eq > 0) env[route.env.slice(0, eq)] = route.env.slice(eq + 1);
           }
-        } catch {}
+          const proc = spawnSync("bash", [hookPath], {
+            input: hookInput,
+            encoding: "utf-8",
+            timeout: 10000,
+            env,
+          });
+          if (proc.error) {
+            logger.warn("gateway", `skill hook spawn failed: ${route.skill}`, proc.error);
+          } else if (proc.status !== 0) {
+            logger.warn("gateway", `skill hook exit=${proc.status} signal=${proc.signal}: ${route.skill}`, proc.stderr?.toString().slice(0, 400));
+          } else {
+            const result = (proc.stdout ?? "").trim();
+            if (result && result !== "{}") {
+              log(`[BW gateway → ${route.skill}] ${route.reason}`);
+              process.stdout.write(result + "\n");
+              return;
+            }
+          }
+        } catch (err) {
+          logger.error("gateway", `skill hook unexpected error: ${route.skill}`, err);
+        }
       }
       // Fallback: force Claude to invoke the skill via MAGIC KEYWORD pattern
       const skillUpper = route.skill.toUpperCase().replace(/-/g, "_");

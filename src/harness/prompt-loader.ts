@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { logger } from "./logger.js";
 
 // Resolve prompts dir relative to package root (works for both dev and installed)
 function getPromptsDir(): string {
@@ -46,7 +47,8 @@ function parseYamlList(lines: string[], startIdx: number): string[] {
   if (afterColon.startsWith("[")) {
     try {
       return JSON.parse(afterColon);
-    } catch {
+    } catch (err) {
+      logger.warn("prompt-loader", `malformed inline YAML list: ${afterColon.slice(0, 80)}`, err);
       return [];
     }
   }

@@ -3174,6 +3174,73 @@ var agentCriticAgent = {
 Verdict: APPROVE or REQUEST_CHANGES with specific issues.`
 };
 
+// src/harness/agents/critic/verifier.ts
+var verifierCriticAgent = {
+  id: "critic-verifier",
+  role: "critic",
+  name: "Verifier",
+  specialty: "Evidence-based completion check with separate-pass discipline",
+  costTier: "medium",
+  useWhen: [
+    "Confirming a change is complete before the user relies on it",
+    "Acceptance criteria must be checked item-by-item with fresh evidence",
+    "Follow-up review after an executor or author has claimed done"
+  ],
+  avoidWhen: [
+    "Same turn as the author \u2014 verification must run in a separate pass",
+    "Exploration or design work with no claim of completion yet",
+    "Trivial edits with no observable behavior to verify"
+  ],
+  systemPrompt: `You are a verifier. You run in a separate pass from whoever authored the change. Your only job is to answer one question: does the work actually do what it claims, with FRESH evidence captured NOW?
+
+SEPARATE-PASS RULE (non-negotiable): If you authored or revised the code in the same active context, you are disqualified. Say so and stop. The author and the verifier are two different roles by design \u2014 self-approval is not verification.
+
+CONFIDENCE THRESHOLD: High confidence requires fresh command output pasted into the report. Medium is allowed when exactly one criterion is UNCLEAR. Low confidence \u2014 or any FAIL \u2014 always downgrades the verdict.
+
+CONTEXT GATHERING (do this first):
+- Read the acceptance criteria. If vague ("make it better"), mark INCOMPLETE and ask for concrete criteria before verifying.
+- Identify the change surface: \`git diff --stat\` and \`git log -1\`.
+- Locate test/build commands from package.json or CLAUDE.md. Do NOT invent commands.
+
+VERIFICATION PROTOCOL \u2014 do not assert, SHOW:
+- Run the project's test command. Quote the pass/fail summary line.
+- Run the project's build/typecheck. Quote the result.
+- For each acceptance criterion, produce a row with: criterion, verdict (PASS/FAIL/UNCLEAR), command used, output slice.
+
+OUTPUT FORMAT \u2014 enforce this exact shape:
+
+## Verification Report
+
+### Verdict
+**Status**: PASS | FAIL | INCOMPLETE
+**Confidence**: high | medium | low
+**Blockers**: <count>
+
+### Evidence
+| Check       | Result    | Command             | Output (trimmed)        |
+|-------------|-----------|---------------------|-------------------------|
+| Tests       | pass/fail | \`npm test\`          | \`689 passed, 0 failed\`  |
+| Typecheck   | pass/fail | \`npx tsc --noEmit\`  | \`found 0 errors\`        |
+| Build       | pass/fail | \`npm run build\`     | \`tsup: done in 1.2s\`    |
+
+### Acceptance Criteria
+| # | Criterion                | Status | Evidence                        |
+|---|--------------------------|--------|---------------------------------|
+| 1 | <restated criterion>     | PASS   | <file:line or output slice>     |
+
+### Gaps / Risks
+- <missing criterion, regression risk, or stale evidence concern>
+
+ANTI-PATTERNS \u2014 DO NOT:
+- DO NOT verify work you authored in the same active context
+- DO NOT accept stale output ("tests passed earlier") \u2014 re-run after the last change
+- DO NOT paraphrase output \u2014 quote the actual pass/fail line
+- DO NOT approve when any criterion is UNCLEAR \u2014 downgrade to INCOMPLETE
+- DO NOT flag style issues \u2014 verification is about whether the claim is true
+
+Verdict: PASS, FAIL, or INCOMPLETE with a filled-in evidence table. No tables, no verdict.`
+};
+
 // src/harness/agents/critic/index.ts
 var CRITIC_AGENTS = [
   perfCriticAgent,
@@ -3189,13 +3256,21 @@ var CRITIC_AGENTS = [
   devsecopsAgent,
   accessibilityCriticAgent,
   i18nCriticAgent,
-  agentCriticAgent
+  agentCriticAgent,
+  verifierCriticAgent
 ];
 
 // src/harness/prompt-loader.ts
 import { readFile as readFile5 } from "fs/promises";
-import { join as join5, dirname } from "path";
+import { join as join6, dirname } from "path";
 import { fileURLToPath } from "url";
+
+// src/harness/logger.ts
+import { appendFileSync, mkdirSync } from "fs";
+import { join as join5 } from "path";
+import { homedir as homedir5 } from "os";
+var BW_DIR = join5(homedir5(), ".bestwork");
+var LOG_FILE = join5(BW_DIR, "gateway.log");
 
 // src/harness/agents/index.ts
 var ALL_AGENTS = [
@@ -3742,11 +3817,11 @@ async function orgCommand() {
 
 // src/cli/commands/harness/update.ts
 import { readFile as readFile6 } from "fs/promises";
-import { join as join6, dirname as dirname2 } from "path";
+import { join as join7, dirname as dirname2 } from "path";
 import { fileURLToPath as fileURLToPath2 } from "url";
 async function updateCommand() {
   const thisFile = fileURLToPath2(import.meta.url);
-  const pkgPath = join6(dirname2(thisFile), "..", "..", "..", "..", "package.json");
+  const pkgPath = join7(dirname2(thisFile), "..", "..", "..", "..", "package.json");
   let currentVersion = "unknown";
   try {
     const pkg = JSON.parse(await readFile6(pkgPath, "utf-8"));
@@ -3791,8 +3866,8 @@ async function updateCommand() {
 
 // src/cli/commands/harness/doctor.ts
 import { readFile as readFile7, access } from "fs/promises";
-import { join as join7 } from "path";
-import { homedir as homedir5 } from "os";
+import { join as join8 } from "path";
+import { homedir as homedir6 } from "os";
 import { execSync as execSync2 } from "child_process";
 var OK = BW_OK;
 var WARN = BW_WARN;
@@ -3802,7 +3877,7 @@ async function doctorCommand() {
   let issues = 0;
   let currentVersion = "unknown";
   try {
-    const pkgPath = join7(homedir5(), ".nvm/versions/node", `v${process.versions.node}`, "lib/node_modules/bestwork-agent/package.json");
+    const pkgPath = join8(homedir6(), ".nvm/versions/node", `v${process.versions.node}`, "lib/node_modules/bestwork-agent/package.json");
     const pkg = JSON.parse(await readFile7(pkgPath, "utf-8"));
     currentVersion = pkg.version;
   } catch {
@@ -3836,7 +3911,7 @@ async function doctorCommand() {
     console.log(`  ${FAIL} Node.js: v${nodeVersion} (requires >=18)`);
     issues++;
   }
-  const dataDir = join7(homedir5(), ".bestwork", "data");
+  const dataDir = join8(homedir6(), ".bestwork", "data");
   try {
     await access(dataDir);
     console.log(`  ${OK} Data directory: ~/.bestwork/data/`);
@@ -3845,7 +3920,7 @@ async function doctorCommand() {
     console.log(`      Run: bestwork install`);
     issues++;
   }
-  const configPath = join7(homedir5(), ".bestwork", "config.json");
+  const configPath = join8(homedir6(), ".bestwork", "config.json");
   try {
     const raw = await readFile7(configPath, "utf-8");
     const config = JSON.parse(raw);
@@ -3857,7 +3932,7 @@ async function doctorCommand() {
   } catch {
     console.log(`  ${WARN} No config file (notifications not set up)`);
   }
-  const settingsPath = join7(homedir5(), ".claude", "settings.json");
+  const settingsPath = join8(homedir6(), ".claude", "settings.json");
   try {
     const raw = await readFile7(settingsPath, "utf-8");
     const settings = JSON.parse(raw);
@@ -3894,7 +3969,7 @@ async function doctorCommand() {
   }
   try {
     const npmRoot = execSync2("npm root -g", { encoding: "utf-8" }).trim();
-    const hooksDir = join7(npmRoot, "bestwork-agent", "hooks");
+    const hooksDir = join8(npmRoot, "bestwork-agent", "hooks");
     await access(hooksDir);
     console.log(`  ${OK} Hook scripts: ${hooksDir}`);
   } catch {
@@ -3902,8 +3977,8 @@ async function doctorCommand() {
     console.log(`      Run: npm install -g bestwork-agent`);
     issues++;
   }
-  const scopePath = join7(homedir5(), ".bestwork", "scope.lock");
-  const strictPath = join7(homedir5(), ".bestwork", "strict.lock");
+  const scopePath = join8(homedir6(), ".bestwork", "scope.lock");
+  const strictPath = join8(homedir6(), ".bestwork", "strict.lock");
   try {
     const scope = await readFile7(scopePath, "utf-8");
     console.log(`  ${OK} Scope lock: ${scope.trim()}`);
@@ -3960,15 +4035,15 @@ async function welcomeCommand() {
 
 // src/harness/session-recovery.ts
 import { readFile as readFile8, writeFile as writeFile4, mkdir as mkdir4, readdir as readdir2 } from "fs/promises";
-import { join as join8 } from "path";
-import { homedir as homedir6 } from "os";
-var SESSIONS_DIR = join8(homedir6(), ".bestwork", "sessions");
+import { join as join9 } from "path";
+import { homedir as homedir7 } from "os";
+var SESSIONS_DIR = join9(homedir7(), ".bestwork", "sessions");
 async function ensureSessionsDir() {
   await mkdir4(SESSIONS_DIR, { recursive: true });
 }
 function sessionFile(id) {
   const safeId = id.replace(/[^a-zA-Z0-9_-]/g, "");
-  return join8(SESSIONS_DIR, `${safeId}.json`);
+  return join9(SESSIONS_DIR, `${safeId}.json`);
 }
 async function loadSession(id) {
   try {
@@ -3990,7 +4065,7 @@ async function listActiveSessions() {
   for (const file of files) {
     if (!file.endsWith(".json")) continue;
     try {
-      const raw = await readFile8(join8(SESSIONS_DIR, file), "utf-8");
+      const raw = await readFile8(join9(SESSIONS_DIR, file), "utf-8");
       const session = JSON.parse(raw);
       if (session.status !== "completed") {
         sessions.push(session);

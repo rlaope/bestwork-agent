@@ -1,6 +1,6 @@
 # bestwork-agent
 
-Open-source harness engineering for Claude Code. 49 specialist agents (25 tech + 10 pm + 14 critic), 14 org roles, 22 skills.
+Open-source harness engineering for Claude Code. 50 specialist agents (25 tech + 10 pm + 15 critic), 14 org roles, 22 skills.
 
 ## Build & Test
 
@@ -16,7 +16,7 @@ npx tsc --noEmit # typecheck
 - `src/observe/` — session analytics, heatmap, loop detection, replay
 - `hooks/` — Claude Code hooks (shell + agent type)
 - `skills/` — 22 plugin slash commands
-- `prompts/` — editable agent system prompts (49 .md files)
+- `prompts/` — editable agent system prompts (50 .md files)
 
 For architecture details, gateway flow, HUD caching, state paths, and install paths see [docs/architecture.md](docs/architecture.md).
 
@@ -43,3 +43,5 @@ Every response MUST start with the `[BW]` tag from the gateway's additionalConte
 - HUD must never refresh OAuth tokens. Read-only access only.
 - Team structure descriptions are result-focused, not process-focused.
 - `npm run build` auto-syncs to plugin cache + marketplace paths.
+- Verifier (`critic-verifier`) must run in a separate pass from the author — never self-approve work produced in the same active context.
+- Silent `catch {}` is banned in src/harness and src/observe. Use `logger.warn/error` from `src/harness/logger.ts` with scope + error.

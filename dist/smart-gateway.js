@@ -1504,6 +1504,73 @@ var agentCriticAgent = {
 Verdict: APPROVE or REQUEST_CHANGES with specific issues.`
 };
 
+// src/harness/agents/critic/verifier.ts
+var verifierCriticAgent = {
+  id: "critic-verifier",
+  role: "critic",
+  name: "Verifier",
+  specialty: "Evidence-based completion check with separate-pass discipline",
+  costTier: "medium",
+  useWhen: [
+    "Confirming a change is complete before the user relies on it",
+    "Acceptance criteria must be checked item-by-item with fresh evidence",
+    "Follow-up review after an executor or author has claimed done"
+  ],
+  avoidWhen: [
+    "Same turn as the author \u2014 verification must run in a separate pass",
+    "Exploration or design work with no claim of completion yet",
+    "Trivial edits with no observable behavior to verify"
+  ],
+  systemPrompt: `You are a verifier. You run in a separate pass from whoever authored the change. Your only job is to answer one question: does the work actually do what it claims, with FRESH evidence captured NOW?
+
+SEPARATE-PASS RULE (non-negotiable): If you authored or revised the code in the same active context, you are disqualified. Say so and stop. The author and the verifier are two different roles by design \u2014 self-approval is not verification.
+
+CONFIDENCE THRESHOLD: High confidence requires fresh command output pasted into the report. Medium is allowed when exactly one criterion is UNCLEAR. Low confidence \u2014 or any FAIL \u2014 always downgrades the verdict.
+
+CONTEXT GATHERING (do this first):
+- Read the acceptance criteria. If vague ("make it better"), mark INCOMPLETE and ask for concrete criteria before verifying.
+- Identify the change surface: \`git diff --stat\` and \`git log -1\`.
+- Locate test/build commands from package.json or CLAUDE.md. Do NOT invent commands.
+
+VERIFICATION PROTOCOL \u2014 do not assert, SHOW:
+- Run the project's test command. Quote the pass/fail summary line.
+- Run the project's build/typecheck. Quote the result.
+- For each acceptance criterion, produce a row with: criterion, verdict (PASS/FAIL/UNCLEAR), command used, output slice.
+
+OUTPUT FORMAT \u2014 enforce this exact shape:
+
+## Verification Report
+
+### Verdict
+**Status**: PASS | FAIL | INCOMPLETE
+**Confidence**: high | medium | low
+**Blockers**: <count>
+
+### Evidence
+| Check       | Result    | Command             | Output (trimmed)        |
+|-------------|-----------|---------------------|-------------------------|
+| Tests       | pass/fail | \`npm test\`          | \`689 passed, 0 failed\`  |
+| Typecheck   | pass/fail | \`npx tsc --noEmit\`  | \`found 0 errors\`        |
+| Build       | pass/fail | \`npm run build\`     | \`tsup: done in 1.2s\`    |
+
+### Acceptance Criteria
+| # | Criterion                | Status | Evidence                        |
+|---|--------------------------|--------|---------------------------------|
+| 1 | <restated criterion>     | PASS   | <file:line or output slice>     |
+
+### Gaps / Risks
+- <missing criterion, regression risk, or stale evidence concern>
+
+ANTI-PATTERNS \u2014 DO NOT:
+- DO NOT verify work you authored in the same active context
+- DO NOT accept stale output ("tests passed earlier") \u2014 re-run after the last change
+- DO NOT paraphrase output \u2014 quote the actual pass/fail line
+- DO NOT approve when any criterion is UNCLEAR \u2014 downgrade to INCOMPLETE
+- DO NOT flag style issues \u2014 verification is about whether the claim is true
+
+Verdict: PASS, FAIL, or INCOMPLETE with a filled-in evidence table. No tables, no verdict.`
+};
+
 // src/harness/agents/critic/index.ts
 var CRITIC_AGENTS = [
   perfCriticAgent,
@@ -1519,13 +1586,44 @@ var CRITIC_AGENTS = [
   devsecopsAgent,
   accessibilityCriticAgent,
   i18nCriticAgent,
-  agentCriticAgent
+  agentCriticAgent,
+  verifierCriticAgent
 ];
 
 // src/harness/prompt-loader.ts
 import { readFile } from "fs/promises";
-import { join, dirname } from "path";
+import { join as join2, dirname } from "path";
 import { fileURLToPath } from "url";
+
+// src/harness/logger.ts
+import { appendFileSync, mkdirSync } from "fs";
+import { join } from "path";
+import { homedir } from "os";
+var BW_DIR = join(homedir(), ".bestwork");
+var LOG_FILE = join(BW_DIR, "gateway.log");
+function formatError(err) {
+  if (err instanceof Error) {
+    return err.stack ? `${err.message}
+  ${err.stack.split("\n").slice(1, 3).join("\n  ")}` : err.message;
+  }
+  return String(err);
+}
+function log(level, scope, msg, err) {
+  try {
+    mkdirSync(BW_DIR, { recursive: true });
+    const ts = (/* @__PURE__ */ new Date()).toISOString().slice(11, 19);
+    const tail = err !== void 0 ? ` \u2014 ${formatError(err)}` : "";
+    appendFileSync(LOG_FILE, `[${ts}] [${level}] [${scope}] ${msg}${tail}
+`);
+  } catch {
+  }
+}
+var logger = {
+  debug: (scope, msg, err) => log("debug", scope, msg, err),
+  info: (scope, msg, err) => log("info", scope, msg, err),
+  warn: (scope, msg, err) => log("warn", scope, msg, err),
+  error: (scope, msg, err) => log("error", scope, msg, err)
+};
 
 // src/harness/agents/index.ts
 var ALL_AGENTS = [
@@ -1703,7 +1801,7 @@ function buildTaskAllocations(tasks, mode, config) {
       return { description: t, agents: applyAgentConfig([techAgent], config), parallel: false };
     }
     if (mode === "hierarchy") {
-      return { description: t, agents: applyAgentConfig([techAgent, "pm-product", "critic-code", "tech-lead"], config), parallel: true };
+      return { description: t, agents: applyAgentConfig([techAgent, "pm-product", "critic-code", "tech-lead", "critic-verifier"], config), parallel: true };
     }
     return { description: t, agents: applyAgentConfig([techAgent, "critic-code"], config), parallel: true };
   });
@@ -1811,10 +1909,10 @@ function classifyIntent(task, config) {
 
 // src/harness/notify.ts
 import { readFile as readFile2, writeFile, mkdir } from "fs/promises";
-import { join as join2 } from "path";
-import { homedir } from "os";
-var CONFIG_DIR = join2(homedir(), ".bestwork");
-var CONFIG_FILE = join2(CONFIG_DIR, "config.json");
+import { join as join3 } from "path";
+import { homedir as homedir2 } from "os";
+var CONFIG_DIR = join3(homedir2(), ".bestwork");
+var CONFIG_FILE = join3(CONFIG_DIR, "config.json");
 async function loadConfig() {
   try {
     const raw = await readFile2(CONFIG_FILE, "utf-8");
@@ -1825,8 +1923,8 @@ async function loadConfig() {
 }
 async function loadMergedConfig(cwd) {
   const globalConfig = await loadConfig();
-  const projectDir = join2(cwd ?? process.cwd(), ".bestwork");
-  const projectConfigFile = join2(projectDir, "config.json");
+  const projectDir = join3(cwd ?? process.cwd(), ".bestwork");
+  const projectConfigFile = join3(projectDir, "config.json");
   let projectConfig = {};
   try {
     const raw = await readFile2(projectConfigFile, "utf-8");
@@ -1960,20 +2058,21 @@ function formatConfigErrors(errors) {
 }
 
 // src/harness/smart-gateway.ts
-import { appendFileSync, mkdirSync, readFileSync, existsSync, readdirSync } from "fs";
-import { join as join3 } from "path";
-import { homedir as homedir2 } from "os";
-import { execSync } from "child_process";
-var BW_DIR = join3(homedir2(), ".bestwork");
+import { appendFileSync as appendFileSync2, mkdirSync as mkdirSync2, readFileSync, existsSync, readdirSync } from "fs";
+import { join as join4 } from "path";
+import { homedir as homedir3 } from "os";
+import { spawnSync } from "child_process";
+var BW_DIR2 = join4(homedir3(), ".bestwork");
 var PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT || "";
 function loadProjectContext() {
   try {
-    const ctxPath = join3(process.cwd(), ".bestwork", "context", "project-summary.md");
+    const ctxPath = join4(process.cwd(), ".bestwork", "context", "project-summary.md");
     if (existsSync(ctxPath)) {
       const content = readFileSync(ctxPath, "utf-8").trim();
       if (content) return content;
     }
-  } catch {
+  } catch (err) {
+    logger.warn("gateway", "failed to load project context", err);
   }
   return "";
 }
@@ -2236,14 +2335,14 @@ function levenshtein(a, b) {
 function discoverUserSkills() {
   const skills = [];
   const dirs = [
-    join3(process.cwd(), ".bestwork", "skills"),
-    join3(homedir2(), ".bestwork", "skills")
+    join4(process.cwd(), ".bestwork", "skills"),
+    join4(homedir3(), ".bestwork", "skills")
   ];
   for (const dir of dirs) {
     if (!existsSync(dir)) continue;
     try {
       for (const entry of readdirSync(dir)) {
-        const skillMd = join3(dir, entry, "SKILL.md");
+        const skillMd = join4(dir, entry, "SKILL.md");
         if (!existsSync(skillMd)) continue;
         try {
           const content = readFileSync(skillMd, "utf-8");
@@ -2253,10 +2352,12 @@ function discoverUserSkills() {
             const desc = fmMatch[1].match(/description:\s*(.+)/)?.[1]?.trim() || "";
             skills.push({ name, description: desc, path: skillMd });
           }
-        } catch {
+        } catch (err) {
+          logger.warn("skills", `failed to parse ${skillMd}`, err);
         }
       }
-    } catch {
+    } catch (err) {
+      logger.debug("skills", `failed to scan ${dir}`, err);
     }
   }
   return skills;
@@ -2276,17 +2377,17 @@ async function readStdin() {
     setTimeout(() => resolve(null), 500);
   });
 }
-function log(msg) {
+function log2(msg) {
   try {
-    mkdirSync(BW_DIR, { recursive: true });
+    mkdirSync2(BW_DIR2, { recursive: true });
     const ts = (/* @__PURE__ */ new Date()).toISOString().slice(11, 19);
-    appendFileSync(join3(BW_DIR, "gateway.log"), `[${ts}] ${msg}
+    appendFileSync2(join4(BW_DIR2, "gateway.log"), `[${ts}] ${msg}
 `);
   } catch {
   }
 }
 function output(context) {
-  log(context.split("\n")[0]);
+  log2(context.split("\n")[0]);
   const result = {
     hookSpecificOutput: {
       hookEventName: "UserPromptSubmit",
@@ -2330,17 +2431,32 @@ async function main() {
       if (route.hook && PLUGIN_ROOT) {
         try {
           const hookInput = JSON.stringify({ prompt, session_id: input.session_id ?? "" });
-          const envPrefix = route.env ? `${route.env} ` : "";
-          const result = execSync(
-            `echo '${hookInput.replace(/'/g, "'\\''")}' | ${envPrefix}bash "${PLUGIN_ROOT}/hooks/${route.hook}"`,
-            { encoding: "utf-8", timeout: 1e4 }
-          ).trim();
-          if (result && result !== "{}") {
-            log(`[BW gateway \u2192 ${route.skill}] ${route.reason}`);
-            process.stdout.write(result + "\n");
-            return;
+          const hookPath = join4(PLUGIN_ROOT, "hooks", route.hook);
+          const env = { ...process.env };
+          if (route.env) {
+            const eq = route.env.indexOf("=");
+            if (eq > 0) env[route.env.slice(0, eq)] = route.env.slice(eq + 1);
           }
-        } catch {
+          const proc = spawnSync("bash", [hookPath], {
+            input: hookInput,
+            encoding: "utf-8",
+            timeout: 1e4,
+            env
+          });
+          if (proc.error) {
+            logger.warn("gateway", `skill hook spawn failed: ${route.skill}`, proc.error);
+          } else if (proc.status !== 0) {
+            logger.warn("gateway", `skill hook exit=${proc.status} signal=${proc.signal}: ${route.skill}`, proc.stderr?.toString().slice(0, 400));
+          } else {
+            const result = (proc.stdout ?? "").trim();
+            if (result && result !== "{}") {
+              log2(`[BW gateway \u2192 ${route.skill}] ${route.reason}`);
+              process.stdout.write(result + "\n");
+              return;
+            }
+          }
+        } catch (err) {
+          logger.error("gateway", `skill hook unexpected error: ${route.skill}`, err);
         }
       }
       const skillUpper = route.skill.toUpperCase().replace(/-/g, "_");
@@ -2361,7 +2477,7 @@ IMPORTANT: Do NOT skip this. Invoke the Skill tool with skill="bestwork-agent:${
     const merged = await loadMergedConfig();
     const configErrors = validateConfig(merged);
     if (configErrors.length > 0) {
-      log(`[BW config] validation warnings:
+      log2(`[BW config] validation warnings:
 ${formatConfigErrors(configErrors)}`);
     }
     projectConfig = merged.project;
