@@ -49,7 +49,13 @@ function getLastPrompt(sessionId: string): string {
       const display = (entry.display ?? "").replace(/\x1b\[[0-9;]*m/g, "");
       return display.slice(0, 100) || "N/A";
     }
-  } catch {}
+  } catch (err) {
+    // history.jsonl may be missing (fresh install), corrupt, or permission-denied;
+    // any of these makes the completion notification show "N/A" as prompt context.
+    import("./logger.js").then(({ logger }) =>
+      logger.debug("notify", `failed to read last prompt from history.jsonl`, err),
+    ).catch(() => {});
+  }
   return "N/A";
 }
 

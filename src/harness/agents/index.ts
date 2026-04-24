@@ -39,8 +39,12 @@ export async function getAgentWithPrompt(id: string): Promise<AgentProfile | nul
       useWhen: meta.useWhen,
       avoidWhen: meta.avoidWhen,
     };
-  } catch {
-    return agent; // fallback to hardcoded
+  } catch (err) {
+    // A YAML typo in prompts/*.md silently drops users to the hardcoded prompt.
+    // Log so the degraded experience is discoverable from ~/.bestwork/gateway.log.
+    const { logger } = await import("../logger.js");
+    logger.warn("agents", `prompt load failed for ${agent.id}; using hardcoded fallback`, err);
+    return agent;
   }
 }
 

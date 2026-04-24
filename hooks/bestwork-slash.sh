@@ -19,8 +19,9 @@ if echo "$PROMPT" | grep -qE '^\./discord'; then
     echo "$EXISTING" | jq --arg url "$URL" --arg lang "$LANG" \
       '.notify.discord = {"webhookUrl":$url} | .language = $lang' > "$HOME/.bestwork/config.json"
     chmod 600 "$HOME/.bestwork/config.json"
-    # Test notification
+    # Test notification — bounded so a slow webhook host can't block the prompt
     curl -s -X POST "$URL" \
+      --connect-timeout 3 --max-time 5 \
       -H "Content-Type: application/json" \
       -d "{\"embeds\":[{\"title\":\"bestwork connected\",\"description\":\"Discord notifications enabled (lang: ${LANG}).\",\"color\":55467}]}" > /dev/null 2>&1
     jq -n --arg lang "$LANG" \
@@ -45,6 +46,7 @@ if echo "$PROMPT" | grep -qE '^\./slack'; then
       '.notify.slack = {"webhookUrl":$url} | .language = $lang' > "$HOME/.bestwork/config.json"
     chmod 600 "$HOME/.bestwork/config.json"
     curl -s -X POST "$URL" \
+      --connect-timeout 3 --max-time 5 \
       -H "Content-Type: application/json" \
       -d "{\"blocks\":[{\"type\":\"header\",\"text\":{\"type\":\"plain_text\",\"text\":\"bestwork connected\"}},{\"type\":\"section\",\"text\":{\"type\":\"mrkdwn\",\"text\":\"Slack notifications enabled (lang: ${LANG}).\"}}]}" > /dev/null 2>&1
     jq -n --arg lang "$LANG" \

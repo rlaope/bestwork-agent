@@ -3,6 +3,8 @@ import { join } from "node:path";
 import { homedir } from "node:os";
 import { execSync } from "node:child_process";
 import { BW_OK, BW_WARN, BW_ERR } from "../../../utils/brand.js";
+import { loadMergedConfig } from "../../../harness/notify.js";
+import { validateConfig, formatConfigErrors } from "../../../harness/config-validator.js";
 
 const OK = BW_OK;
 const WARN = BW_WARN;
@@ -149,6 +151,24 @@ export async function doctorCommand() {
     console.log(`  ${OK} Strict mode: ON`);
   } catch {
     console.log(`  ${OK} Strict mode: OFF`);
+  }
+
+  // 9. Config validation (global + project merged)
+  try {
+    const merged = await loadMergedConfig();
+    const errors = validateConfig(merged);
+    if (errors.length === 0) {
+      console.log(`  ${OK} Config: valid`);
+    } else {
+      console.log(`  ${FAIL} Config: ${errors.length} validation error(s)`);
+      for (const line of formatConfigErrors(errors).split("\n")) {
+        if (line.trim()) console.log(`      ${line}`);
+      }
+      issues++;
+    }
+  } catch (err) {
+    console.log(`  ${WARN} Config: could not load (${err instanceof Error ? err.message : String(err)})`);
+    issues++;
   }
 
   // Summary

@@ -1,3 +1,44 @@
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __esm = (fn, res) => function __init() {
+  return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+};
+
+// src/harness/logger.ts
+import { appendFileSync, mkdirSync } from "fs";
+import { join } from "path";
+import { homedir } from "os";
+function formatError(err) {
+  if (err instanceof Error) {
+    return err.stack ? `${err.message}
+  ${err.stack.split("\n").slice(1, 3).join("\n  ")}` : err.message;
+  }
+  return String(err);
+}
+function log(level, scope, msg, err) {
+  try {
+    mkdirSync(BW_DIR, { recursive: true });
+    const ts = (/* @__PURE__ */ new Date()).toISOString().slice(11, 19);
+    const tail = err !== void 0 ? ` \u2014 ${formatError(err)}` : "";
+    appendFileSync(LOG_FILE, `[${ts}] [${level}] [${scope}] ${msg}${tail}
+`);
+  } catch {
+  }
+}
+var BW_DIR, LOG_FILE, logger;
+var init_logger = __esm({
+  "src/harness/logger.ts"() {
+    "use strict";
+    BW_DIR = join(homedir(), ".bestwork");
+    LOG_FILE = join(BW_DIR, "gateway.log");
+    logger = {
+      debug: (scope, msg, err) => log("debug", scope, msg, err),
+      info: (scope, msg, err) => log("info", scope, msg, err),
+      warn: (scope, msg, err) => log("warn", scope, msg, err),
+      error: (scope, msg, err) => log("error", scope, msg, err)
+    };
+  }
+});
+
 // src/harness/org.ts
 var C_LEVEL = [
   {
@@ -1591,39 +1632,10 @@ var CRITIC_AGENTS = [
 ];
 
 // src/harness/prompt-loader.ts
+init_logger();
 import { readFile } from "fs/promises";
 import { join as join2, dirname } from "path";
 import { fileURLToPath } from "url";
-
-// src/harness/logger.ts
-import { appendFileSync, mkdirSync } from "fs";
-import { join } from "path";
-import { homedir } from "os";
-var BW_DIR = join(homedir(), ".bestwork");
-var LOG_FILE = join(BW_DIR, "gateway.log");
-function formatError(err) {
-  if (err instanceof Error) {
-    return err.stack ? `${err.message}
-  ${err.stack.split("\n").slice(1, 3).join("\n  ")}` : err.message;
-  }
-  return String(err);
-}
-function log(level, scope, msg, err) {
-  try {
-    mkdirSync(BW_DIR, { recursive: true });
-    const ts = (/* @__PURE__ */ new Date()).toISOString().slice(11, 19);
-    const tail = err !== void 0 ? ` \u2014 ${formatError(err)}` : "";
-    appendFileSync(LOG_FILE, `[${ts}] [${level}] [${scope}] ${msg}${tail}
-`);
-  } catch {
-  }
-}
-var logger = {
-  debug: (scope, msg, err) => log("debug", scope, msg, err),
-  info: (scope, msg, err) => log("info", scope, msg, err),
-  warn: (scope, msg, err) => log("warn", scope, msg, err),
-  error: (scope, msg, err) => log("error", scope, msg, err)
-};
 
 // src/harness/agents/index.ts
 var ALL_AGENTS = [
@@ -2119,6 +2131,7 @@ function formatConfigErrors(errors) {
 }
 
 // src/harness/smart-gateway.ts
+init_logger();
 import { appendFileSync as appendFileSync2, mkdirSync as mkdirSync2, readFileSync, existsSync, readdirSync } from "fs";
 import { join as join4 } from "path";
 import { homedir as homedir3 } from "os";

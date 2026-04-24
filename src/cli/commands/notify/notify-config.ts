@@ -1,4 +1,5 @@
 import { loadConfig, saveConfig, sendNotification } from "../../../harness/notify.js";
+import { validateConfig, formatConfigErrors } from "../../../harness/config-validator.js";
 
 interface NotifySetupOptions {
   discord?: string;
@@ -27,6 +28,15 @@ export async function notifyConfigCommand(options: NotifySetupOptions) {
       chatId: options.telegramChat,
     };
     console.log("  Telegram bot configured.");
+  }
+
+  // Fail fast before writing an invalid config to disk.
+  const errors = validateConfig({ project: config.project });
+  if (errors.length > 0) {
+    process.stderr.write("\n  ✗ Config validation failed:\n");
+    process.stderr.write(formatConfigErrors(errors) + "\n");
+    process.exitCode = 1;
+    return;
   }
 
   await saveConfig(config);

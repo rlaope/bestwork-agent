@@ -1,4 +1,21 @@
 #!/usr/bin/env node
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __esm = (fn, res) => function __init() {
+  return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+};
+
+// src/harness/logger.ts
+import { appendFileSync, mkdirSync } from "fs";
+import { join as join5 } from "path";
+import { homedir as homedir5 } from "os";
+var BW_DIR, LOG_FILE;
+var init_logger = __esm({
+  "src/harness/logger.ts"() {
+    "use strict";
+    BW_DIR = join5(homedir5(), ".bestwork");
+    LOG_FILE = join5(BW_DIR, "gateway.log");
+  }
+});
 
 // src/cli/index.ts
 import { Command } from "commander";
@@ -1522,6 +1539,27 @@ async function loadConfig() {
     return { notify: {} };
   }
 }
+async function loadMergedConfig(cwd) {
+  const globalConfig = await loadConfig();
+  const projectDir = join4(cwd ?? process.cwd(), ".bestwork");
+  const projectConfigFile = join4(projectDir, "config.json");
+  let projectConfig = {};
+  try {
+    const raw = await readFile4(projectConfigFile, "utf-8");
+    projectConfig = JSON.parse(raw);
+  } catch {
+  }
+  return {
+    notify: {
+      ...globalConfig.notify,
+      ...projectConfig.notify ?? {}
+    },
+    project: {
+      ...globalConfig.project,
+      ...projectConfig.project
+    }
+  };
+}
 async function saveConfig(config) {
   await mkdir3(CONFIG_DIR, { recursive: true });
   await writeFile3(CONFIG_FILE, JSON.stringify(config, null, 2) + "\n", { mode: 384 });
@@ -1654,6 +1692,120 @@ ${body}`;
   );
 }
 
+// src/harness/config-validator.ts
+var VALID_MODES = ["solo", "pair", "trio", "squad", "hierarchy"];
+function validateConfig(config) {
+  const errors = [];
+  if (!config || typeof config !== "object") {
+    return errors;
+  }
+  const c = config;
+  if (c.notify !== void 0) {
+    if (typeof c.notify !== "object" || c.notify === null) {
+      errors.push({ field: "notify", message: "Must be an object" });
+    } else {
+      const n = c.notify;
+      if (n.discord !== void 0) {
+        if (typeof n.discord !== "object" || n.discord === null) {
+          errors.push({ field: "notify.discord", message: "Must be an object" });
+        } else {
+          const url = n.discord.webhookUrl;
+          if (url !== void 0) {
+            if (typeof url !== "string") {
+              errors.push({ field: "notify.discord.webhookUrl", message: "Must be a string" });
+            } else if (url && !url.startsWith("https://discord.com/api/webhooks/")) {
+              errors.push({
+                field: "notify.discord.webhookUrl",
+                message: "Must start with https://discord.com/api/webhooks/"
+              });
+            }
+          }
+        }
+      }
+      if (n.slack !== void 0) {
+        if (typeof n.slack !== "object" || n.slack === null) {
+          errors.push({ field: "notify.slack", message: "Must be an object" });
+        } else {
+          const url = n.slack.webhookUrl;
+          if (url !== void 0) {
+            if (typeof url !== "string") {
+              errors.push({ field: "notify.slack.webhookUrl", message: "Must be a string" });
+            } else if (url && !url.startsWith("https://hooks.slack.com/")) {
+              errors.push({
+                field: "notify.slack.webhookUrl",
+                message: "Must start with https://hooks.slack.com/"
+              });
+            }
+          }
+        }
+      }
+      if (n.telegram !== void 0) {
+        if (typeof n.telegram !== "object" || n.telegram === null) {
+          errors.push({ field: "notify.telegram", message: "Must be an object" });
+        } else {
+          const t = n.telegram;
+          if (t.botToken !== void 0 && typeof t.botToken !== "string") {
+            errors.push({ field: "notify.telegram.botToken", message: "Must be a string" });
+          }
+          if (t.chatId !== void 0 && typeof t.chatId !== "string") {
+            errors.push({ field: "notify.telegram.chatId", message: "Must be a string" });
+          }
+        }
+      }
+    }
+  }
+  if (c.defaultMode !== void 0) {
+    if (typeof c.defaultMode !== "string" || !VALID_MODES.includes(c.defaultMode)) {
+      errors.push({
+        field: "defaultMode",
+        message: `Invalid mode: ${c.defaultMode}. Must be solo|pair|trio|squad|hierarchy`
+      });
+    }
+  }
+  if (c.preferredAgents !== void 0) {
+    if (!Array.isArray(c.preferredAgents)) {
+      errors.push({ field: "preferredAgents", message: "Must be an array of agent IDs" });
+    } else {
+      for (let i = 0; i < c.preferredAgents.length; i++) {
+        if (typeof c.preferredAgents[i] !== "string") {
+          errors.push({ field: `preferredAgents[${i}]`, message: "Each agent ID must be a string" });
+        }
+      }
+    }
+  }
+  if (c.disabledAgents !== void 0) {
+    if (!Array.isArray(c.disabledAgents)) {
+      errors.push({ field: "disabledAgents", message: "Must be an array of agent IDs" });
+    } else {
+      for (let i = 0; i < c.disabledAgents.length; i++) {
+        if (typeof c.disabledAgents[i] !== "string") {
+          errors.push({ field: `disabledAgents[${i}]`, message: "Each agent ID must be a string" });
+        }
+      }
+    }
+  }
+  if (c.testCommand !== void 0 && typeof c.testCommand !== "string") {
+    errors.push({ field: "testCommand", message: "Must be a string" });
+  }
+  if (c.buildCommand !== void 0 && typeof c.buildCommand !== "string") {
+    errors.push({ field: "buildCommand", message: "Must be a string" });
+  }
+  if (c.project !== void 0) {
+    if (typeof c.project !== "object" || c.project === null) {
+      errors.push({ field: "project", message: "Must be an object" });
+    } else {
+      const nested = validateConfig(c.project);
+      for (const err of nested) {
+        errors.push({ field: `project.${err.field}`, message: err.message });
+      }
+    }
+  }
+  return errors;
+}
+function formatConfigErrors(errors) {
+  return errors.map((e) => `  - ${e.field}: ${e.message}`).join("\n");
+}
+
 // src/cli/commands/notify/notify-config.ts
 async function notifyConfigCommand(options) {
   const config = await loadConfig();
@@ -1671,6 +1823,13 @@ async function notifyConfigCommand(options) {
       chatId: options.telegramChat
     };
     console.log("  Telegram bot configured.");
+  }
+  const errors = validateConfig({ project: config.project });
+  if (errors.length > 0) {
+    process.stderr.write("\n  \u2717 Config validation failed:\n");
+    process.stderr.write(formatConfigErrors(errors) + "\n");
+    process.exitCode = 1;
+    return;
   }
   await saveConfig(config);
   if (options.test) {
@@ -3261,16 +3420,10 @@ var CRITIC_AGENTS = [
 ];
 
 // src/harness/prompt-loader.ts
+init_logger();
 import { readFile as readFile5 } from "fs/promises";
 import { join as join6, dirname } from "path";
 import { fileURLToPath } from "url";
-
-// src/harness/logger.ts
-import { appendFileSync, mkdirSync } from "fs";
-import { join as join5 } from "path";
-import { homedir as homedir5 } from "os";
-var BW_DIR = join5(homedir5(), ".bestwork");
-var LOG_FILE = join5(BW_DIR, "gateway.log");
 
 // src/harness/agents/index.ts
 var ALL_AGENTS = [
@@ -3990,6 +4143,22 @@ async function doctorCommand() {
     console.log(`  ${OK} Strict mode: ON`);
   } catch {
     console.log(`  ${OK} Strict mode: OFF`);
+  }
+  try {
+    const merged = await loadMergedConfig();
+    const errors = validateConfig(merged);
+    if (errors.length === 0) {
+      console.log(`  ${OK} Config: valid`);
+    } else {
+      console.log(`  ${FAIL} Config: ${errors.length} validation error(s)`);
+      for (const line of formatConfigErrors(errors).split("\n")) {
+        if (line.trim()) console.log(`      ${line}`);
+      }
+      issues++;
+    }
+  } catch (err) {
+    console.log(`  ${WARN} Config: could not load (${err instanceof Error ? err.message : String(err)})`);
+    issues++;
   }
   console.log("");
   if (issues === 0) {
