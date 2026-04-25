@@ -1,7 +1,58 @@
+var __defProp = Object.defineProperty;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __esm = (fn, res) => function __init() {
+  return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+};
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+
+// src/harness/logger.ts
+var logger_exports = {};
+__export(logger_exports, {
+  log: () => log,
+  logger: () => logger
+});
+import { appendFileSync, mkdirSync } from "fs";
+import { join as join2 } from "path";
+import { homedir as homedir2 } from "os";
+function formatError(err) {
+  if (err instanceof Error) {
+    return err.stack ? `${err.message}
+  ${err.stack.split("\n").slice(1, 3).join("\n  ")}` : err.message;
+  }
+  return String(err);
+}
+function log(level, scope, msg, err) {
+  try {
+    mkdirSync(BW_DIR, { recursive: true });
+    const ts = (/* @__PURE__ */ new Date()).toISOString().slice(11, 19);
+    const tail = err !== void 0 ? ` \u2014 ${formatError(err)}` : "";
+    appendFileSync(LOG_FILE, `[${ts}] [${level}] [${scope}] ${msg}${tail}
+`);
+  } catch {
+  }
+}
+var BW_DIR, LOG_FILE, logger;
+var init_logger = __esm({
+  "src/harness/logger.ts"() {
+    "use strict";
+    BW_DIR = join2(homedir2(), ".bestwork");
+    LOG_FILE = join2(BW_DIR, "gateway.log");
+    logger = {
+      debug: (scope, msg, err) => log("debug", scope, msg, err),
+      info: (scope, msg, err) => log("info", scope, msg, err),
+      warn: (scope, msg, err) => log("warn", scope, msg, err),
+      error: (scope, msg, err) => log("error", scope, msg, err)
+    };
+  }
+});
+
 // src/harness/notify-on-complete.ts
 import { readFile as readFile2 } from "fs/promises";
-import { join as join2, basename } from "path";
-import { homedir as homedir2 } from "os";
+import { join as join3, basename } from "path";
+import { homedir as homedir3 } from "os";
 import { execSync } from "child_process";
 
 // src/harness/meeting-state.ts
@@ -110,7 +161,7 @@ function getTaskTitle() {
 }
 function getLastPrompt(sessionId) {
   try {
-    const historyPath = join2(homedir2(), ".claude", "history.jsonl");
+    const historyPath = join3(homedir3(), ".claude", "history.jsonl");
     const content = execSync(`grep '"sessionId":"${sessionId}"' "${historyPath}" | tail -1`, {
       encoding: "utf-8",
       timeout: 3e3
@@ -120,7 +171,11 @@ function getLastPrompt(sessionId) {
       const display = (entry.display ?? "").replace(/\x1b\[[0-9;]*m/g, "");
       return display.slice(0, 100) || "N/A";
     }
-  } catch {
+  } catch (err) {
+    Promise.resolve().then(() => (init_logger(), logger_exports)).then(
+      ({ logger: logger2 }) => logger2.debug("notify", `failed to read last prompt from history.jsonl`, err)
+    ).catch(() => {
+    });
   }
   return "N/A";
 }
@@ -164,7 +219,7 @@ function getGitChanges() {
 }
 function getReviewResult() {
   try {
-    const scriptDir = join2(homedir2(), ".nvm/versions/node", `v${process.versions.node}`, "lib/node_modules/bestwork-agent/hooks");
+    const scriptDir = join3(homedir3(), ".nvm/versions/node", `v${process.versions.node}`, "lib/node_modules/bestwork-agent/hooks");
     const output = exec(`echo '{}' | BESTWORK_REVIEW_TRIGGER=1 bash "${scriptDir}/bestwork-review.sh"`);
     if (output.includes("\u26A0\uFE0F")) {
       const parsed = JSON.parse(output);
@@ -178,7 +233,7 @@ function getReviewResult() {
 }
 async function loadConfig() {
   try {
-    const raw = await readFile2(join2(homedir2(), ".bestwork", "config.json"), "utf-8");
+    const raw = await readFile2(join3(homedir3(), ".bestwork", "config.json"), "utf-8");
     return JSON.parse(raw);
   } catch {
     return {};
@@ -186,7 +241,7 @@ async function loadConfig() {
 }
 function getProjectName() {
   try {
-    const pkgPath = join2(process.cwd(), "package.json");
+    const pkgPath = join3(process.cwd(), "package.json");
     const pkg = JSON.parse(execSync(`cat "${pkgPath}"`, { encoding: "utf-8" }));
     return pkg.name || basename(process.cwd());
   } catch {
