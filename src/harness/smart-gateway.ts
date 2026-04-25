@@ -50,6 +50,8 @@ const SLASH_PREFIXES = [
   "./trio", "./update",
   // New execution mode skills
   "./delegate", "./waterfall", "./deliver", "./blitz", "./superthinking", "./clarify", "./validate",
+  // Evidence-driven causal tracing
+  "./trace",
   // Meeting history
   "./meetings",
 ];
@@ -259,6 +261,22 @@ const SKILL_ROUTES: Array<{ patterns: RegExp[]; skill: string; reason: string; h
     ],
     skill: "validate",
     reason: "feature validation gate — evidence-based go/no-go before building",
+  },
+  {
+    patterns: [
+      // Causal "why" questions in three languages, plus regression/intermittent triggers.
+      // Action verbs and explicit "why" required to avoid swallowing descriptive prompts.
+      /(?:trace|diagnose|debug)\s+(?:why|what|the\s+cause)/i,
+      /why\s+(?:does|is|did|do|are)\s+.{3,}/i,
+      /what\s+caused\s+.{3,}/i,
+      /(?:intermittent|flaky|regression).*(?:why|cause|investigate)/i,
+      /왜\s+.{2,}\s*(?:발생|일어|문제|실패|안 되|에러)/i,
+      /원인\s*(?:파악|찾|분석)/i,
+      /(?:なぜ|何故).{2,}(?:発生|起きる|失敗|エラー)/i,
+      /原因\s*(?:を|分析|調査)/i,
+    ],
+    skill: "trace",
+    reason: "evidence-driven causal trace — competing hypotheses, falsification, rebuttal",
   },
 ];
 
